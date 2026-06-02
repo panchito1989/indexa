@@ -302,19 +302,34 @@ async function gaqlMutate<T>(
 ): Promise<T> {
   const { developerToken, loginCustomerId } = getEnv();
 
-  const res = await fetch(
-    `${GOOGLE_ADS_API_BASE}/customers/${customerId}/${resource}:mutate`,
-    {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "developer-token": developerToken,
-        "login-customer-id": loginCustomerId,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ operations }),
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20_000);
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${GOOGLE_ADS_API_BASE}/customers/${customerId}/${resource}:mutate`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "developer-token": developerToken,
+          "login-customer-id": loginCustomerId,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ operations }),
+        signal: controller.signal,
+      }
+    );
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Google Ads mutate ${resource} timeout (20s)`);
     }
-  );
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => "(sin cuerpo)");

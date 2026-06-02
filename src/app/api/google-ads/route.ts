@@ -25,6 +25,7 @@ async function getCustomerId(uid: string): Promise<string> {
   const snap = await getAdminDb().collection("usuarios").doc(uid).get();
   const customerId = snap.data()?.googleAdsCustomerId as string | undefined;
   if (!customerId) throw new Error("No hay Customer ID de Google Ads configurado.");
+  if (!/^\d+$/.test(customerId)) throw new Error("Customer ID de Google Ads inválido.");
   return customerId;
 }
 
@@ -43,7 +44,11 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = request.nextUrl;
   const action = searchParams.get("action") || "campaigns";
-  const campaignId = searchParams.get("campaignId") ?? undefined;
+  const rawCampaignId = searchParams.get("campaignId");
+  if (rawCampaignId !== null && !/^\d+$/.test(rawCampaignId)) {
+    return NextResponse.json({ error: "campaignId inválido." }, { status: 400 });
+  }
+  const campaignId = rawCampaignId ?? undefined;
   const dateRange = searchParams.get("dateRange") || "LAST_7_DAYS";
 
   try {
@@ -87,8 +92,9 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error desconocido.";
     console.error(`[google-ads GET action=${action}]`, msg);
-    const status = msg.includes("No hay") ? 404 : 502;
-    return NextResponse.json({ error: msg }, { status });
+    const isNotFound = msg.includes("No hay");
+    const clientMsg = isNotFound ? msg : "Error al consultar Google Ads. Intenta de nuevo.";
+    return NextResponse.json({ error: clientMsg }, { status: isNotFound ? 404 : 502 });
   }
 }
 
@@ -171,6 +177,6 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Error desconocido.";
     console.error(`[google-ads POST action=${action}]`, msg);
-    return NextResponse.json({ error: msg }, { status: 502 });
+    return NextResponse.json({ error: "Error al ejecutar acción en Google Ads. Intenta de nuevo." }, { status: 502 });
   }
 }

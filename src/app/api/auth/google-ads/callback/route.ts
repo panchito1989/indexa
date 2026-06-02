@@ -13,6 +13,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyState } from "@/lib/oauthState";
 import { encryptToken } from "@/lib/tokenCrypto";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 
@@ -56,6 +59,11 @@ function htmlResponse(payload: Record<string, unknown>, status = 200) {
 }
 
 export async function GET(request: NextRequest) {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!limiter.check(ip)) {
+    return htmlResponse({ type: "google-ads-oauth-error", error: "Demasiadas solicitudes." }, 429);
+  }
+
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
