@@ -14,6 +14,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyState } from "@/lib/oauthState";
 import { encryptToken } from "@/lib/tokenCrypto";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 
@@ -80,7 +81,9 @@ export async function GET(request: NextRequest) {
 
   const appId = process.env.NEXT_PUBLIC_FACEBOOK_APP_ID || process.env.FACEBOOK_APP_ID;
   const appSecret = process.env.FACEBOOK_APP_SECRET;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${url.protocol}//${url.host}`;
+  // Match the redirect_uri the browser used at authorize time (window.location.origin),
+  // derived from the incoming request so localhost / tunnels / previews / prod all work.
+  const siteUrl = getRequestOrigin(request);
   const redirectUri = `${siteUrl}/api/auth/meta/callback`;
 
   if (!appId || !appSecret) {

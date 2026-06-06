@@ -14,6 +14,7 @@ import { verifyState } from "@/lib/oauthState";
 import { encryptToken } from "@/lib/tokenCrypto";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { getRequestOrigin } from "@/lib/requestOrigin";
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
@@ -85,7 +86,9 @@ export async function GET(request: NextRequest) {
 
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_ADS_CLIENT_ID || process.env.GOOGLE_ADS_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${url.protocol}//${url.host}`;
+  // Match the redirect_uri the browser used at authorize time (window.location.origin),
+  // derived from the incoming request so localhost / tunnels / previews / prod all work.
+  const siteUrl = getRequestOrigin(request);
   const redirectUri = `${siteUrl}/api/auth/google-ads/callback`;
 
   if (!clientId || !clientSecret) {
