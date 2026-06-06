@@ -265,7 +265,16 @@ export default function AdminGoogleAdsPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error del asistente.");
-      setAiHistory((h) => [...h, { role: "assistant", content: data.reply ?? "" }]);
+      if (Array.isArray(data.history)) {
+        setAiHistory(
+          (data.history as Array<{ role: "user" | "assistant"; content: unknown }>).map((m) => ({
+            role: m.role,
+            content: typeof m.content === "string" ? m.content : String(data.reply ?? ""),
+          }))
+        );
+      } else {
+        setAiHistory((h) => [...h, { role: "assistant", content: data.reply ?? "" }]);
+      }
     } catch (e) {
       setAiHistory((h) => [
         ...h,
