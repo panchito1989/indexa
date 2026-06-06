@@ -19,6 +19,7 @@ import {
   TrendingUp,
   Megaphone,
   Shield,
+  Target,
 } from "lucide-react";
 import {
   collection,
@@ -42,6 +43,7 @@ const NAV_ITEMS = [
   { href: "/admin/agencias", label: "Agencias", icon: Shield },
   { href: "/admin/campanas/tiktok", label: "TikTok Ads", icon: Video },
   { href: "/admin/campanas/facebook", label: "Facebook Ads", icon: Megaphone },
+  { href: "/admin/campanas/google-ads", label: "Google Ads", icon: Target },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
 
