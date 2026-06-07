@@ -968,7 +968,7 @@ export async function addNegativeKeywords(customerId: string, accessToken: strin
 
 export async function addLocationTargeting(customerId: string, accessToken: string, campaignResourceName: string, locationName: string): Promise<boolean> {
   if (!locationName?.trim()) return false;
-  const name = locationName.trim().replace(/'/g, "\\'"); // escape apostrophes for GAQL
+  const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard — geo names never contain them)
   type GeoRow = { geoTargetConstant: { resourceName: string } };
   // Match any enabled geo target with this name (city, region/state, etc.), most specific first.
   const matches = await gaqlSearch<GeoRow>(customerId, accessToken,
@@ -990,6 +990,7 @@ function clampBidModifier(m: number): number { return Math.min(3.0, Math.max(0.1
 export async function setDeviceBidModifier(customerId: string, accessToken: string, campaignResourceName: string, device: string, bidModifier: number): Promise<number> {
   const mod = clampBidModifier(bidModifier);
   const dev = device.toUpperCase();
+  if (!["MOBILE", "DESKTOP", "TABLET"].includes(dev)) throw new Error("Dispositivo inválido (usa MOBILE/DESKTOP/TABLET).");
   const campaignId = extractId(campaignResourceName);
   type AgRow = { adGroup: { id: string; resourceName: string } };
   const adGroups = await gaqlSearch<AgRow>(customerId, accessToken,
@@ -1022,7 +1023,7 @@ export async function setAdScheduleBidModifier(customerId: string, accessToken: 
 export async function setLocationBidModifier(customerId: string, accessToken: string, campaignResourceName: string, locationName: string, bidModifier: number): Promise<void> {
   const mod = clampBidModifier(bidModifier);
   const campaignId = extractId(campaignResourceName);
-  const name = locationName.trim().replace(/'/g, "\\'");
+  const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard)
   type GeoRow = { geoTargetConstant: { resourceName: string } };
   const geo = (await gaqlSearch<GeoRow>(customerId, accessToken,
     `SELECT geo_target_constant.resource_name FROM geo_target_constant WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED' LIMIT 1`).catch(() => [] as GeoRow[]))[0]?.geoTargetConstant?.resourceName;
