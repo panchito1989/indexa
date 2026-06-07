@@ -14,6 +14,13 @@ import {
   updateCampaignStatus,
   updateCampaignBudget,
   createFullCampaign,
+  getHourlyPerformance,
+  getDevicePerformance,
+  getGeoPerformance,
+  getAudiencePerformance,
+  getExtensionPerformance,
+  activateCampaign,
+  addNegativeKeywords,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 60;
@@ -86,6 +93,16 @@ export async function GET(request: NextRequest) {
         const budget = await getAccountBudget(customerId, accessToken);
         return NextResponse.json({ budget });
       }
+      case "hourly":
+        return NextResponse.json({ rows: await getHourlyPerformance(customerId, accessToken, dateRange) });
+      case "device":
+        return NextResponse.json({ rows: await getDevicePerformance(customerId, accessToken, dateRange) });
+      case "geo":
+        return NextResponse.json({ rows: await getGeoPerformance(customerId, accessToken, dateRange) });
+      case "audiences":
+        return NextResponse.json({ rows: await getAudiencePerformance(customerId, accessToken, dateRange) });
+      case "extensions":
+        return NextResponse.json({ rows: await getExtensionPerformance(customerId, accessToken, dateRange) });
       default:
         return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
     }
@@ -171,6 +188,20 @@ export async function POST(request: NextRequest) {
       });
 
       return NextResponse.json({ success: true, ...result });
+    }
+
+    if (action === "activate") {
+      const { campaignResourceName } = body as { campaignResourceName?: string };
+      if (!campaignResourceName) return NextResponse.json({ error: "Falta campaignResourceName." }, { status: 400 });
+      await activateCampaign(customerId, accessToken, campaignResourceName);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "add_negative_keywords") {
+      const { campaignResourceName, keywords } = body as { campaignResourceName?: string; keywords?: string[] };
+      if (!campaignResourceName || !keywords?.length) return NextResponse.json({ error: "Faltan campaignResourceName o keywords." }, { status: 400 });
+      const added = await addNegativeKeywords(customerId, accessToken, campaignResourceName, keywords);
+      return NextResponse.json({ success: true, added });
     }
 
     return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
