@@ -1,5 +1,5 @@
 /**
- * Google Ads REST API v18 client — server-side only.
+ * Google Ads REST API client (v22 by default) — server-side only.
  *
  * Refresh automático: si el access_token está próximo a vencer (< 5 min),
  * lo renueva usando el refresh_token y actualiza Firestore sin que el usuario
@@ -12,7 +12,14 @@
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { encryptToken, decryptToken } from "@/lib/tokenCrypto";
 
-const GOOGLE_ADS_API_BASE = "https://googleads.googleapis.com/v18";
+// Google Ads API version. Versions sunset ~13 months after release; a sunset
+// version returns an HTML "Error 404 (Not Found)" page instead of a JSON error.
+// When that happens, bump this — overridable via GOOGLE_ADS_API_VERSION env var
+// (no redeploy needed). Probe live versions with:
+//   curl https://googleads.googleapis.com/vN/customers:listAccessibleCustomers
+//   → HTTP 401 = valid, 404 = sunset.
+const GOOGLE_ADS_API_VERSION = process.env.GOOGLE_ADS_API_VERSION || "v22";
+const GOOGLE_ADS_API_BASE = `https://googleads.googleapis.com/${GOOGLE_ADS_API_VERSION}`;
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refrescar si expira en < 5 min
 
