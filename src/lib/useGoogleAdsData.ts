@@ -90,6 +90,9 @@ export function useGoogleAdsData() {
   // ── Loaders ─────────────────────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!isConnected) return;
+    // Con rango personalizado incompleto, no dispares la carga (evita un 400
+    // "Rango de fechas inválido" mientras el usuario aún elige las fechas).
+    if (dateRange === "CUSTOM" && (!customStart || !customEnd)) return;
     setLoading(true);
     setError("");
     try {
@@ -106,7 +109,7 @@ export function useGoogleAdsData() {
     } finally {
       setLoading(false);
     }
-  }, [isConnected, apiFetch, rangeParams]);
+  }, [isConnected, apiFetch, rangeParams, dateRange, customStart, customEnd]);
 
   const loadKeywords = useCallback(async () => {
     if (!isConnected) return;
