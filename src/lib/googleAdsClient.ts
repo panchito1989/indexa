@@ -140,12 +140,12 @@ function getEnv() {
   // The `login-customer-id` header must be digits only. The Google Ads UI shows the
   // manager (MCC) account ID with dashes (e.g. 123-456-7890); strip them, otherwise
   // the API rejects every request with 400 INVALID_ARGUMENT.
-  const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "");
+  const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "") || "";
 
-  if (!clientSecret || !clientId || !developerToken || !loginCustomerId) {
+  if (!clientSecret || !clientId || !developerToken) {
     throw new Error(
       "Google Ads env vars missing: GOOGLE_ADS_CLIENT_SECRET, GOOGLE_ADS_CLIENT_ID, " +
-      "GOOGLE_ADS_DEVELOPER_TOKEN, GOOGLE_ADS_LOGIN_CUSTOMER_ID"
+      "GOOGLE_ADS_DEVELOPER_TOKEN"
     );
   }
   return { clientSecret, clientId, developerToken, loginCustomerId };
@@ -281,7 +281,7 @@ async function gaqlSearch<T>(
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "developer-token": developerToken,
-          "login-customer-id": loginCustomerId,
+          "login-customer-id": loginCustomerId || customerId,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ query }),
@@ -331,7 +331,7 @@ async function gaqlMutate<T>(
         headers: {
           "Authorization": `Bearer ${accessToken}`,
           "developer-token": developerToken,
-          "login-customer-id": loginCustomerId,
+          "login-customer-id": loginCustomerId || customerId,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ operations }),
@@ -658,15 +658,15 @@ export async function getAccessibleCustomers(
   const { developerToken, loginCustomerId } = getEnv();
 
   // Step 1: Get resource names list
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${accessToken}`,
+    "developer-token": developerToken,
+  };
+  if (loginCustomerId) headers["login-customer-id"] = loginCustomerId;
+
   const listRes = await fetch(
     `${GOOGLE_ADS_API_BASE}/customers:listAccessibleCustomers`,
-    {
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "developer-token": developerToken,
-        "login-customer-id": loginCustomerId,
-      },
-    }
+    { headers }
   );
 
   if (!listRes.ok) {
