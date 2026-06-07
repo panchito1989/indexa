@@ -130,7 +130,10 @@ function getEnv() {
   const clientSecret = process.env.GOOGLE_ADS_CLIENT_SECRET;
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_ADS_CLIENT_ID || process.env.GOOGLE_ADS_CLIENT_ID;
   const developerToken = process.env.GOOGLE_ADS_DEVELOPER_TOKEN;
-  const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID;
+  // The `login-customer-id` header must be digits only. The Google Ads UI shows the
+  // manager (MCC) account ID with dashes (e.g. 123-456-7890); strip them, otherwise
+  // the API rejects every request with 400 INVALID_ARGUMENT.
+  const loginCustomerId = process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "");
 
   if (!clientSecret || !clientId || !developerToken || !loginCustomerId) {
     throw new Error(
@@ -661,7 +664,7 @@ export async function getAccessibleCustomers(
 
   if (!listRes.ok) {
     const text = await listRes.text().catch(() => "");
-    throw new Error(`listAccessibleCustomers HTTP ${listRes.status}: ${text.slice(0, 200)}`);
+    throw new Error(`listAccessibleCustomers HTTP ${listRes.status}: ${text.slice(0, 500)}`);
   }
 
   const { resourceNames } = await listRes.json() as { resourceNames?: string[] };
