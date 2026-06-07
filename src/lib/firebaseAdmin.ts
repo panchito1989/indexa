@@ -32,13 +32,24 @@ function getAdminApp(): App {
     process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
   if (serviceAccountKey) {
+    // The env var is explicitly set, so the operator intends to use it. If it
+    // can't be parsed/used, that's a misconfiguration — almost always a value
+    // corrupted on paste (Vercel's bulk ".env import" mangles the private_key's
+    // escaped newlines/quotes). Fail loudly instead of silently falling back to
+    // projectId-only mode, which still verifies ID tokens but breaks every
+    // Firestore read/write with a cryptic "Could not load the default
+    // credentials" error far downstream.
     try {
       const serviceAccount = parseServiceAccount(serviceAccountKey);
       console.log("[Firebase Admin] Initialized from env var (project:", serviceAccount.project_id, ")");
       return initializeApp({ credential: cert(serviceAccount as Parameters<typeof cert>[0]) });
-    } catch {
-      console.error("[Firebase Admin] Failed to parse service account JSON from env var. Check JSON formatting.");
-      // fall through to next option
+    } catch (err) {
+      throw new Error(
+        "[Firebase Admin] FIREBASE_SERVICE_ACCOUNT(_KEY) is set but could not be parsed/used — " +
+          "re-set it as a single env var with the exact service-account JSON (do NOT bulk-paste a .env file, " +
+          "which corrupts the private_key). Underlying error: " +
+          (err instanceof Error ? err.message : String(err))
+      );
     }
   }
 
