@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
-import { createRateLimiter } from "@/lib/rateLimit";
+import { checkRateLimit } from "@/lib/rateLimit";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import OpenAI from "openai";
 
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de anuncios
 
-const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
-const userLimiter = createRateLimiter({ windowMs: 60_000, max: 12 });
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 
 // ── AI Model config ────────────────────────────────────────────────
@@ -912,7 +910,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limit
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-    if (!limiter.check(ip)) {
+    if (!(await checkRateLimit(`ai-ip:${ip}`, 30, 60))) {
       return NextResponse.json({ error: "Demasiadas solicitudes. Intenta en un minuto." }, { status: 429 });
     }
 
@@ -924,7 +922,7 @@ export async function POST(request: NextRequest) {
     const user = await verifyIdToken(fbToken);
     if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
 
-    if (!userLimiter.check(user.uid)) {
+    if (!(await checkRateLimit(`ai-uid:${user.uid}`, 12, 60))) {
       return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
     }
 

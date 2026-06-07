@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyIdToken } from "@/lib/verifyAuth";
+import { verifyAdmin } from "@/lib/verifyAuth";
 
 export const maxDuration = 30;
 
@@ -11,7 +11,10 @@ export async function GET(request: NextRequest) {
     if (!authHeader?.startsWith("Bearer ")) {
       return NextResponse.json({ error: "No auth token" }, { status: 401 });
     }
-    await verifyIdToken(authHeader.split("Bearer ")[1]);
+    const adminUser = await verifyAdmin(authHeader.split("Bearer ")[1]);
+    if (!adminUser) {
+      return NextResponse.json({ error: "No autorizado." }, { status: 403 });
+    }
 
     const advertiserId = request.headers.get("x-tiktok-advertiser-id") || request.nextUrl.searchParams.get("advertiser_id");
     const accessToken = request.headers.get("x-tiktok-access-token") || request.nextUrl.searchParams.get("access_token");

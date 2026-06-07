@@ -58,3 +58,56 @@ export function createRateLimiter(opts: RateLimiterOptions) {
     },
   };
 }
+
+// ── Distributed rate limit (Vercel KV / Upstash Redis REST) ──────────────────
+// Cross-instance limit for expensive/abusable endpoints. Uses Vercel KV when
+// KV_REST_API_URL + KV_REST_API_TOKEN are set; otherwise falls back to a
+// per-instance in-memory counter. FAIL-OPEN: any backend error allows the
+// request, so a KV outage never locks out legitimate users.
+const KV_URL = process.env.KV_REST_API_URL;
+const KV_TOKEN = process.env.KV_REST_API_TOKEN;
+
+const memStore = new Map<string, Entry>();
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, e] of memStore) if (now > e.resetAt) memStore.delete(k);
+}, 60_000).unref?.();
+
+function memAllow(key: string, max: number, windowMs: number): boolean {
+  const now = Date.now();
+  const e = memStore.get(key);
+  if (!e || now > e.resetAt) { memStore.set(key, { count: 1, resetAt: now + windowMs }); return true; }
+  e.count++;
+  return e.count <= max;
+}
+
+async function kvCmd(path: string): Promise<number | null> {
+  try {
+    const res = await fetch(`${KV_URL}${path}`, {
+      headers: { Authorization: `Bearer ${KV_TOKEN}` },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { result?: number };
+    return typeof data.result === "number" ? data.result : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Distributed, cross-instance rate limit. Returns true if allowed, false if over limit.
+ * Fixed window of `windowSec` seconds, `max` requests per `key`.
+ *
+ *   if (!(await checkRateLimit(`ai:${uid}`, 12, 60))) return 429;
+ */
+export async function checkRateLimit(key: string, max: number, windowSec: number): Promise<boolean> {
+  if (KV_URL && KV_TOKEN) {
+    const k = `rl:${encodeURIComponent(key)}`;
+    const count = await kvCmd(`/incr/${k}`);
+    if (count === null) return true; // fail-open: KV unavailable
+    if (count === 1) await kvCmd(`/expire/${k}/${windowSec}`); // start the window on first hit
+    return count <= max;
+  }
+  return memAllow(key, max, windowSec * 1000);
+}

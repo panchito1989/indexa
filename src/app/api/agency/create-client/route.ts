@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAgency } from "@/lib/verifyAuth";
 import { addDocument, queryCollection } from "@/lib/firestoreRest";
 import { buildSearchIndex } from "@/lib/searchUtils";
+import { createRateLimiter } from "@/lib/rateLimit";
+
+const createLimiter = createRateLimiter({ windowMs: 60_000, max: 5 });
 
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
@@ -24,6 +27,10 @@ export async function POST(request: NextRequest) {
     const agencyUser = await verifyAgency(token);
     if (!agencyUser) {
       return NextResponse.json({ success: false, message: "Solo agencias pueden crear clientes." }, { status: 403 });
+    }
+
+    if (!createLimiter.check(agencyUser.uid)) {
+      return NextResponse.json({ success: false, message: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
     }
 
     const body: CreateClientBody = await request.json();
@@ -77,8 +84,8 @@ export async function POST(request: NextRequest) {
     if (!signupRes.ok) {
       const err = await signupRes.json();
       const code = err?.error?.message || "";
-      if (code === "EMAIL_EXISTS") {
-        return NextResponse.json({ success: false, message: "Este email ya tiene una cuenta." }, { status: 409 });
+      if (code.includes("EMAIL_EXISTS")) {
+        return NextResponse.json({ success: false, message: "No se pudo crear la cuenta. Verifica el correo e inténtalo de nuevo." }, { status: 400 });
       }
       return NextResponse.json({ success: false, message: `Error creando usuario: ${code}` }, { status: 400 });
     }

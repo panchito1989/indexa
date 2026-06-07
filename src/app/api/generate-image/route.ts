@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
-import { createRateLimiter } from "@/lib/rateLimit";
-
-// Rate limit: 10 image generations per minute per IP
-const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
+import { checkRateLimit } from "@/lib/rateLimit";
 
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
-  if (!limiter.check(ip)) {
+  if (!(await checkRateLimit(`img-ip:${ip}`, 10, 60))) {
     return NextResponse.json({ error: "Demasiadas solicitudes. Intenta en un minuto." }, { status: 429 });
   }
 
@@ -25,6 +22,10 @@ export async function POST(request: NextRequest) {
   const user = await verifyIdToken(token);
   if (!user) {
     return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+  }
+
+  if (!(await checkRateLimit(`img-uid:${user.uid}`, 15, 60))) {
+    return NextResponse.json({ error: "Demasiadas solicitudes." }, { status: 429 });
   }
 
   // ── Body ──────────────────────────────────────────────────────
