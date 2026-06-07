@@ -124,6 +124,7 @@ export function useGoogleAdsData() {
 
   const loadKeywordPerf = useCallback(async () => {
     if (!isConnected) return;
+    if (dateRange === "CUSTOM" && (!customStart || !customEnd)) return;
     setLoading(true);
     try {
       const data = await apiFetch("keyword_performance", rangeParams());
@@ -131,10 +132,11 @@ export function useGoogleAdsData() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar rendimiento de keywords.");
     } finally { setLoading(false); }
-  }, [isConnected, apiFetch, rangeParams]);
+  }, [isConnected, apiFetch, rangeParams, dateRange, customStart, customEnd]);
 
   const loadSearchTerms = useCallback(async () => {
     if (!isConnected) return;
+    if (dateRange === "CUSTOM" && (!customStart || !customEnd)) return;
     setLoading(true);
     try {
       const data = await apiFetch("search_terms", rangeParams());
@@ -142,10 +144,11 @@ export function useGoogleAdsData() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar términos de búsqueda.");
     } finally { setLoading(false); }
-  }, [isConnected, apiFetch, rangeParams]);
+  }, [isConnected, apiFetch, rangeParams, dateRange, customStart, customEnd]);
 
   const loadSegment = useCallback(async (action: string) => {
     if (!isConnected) return;
+    if (dateRange === "CUSTOM" && (!customStart || !customEnd)) return;
     setLoading(true);
     try {
       const data = await apiFetch(action, rangeParams());
@@ -153,12 +156,15 @@ export function useGoogleAdsData() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar segmento.");
     } finally { setLoading(false); }
-  }, [isConnected, apiFetch, rangeParams]);
+  }, [isConnected, apiFetch, rangeParams, dateRange, customStart, customEnd]);
 
   // Trae keyword-perf + términos frescos para el informe (PDF se puede exportar
   // desde Resumen sin haber abierto esos tabs). Devuelve los datos y también los
   // guarda en estado.
   const fetchForExport = useCallback(async () => {
+    if (dateRange === "CUSTOM" && (!customStart || !customEnd)) {
+      return { keywords: [] as GoogleAdsKeywordPerfRow[], searchTerms: [] as GoogleAdsSearchTermRow[] };
+    }
     const [kp, st] = await Promise.all([
       apiFetch("keyword_performance", rangeParams()),
       apiFetch("search_terms", rangeParams()),
@@ -168,7 +174,7 @@ export function useGoogleAdsData() {
     setKeywordPerf(kw);
     setSearchTerms(terms);
     return { keywords: kw, searchTerms: terms };
-  }, [apiFetch, rangeParams]);
+  }, [apiFetch, rangeParams, dateRange, customStart, customEnd]);
 
   // Auto-cargar al conectar y al cambiar de rango
   useEffect(() => {
