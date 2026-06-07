@@ -7,6 +7,7 @@ import OpenAI from "openai";
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de anuncios
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const userLimiter = createRateLimiter({ windowMs: 60_000, max: 12 });
 const META_GRAPH_URL = "https://graph.facebook.com/v21.0";
 
 // ── AI Model config ────────────────────────────────────────────────
@@ -922,6 +923,10 @@ export async function POST(request: NextRequest) {
 
     const user = await verifyIdToken(fbToken);
     if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+
+    if (!userLimiter.check(user.uid)) {
+      return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
+    }
 
     // AI keys — at least one free model must be available
     const geminiKey = process.env.GEMINI_API_KEY;

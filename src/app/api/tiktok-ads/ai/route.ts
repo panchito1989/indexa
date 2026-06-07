@@ -30,6 +30,7 @@ import {
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de anuncios
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const userLimiter = createRateLimiter({ windowMs: 60_000, max: 12 });
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
@@ -1414,6 +1415,10 @@ export async function POST(request: NextRequest) {
 
     const user = await verifyIdToken(fbToken);
     if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+
+    if (!userLimiter.check(user.uid)) {
+      return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
+    }
 
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicKey) {
