@@ -677,36 +677,54 @@ export async function getAccessibleCustomers(
   const { resourceNames } = await listRes.json() as { resourceNames?: string[] };
   if (!resourceNames?.length) return [];
 
-  // Step 2: Query customer_client from MCC
-  type Row = {
-    customerClient: {
-      id: string;
-      descriptiveName: string;
-      currencyCode: string;
-      timeZone: string;
-      status: string;
+  // Step 2a — MCC mode: list the sub-accounts managed by the manager account.
+  if (loginCustomerId) {
+    type Row = {
+      customerClient: { id: string; descriptiveName: string; currencyCode: string; timeZone: string; status: string };
     };
+    const rows = await gaqlSearch<Row>(
+      loginCustomerId,
+      accessToken,
+      `SELECT customer_client.id, customer_client.descriptive_name,
+              customer_client.currency_code, customer_client.time_zone,
+              customer_client.status
+       FROM customer_client
+       WHERE customer_client.level = 1
+         AND customer_client.status = 'ENABLED'
+       LIMIT 50`
+    );
+    return rows.map((r) => ({
+      id: r.customerClient.id,
+      name: r.customerClient.descriptiveName,
+      currencyCode: r.customerClient.currencyCode,
+      timeZone: r.customerClient.timeZone,
+      status: r.customerClient.status,
+    }));
+  }
+
+  // Step 2b — direct mode (no MCC): the accessible customers ARE the user's own
+  // accounts; fetch each account's details directly (login-customer-id falls back
+  // to the account's own id inside gaqlSearch).
+  type CustRow = {
+    customer: { id: string; descriptiveName: string; currencyCode: string; timeZone: string; status: string };
   };
-
-  const rows = await gaqlSearch<Row>(
-    loginCustomerId,
-    accessToken,
-    `SELECT customer_client.id, customer_client.descriptive_name,
-            customer_client.currency_code, customer_client.time_zone,
-            customer_client.status
-     FROM customer_client
-     WHERE customer_client.level = 1
-       AND customer_client.status = 'ENABLED'
-     LIMIT 50`
-  );
-
-  return rows.map((r) => ({
-    id: r.customerClient.id,
-    name: r.customerClient.descriptiveName,
-    currencyCode: r.customerClient.currencyCode,
-    timeZone: r.customerClient.timeZone,
-    status: r.customerClient.status,
-  }));
+  const out: GoogleAdsCustomer[] = [];
+  for (const rn of resourceNames) {
+    const id = rn.split("/").pop() || "";
+    if (!id) continue;
+    try {
+      const rows = await gaqlSearch<CustRow>(
+        id,
+        accessToken,
+        `SELECT customer.id, customer.descriptive_name, customer.currency_code,
+                customer.time_zone, customer.status
+         FROM customer LIMIT 1`
+      );
+      const c = rows[0]?.customer;
+      if (c) out.push({ id: c.id, name: c.descriptiveName, currencyCode: c.currencyCode, timeZone: c.timeZone, status: c.status });
+    } catch { /* skip accounts we can't read */ }
+  }
+  return out;
 }
 
 // ── Write Functions ───────────────────────────────────────────────────
