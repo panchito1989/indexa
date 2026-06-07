@@ -131,6 +131,33 @@ export interface GoogleAdsGeoRow { locationId: string; locationName: string; cos
 export interface GoogleAdsAudienceRow { name: string; type: string; cost: number; clicks: number; conversions: number; }
 export interface GoogleAdsExtensionRow { assetId: string; type: string; name: string; cost: number; clicks: number; impressions: number; }
 
+export interface GoogleAdsKeywordPerfRow {
+  keywordId: string;
+  text: string;
+  matchType: string;
+  campaignId: string;
+  campaignName: string;
+  cost: number;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  avgCpc: number;
+  conversions: number;
+  costPerConversion: number;
+}
+
+export interface GoogleAdsSearchTermRow {
+  term: string;
+  status: string;
+  campaignName: string;
+  cost: number;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  conversions: number;
+  costPerConversion: number;
+}
+
 export interface DateRangeCustom {
   startDate: string; // YYYY-MM-DD
   endDate: string;   // YYYY-MM-DD
@@ -1061,4 +1088,74 @@ export async function setLocationBidModifier(customerId: string, accessToken: st
   } else {
     throw new Error("No se encontró la ubicación para aplicar el modificador.");
   }
+}
+
+export async function getKeywordPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsKeywordPerfRow[]> {
+  type Row = {
+    adGroupCriterion: {
+      criterionId: string;
+      keyword?: { text?: string; matchType?: string };
+    };
+    campaign: { id: string; name: string };
+    metrics: {
+      costMicros: string; clicks: string; impressions: string;
+      ctr: string; averageCpc: string; conversions: string; costPerConversion: string;
+    };
+  };
+  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT ad_group_criterion.criterion_id, ad_group_criterion.keyword.text,
+            ad_group_criterion.keyword.match_type, campaign.id, campaign.name,
+            metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
+            metrics.average_cpc, metrics.conversions, metrics.cost_per_conversion
+     FROM keyword_view
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+       AND ad_group_criterion.status != 'REMOVED'
+     ORDER BY metrics.cost_micros DESC
+     LIMIT 500`).catch(() => [] as Row[]);
+  return rows.map((r) => ({
+    keywordId: r.adGroupCriterion.criterionId,
+    text: r.adGroupCriterion.keyword?.text ?? "",
+    matchType: r.adGroupCriterion.keyword?.matchType ?? "",
+    campaignId: r.campaign.id,
+    campaignName: r.campaign.name,
+    cost: microsToUnit(r.metrics.costMicros ?? 0),
+    clicks: Number(r.metrics.clicks ?? 0),
+    impressions: Number(r.metrics.impressions ?? 0),
+    ctr: Number(r.metrics.ctr ?? 0),
+    avgCpc: microsToUnit(r.metrics.averageCpc ?? 0),
+    conversions: Number(r.metrics.conversions ?? 0),
+    costPerConversion: microsToUnit(r.metrics.costPerConversion ?? 0),
+  }));
+}
+
+export async function getSearchTerms(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsSearchTermRow[]> {
+  type Row = {
+    searchTermView: { searchTerm?: string; status?: string };
+    campaign?: { name?: string };
+    metrics: {
+      costMicros: string; clicks: string; impressions: string;
+      ctr: string; conversions: string; costPerConversion: string;
+    };
+  };
+  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT search_term_view.search_term, search_term_view.status, campaign.name,
+            metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
+            metrics.conversions, metrics.cost_per_conversion
+     FROM search_term_view
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+     ORDER BY metrics.cost_micros DESC
+     LIMIT 200`).catch(() => [] as Row[]);
+  return rows.map((r) => ({
+    term: r.searchTermView?.searchTerm ?? "",
+    status: r.searchTermView?.status ?? "",
+    campaignName: r.campaign?.name ?? "",
+    cost: microsToUnit(r.metrics.costMicros ?? 0),
+    clicks: Number(r.metrics.clicks ?? 0),
+    impressions: Number(r.metrics.impressions ?? 0),
+    ctr: Number(r.metrics.ctr ?? 0),
+    conversions: Number(r.metrics.conversions ?? 0),
+    costPerConversion: microsToUnit(r.metrics.costPerConversion ?? 0),
+  }));
 }
