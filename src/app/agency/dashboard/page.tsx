@@ -7,6 +7,9 @@ import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/lib/AuthContext";
 import type { AgenciaDoc } from "@/types/tenant";
 import { BarChart3, Eye, MessageCircle, Pause, Play, Trash2, Pencil, ExternalLink, X, Megaphone, ChevronDown, ChevronUp } from "lucide-react";
+import GoogleAdsConnect from "@/app/dashboard/google-ads/GoogleAdsConnect";
+
+interface MccCustomer { id: string; name: string; currencyCode: string; timeZone: string; }
 
 interface AgencySite {
   id: string;
@@ -14,12 +17,16 @@ interface AgencySite {
   slug: string;
   statusPago: string;
   createdAt: string;
+  ownerId?: string; // client's Firebase uid (usuarios/{ownerId})
   ownerEmail?: string;
   descripcion?: string;
   whatsapp?: string;
   // Analytics
   visitas?: number;
   whatsappClicks?: number;
+  // Google Ads (asignación por la agencia)
+  googleAdsCustomerId?: string;
+  googleAdsManaged?: boolean;
 }
 
 const WHATS_NEW_VERSION = "2025-03-v2";
@@ -45,6 +52,11 @@ export default function AgencyDashboardPage() {
   const [editingSite, setEditingSite] = useState<AgencySite | null>(null);
   const [editForm, setEditForm] = useState({ nombre: "", descripcion: "", whatsapp: "" });
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  // Google Ads (MCC)
+  const [mccConnected, setMccConnected] = useState<boolean | null>(null); // null = cargando
+  const [mccCustomers, setMccCustomers] = useState<MccCustomer[]>([]);
+  const [assigningSite, setAssigningSite] = useState<string | null>(null);
 
   // What's New banner
   const [showWhatsNew, setShowWhatsNew] = useState(false);
@@ -93,6 +105,7 @@ export default function AgencyDashboardPage() {
             slug: data.slug || d.id,
             statusPago: data.statusPago || "demo",
             createdAt: data.createdAt?.toDate?.()?.toLocaleDateString("es-MX") ?? "",
+            ownerId: data.ownerId || "",
             ownerEmail: data.ownerEmail || "",
             descripcion: data.descripcion || "",
             whatsapp: data.whatsapp || "",
@@ -100,6 +113,25 @@ export default function AgencyDashboardPage() {
             whatsappClicks: data.whatsappClicks || 0,
           };
         });
+
+      // Mezclar la asignación de Google Ads por cliente (vive en usuarios/{ownerId}).
+      try {
+        const uq = query(collection(db, "usuarios"), where("agencyId", "==", agencyId));
+        const usnap = await getDocs(uq);
+        const byUid = new Map<string, { customerId?: string; managed?: boolean }>();
+        usnap.docs.forEach((u) => {
+          const ud = u.data();
+          byUid.set(u.id, { customerId: ud.googleAdsCustomerId, managed: ud.googleAdsManagedByAgency });
+        });
+        for (const s of results) {
+          const m = s.ownerId ? byUid.get(s.ownerId) : undefined;
+          s.googleAdsCustomerId = m?.customerId || "";
+          s.googleAdsManaged = !!m?.managed;
+        }
+      } catch (e) {
+        console.error("Error fetching client GA assignments:", e);
+      }
+
       setSites(results);
     } catch (err) {
       console.error("Error fetching agency sites:", err);
@@ -111,6 +143,59 @@ export default function AgencyDashboardPage() {
   useEffect(() => {
     if (!loading && agencyId) fetchSites();
   }, [loading, agencyId, fetchSites]);
+
+  // ── Google Ads MCC: detectar conexión del dueño + cargar subcuentas ──
+  const refreshMcc = useCallback(async () => {
+    if (!user) return;
+    try {
+      const token = await user.getIdToken();
+      const res = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: "load" }),
+      });
+      const { tokens } = await res.json();
+      const connected = !!tokens?.googleAdsRefreshToken;
+      setMccConnected(connected);
+      if (connected) {
+        const r = await fetch("/api/google-ads/resources", { headers: { Authorization: `Bearer ${token}` } });
+        const d = await r.json();
+        if (r.ok && Array.isArray(d.customers)) setMccCustomers(d.customers);
+      }
+    } catch {
+      setMccConnected(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!loading && user) refreshMcc();
+  }, [loading, user, refreshMcc]);
+
+  const handleAssignGoogleAds = async (site: AgencySite, customerId: string) => {
+    if (!site.ownerId) { setError("Este cliente no tiene cuenta de usuario asociada."); return; }
+    setAssigningSite(site.id);
+    setError(""); setSuccess("");
+    try {
+      const token = await getToken();
+      const res = await fetch("/api/agency/assign-google-ads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(
+          customerId
+            ? { action: "assign", clientUid: site.ownerId, customerId }
+            : { action: "unassign", clientUid: site.ownerId }
+        ),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Error al asignar la cuenta.");
+      setSuccess(data.message);
+      fetchSites();
+    } catch (err: unknown) {
+      setError((err as Error).message);
+    } finally {
+      setAssigningSite(null);
+    }
+  };
 
   const generateSlug = (name: string) =>
     name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -220,6 +305,26 @@ export default function AgencyDashboardPage() {
   };
 
   const handleSignOut = async () => { await signOut(); router.replace("/admin/login"); };
+
+  // Selector de cuenta de Google Ads por cliente (reusado en desktop y móvil).
+  const renderGaSelect = (site: AgencySite) => {
+    if (mccConnected !== true) return <span className="text-xs text-gray-400">—</span>;
+    if (!site.ownerId) return <span className="text-xs text-gray-400">sin usuario</span>;
+    return (
+      <select
+        value={site.googleAdsManaged ? (site.googleAdsCustomerId || "") : ""}
+        disabled={assigningSite === site.id}
+        onChange={(e) => handleAssignGoogleAds(site, e.target.value)}
+        className="max-w-[190px] rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-blue-500 disabled:opacity-50"
+        title="Asignar cuenta de Google Ads (subcuenta de tu MCC)"
+      >
+        <option value="">— Sin asignar —</option>
+        {mccCustomers.map((c) => (
+          <option key={c.id} value={c.id}>{(c.name || "Cuenta")} ({c.id})</option>
+        ))}
+      </select>
+    );
+  };
 
   const brandColor = agencyBranding?.colorPrincipal || "#002366";
   const brandLabel = agencyName || "Panel de Agencia";
@@ -352,6 +457,29 @@ export default function AgencyDashboardPage() {
                 backgroundColor: sites.length >= maxSitios ? "#dc2626" : brandColor,
               }} />
             </div>
+          </div>
+        )}
+
+        {/* Google Ads MCC */}
+        {mccConnected === false && (
+          <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50/60 p-5 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="max-w-xl">
+                <h3 className="text-base font-bold text-gray-800">Conecta Google Ads (tu MCC)</h3>
+                <p className="mt-0.5 text-sm text-gray-600">
+                  Conéctalo una vez para asignar a cada cliente su cuenta de Google Ads (una subcuenta de tu MCC). Tus clientes no conectan nada — tú gestionas todo desde aquí.
+                </p>
+              </div>
+              <div className="w-full sm:w-64">
+                <GoogleAdsConnect skipPicker onConnected={refreshMcc} />
+              </div>
+            </div>
+          </div>
+        )}
+        {mccConnected && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            Google Ads (MCC) conectado — asigna una cuenta a cada cliente en la columna &quot;Google Ads&quot;.
           </div>
         )}
 
@@ -511,6 +639,7 @@ export default function AgencyDashboardPage() {
                       <MessageCircle className="inline h-3.5 w-3.5 mr-1" />WA
                     </th>
                     <th className="px-5 py-3.5 font-semibold text-gray-600">Creado</th>
+                    <th className="px-5 py-3.5 font-semibold text-gray-600">Google Ads</th>
                     <th className="px-5 py-3.5 font-semibold text-gray-600">Acciones</th>
                   </tr>
                 </thead>
@@ -533,6 +662,7 @@ export default function AgencyDashboardPage() {
                       <td className="px-5 py-4 text-center text-gray-700 font-medium">{(site.visitas || 0).toLocaleString()}</td>
                       <td className="px-5 py-4 text-center text-gray-700 font-medium">{(site.whatsappClicks || 0).toLocaleString()}</td>
                       <td className="px-5 py-4 text-gray-500 text-xs">{site.createdAt}</td>
+                      <td className="px-5 py-4">{renderGaSelect(site)}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1.5">
                           <button onClick={() => openEdit(site)} title="Editar"
@@ -589,6 +719,12 @@ export default function AgencyDashboardPage() {
                     <span className="flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {site.whatsappClicks || 0}</span>
                     <span>{site.createdAt}</span>
                   </div>
+                  {mccConnected === true && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Google Ads:</span>
+                      {renderGaSelect(site)}
+                    </div>
+                  )}
                   <div className="mt-3 flex items-center gap-2 border-t border-gray-100 pt-3">
                     <button onClick={() => openEdit(site)}
                       className="rounded-lg bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100">

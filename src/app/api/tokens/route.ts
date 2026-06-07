@@ -70,6 +70,16 @@ export async function POST(request: NextRequest) {
         }
       }
 
+      // Anti-IDOR: a client whose Google Ads is managed by their agency must NOT
+      // be able to change their own assigned Customer ID (they could otherwise point
+      // at another client's sub-account under the shared MCC, served by the agency token).
+      if ("googleAdsCustomerId" in update) {
+        const cur = await docRef.get();
+        if (cur.data()?.googleAdsManagedByAgency === true) {
+          delete update.googleAdsCustomerId;
+        }
+      }
+
       if (Object.keys(update).length === 0) {
         return NextResponse.json({ error: "No hay campos para guardar." }, { status: 400 });
       }

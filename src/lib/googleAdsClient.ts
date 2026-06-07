@@ -242,11 +242,28 @@ function getDateRange(range: string, custom?: DateRangeCustom): { startDate: str
  * Returns a valid access token for the given user.
  * Refreshes automatically if it expires in < 5 minutes.
  * All API routes call this instead of reading the token from the client.
+ *
+ * Agency-managed clients (usuarios/{uid}.googleAdsManagedByAgency === true) do NOT
+ * hold their own token: we resolve to the agency owner's doc
+ * (usuarios/{uid}.agencyId → agencias/{agencyId}.uid) and use/refresh THAT token.
  */
 export async function getValidAccessToken(uid: string): Promise<string> {
   const db = getAdminDb();
-  const snap = await db.collection("usuarios").doc(uid).get();
+  let tokenUid = uid;
+  let snap = await db.collection("usuarios").doc(uid).get();
   if (!snap.exists) throw new Error("Usuario no encontrado en Firestore.");
+
+  // Agency-managed client → use the agency owner's token, not the client's own.
+  if (snap.data()!.googleAdsManagedByAgency === true) {
+    const agencyId = snap.data()!.agencyId as string | undefined;
+    if (!agencyId) throw new Error("No hay cuenta de Google Ads conectada.");
+    const agSnap = await db.collection("agencias").doc(agencyId).get();
+    const ownerUid = agSnap.exists ? (agSnap.data()!.uid as string | undefined) : undefined;
+    if (!ownerUid) throw new Error("No hay cuenta de Google Ads conectada.");
+    tokenUid = ownerUid;
+    snap = await db.collection("usuarios").doc(ownerUid).get();
+    if (!snap.exists) throw new Error("No hay cuenta de Google Ads conectada.");
+  }
 
   const data = snap.data()!;
   const encryptedRefresh = data.googleAdsRefreshToken as string | undefined;
@@ -292,8 +309,9 @@ export async function getValidAccessToken(uid: string): Promise<string> {
 
   const newExpiresAt = Date.now() + (tokenData.expires_in ?? 3600) * 1000;
 
-  // Persist refreshed token (encrypted)
-  await db.collection("usuarios").doc(uid).update({
+  // Persist refreshed token (encrypted) on the doc that OWNS the token
+  // (the agency owner for managed clients, else the user themselves).
+  await db.collection("usuarios").doc(tokenUid).update({
     googleAdsAccessToken: encryptToken(tokenData.access_token),
     googleAdsTokenExpiresAt: newExpiresAt,
   });

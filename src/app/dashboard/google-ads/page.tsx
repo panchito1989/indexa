@@ -84,6 +84,7 @@ export default function GoogleAdsDashboard() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [managed, setManaged] = useState(false); // Google Ads gestionado por la agencia
 
   // ── Cambiar cuenta / Desconectar Google Ads ───────────────────────
   const handleAccountSwitched = useCallback((newId?: string) => {
@@ -124,7 +125,8 @@ export default function GoogleAdsDashboard() {
           getDoc(doc(_db, "usuarios", user.uid)),
         ]);
 
-        const profileData = profileSnap.data() as UserProfile | undefined;
+        const profileData = profileSnap.data() as (UserProfile & { googleAdsManagedByAgency?: boolean }) | undefined;
+        setManaged(!!profileData?.googleAdsManagedByAgency);
         if (profileData?.sitioId) {
           setSitioId(profileData.sitioId);
           const sitioSnap = await getDoc(doc(_db, "sitios", profileData.sitioId));
@@ -238,6 +240,29 @@ export default function GoogleAdsDashboard() {
 
   // ── Not connected ─────────────────────────────────────────────────
   if (!isConnected) {
+    // Cliente gestionado por la agencia, aún sin cuenta asignada → empty state amable.
+    if (managed) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0f] px-4 py-12">
+          <div className="mx-auto max-w-md">
+            <Link href="/dashboard" className="mb-6 inline-flex items-center gap-2 text-sm text-white/40 hover:text-white">
+              <ChevronLeft size={16} /> Dashboard
+            </Link>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center">
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4285F4]/15">
+                  <Key size={24} className="text-[#4285F4]" />
+                </div>
+              </div>
+              <h2 className="mb-2 text-lg font-bold text-white">Google Ads en preparación</h2>
+              <p className="text-sm text-white/50">
+                Tu agencia aún no ha configurado tu cuenta de Google Ads. Te avisaremos en cuanto esté lista.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-[#0a0a0f] px-4 py-12">
         <div className="mx-auto max-w-md">
@@ -379,19 +404,24 @@ export default function GoogleAdsDashboard() {
             >
               <ExternalLink size={13} /> Google Ads
             </a>
-            <GoogleAdsConnect
-              mode="switch"
-              triggerLabel="Cambiar cuenta"
-              triggerClassName="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60 hover:bg-white/10 disabled:opacity-50"
-              onConnected={handleAccountSwitched}
-            />
-            <button
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              className="flex items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-50"
-            >
-              {disconnecting ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />} Desconectar
-            </button>
+            {/* Cambiar cuenta / Desconectar: solo para clientes NO gestionados por agencia */}
+            {!managed && (
+              <>
+                <GoogleAdsConnect
+                  mode="switch"
+                  triggerLabel="Cambiar cuenta"
+                  triggerClassName="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60 hover:bg-white/10 disabled:opacity-50"
+                  onConnected={handleAccountSwitched}
+                />
+                <button
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="flex items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-50"
+                >
+                  {disconnecting ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />} Desconectar
+                </button>
+              </>
+            )}
           </div>
         </div>
 
