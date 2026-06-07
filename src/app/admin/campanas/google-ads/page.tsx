@@ -18,7 +18,7 @@ import type {
 } from "@/lib/googleAdsClient";
 
 // ── Types ─────────────────────────────────────────────────────────────
-type Tab = "resumen" | "campanas" | "keywords" | "anuncios" | "ia";
+type Tab = "resumen" | "campanas" | "keywords" | "anuncios" | "ia" | "segmentos";
 
 // ── Helpers ───────────────────────────────────────────────────────────
 function fmtMoney(val: number, currency = "MXN"): string {
@@ -55,6 +55,16 @@ const TAB_LABELS: Record<Tab, string> = {
   keywords: "Palabras clave",
   anuncios: "Anuncios",
   ia: "Asistente IA",
+  segmentos: "Segmentos",
+};
+
+// ── Segment action map (module scope to avoid hooks/deps lint) ─────────
+const SEG_ACTION: Record<string, string> = {
+  hora: "hourly",
+  dispositivo: "device",
+  ubicacion: "geo",
+  audiencias: "audiences",
+  extensiones: "extensions",
 };
 
 // ── Main component ─────────────────────────────────────────────────────
@@ -74,6 +84,8 @@ export default function AdminGoogleAdsPage() {
   const [keywords, setKeywords] = useState<GoogleAdsKeyword[]>([]);
   const [reportRows, setReportRows] = useState<GoogleAdsReportRow[]>([]);
   const [ads, setAds] = useState<GoogleAdsAd[]>([]);
+  const [segView, setSegView] = useState<"hora" | "dispositivo" | "ubicacion" | "audiencias" | "extensiones">("hora");
+  const [segRows, setSegRows] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -196,6 +208,24 @@ export default function AdminGoogleAdsPage() {
   useEffect(() => {
     if (tab === "anuncios" && isConnected) loadAds();
   }, [tab, isConnected, loadAds]);
+
+  // ── Load segment ─────────────────────────────────────────────────
+  const loadSegment = useCallback(async () => {
+    if (!isConnected) return;
+    setLoading(true);
+    try {
+      const data = await apiFetch(SEG_ACTION[segView], { dateRange });
+      setSegRows(data?.rows ?? []);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cargar segmento.");
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, apiFetch, segView, dateRange]);
+
+  useEffect(() => {
+    if (tab === "segmentos" && isConnected) loadSegment();
+  }, [tab, isConnected, loadSegment]);
 
   // ── Campaign actions ─────────────────────────────────────────────
   const toggleCampaign = useCallback(async (campaign: GoogleAdsCampaign) => {
@@ -408,7 +438,7 @@ export default function AdminGoogleAdsPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1">
-        {(["resumen", "campanas", "keywords", "anuncios", "ia"] as Tab[]).map((t) => (
+        {(["resumen", "campanas", "keywords", "anuncios", "ia", "segmentos"] as Tab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -679,6 +709,68 @@ export default function AdminGoogleAdsPage() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* ── Segmentos ── */}
+      {tab === "segmentos" && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {(["hora", "dispositivo", "ubicacion", "audiencias", "extensiones"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setSegView(v)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize ${
+                  segView === v
+                    ? "bg-[#4285F4] text-white"
+                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+          <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200 bg-gray-50">
+                  {(segRows[0] ? Object.keys(segRows[0]) : []).map((k) => (
+                    <th
+                      key={k}
+                      className="px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-wide text-gray-500"
+                    >
+                      {k}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {segRows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={Math.max(1, segRows[0] ? Object.keys(segRows[0]).length : 1)}
+                      className="px-4 py-8 text-center text-sm text-gray-400"
+                    >
+                      {loading ? "Cargando…" : "Sin datos para este segmento."}
+                    </td>
+                  </tr>
+                )}
+                {segRows.map((row, i) => (
+                  <tr key={i} className="hover:bg-gray-50">
+                    {Object.entries(row).map(([k, val]) => (
+                      <td key={k} className="px-4 py-3 text-indexa-gray-dark">
+                        {typeof val === "number"
+                          ? /(cost|cpc)/i.test(k)
+                            ? fmtMoney(val, currency)
+                            : fmtNum(val)
+                          : String(val)}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
