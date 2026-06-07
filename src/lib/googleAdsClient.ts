@@ -122,7 +122,14 @@ export interface CreateCampaignResult {
   adGroupId: string;
   adId: string;
   keywordCount: number;
+  campaignResourceName: string;
 }
+
+export interface GoogleAdsHourlyRow { hour: number; dayOfWeek: string; cost: number; clicks: number; impressions: number; conversions: number; ctr: number; avgCpc: number; }
+export interface GoogleAdsDeviceRow { device: string; cost: number; clicks: number; impressions: number; conversions: number; ctr: number; avgCpc: number; }
+export interface GoogleAdsGeoRow { locationId: string; locationName: string; cost: number; clicks: number; conversions: number; }
+export interface GoogleAdsAudienceRow { name: string; type: string; cost: number; clicks: number; conversions: number; }
+export interface GoogleAdsExtensionRow { assetId: string; type: string; name: string; cost: number; clicks: number; impressions: number; }
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -821,5 +828,135 @@ export async function createFullCampaign(
   );
   const adId = extractId(adRes.results[0].resourceName);
 
-  return { campaignId, budgetId, adGroupId, adId, keywordCount: params.keywords.length };
+  return { campaignId, budgetId, adGroupId, adId, keywordCount: params.keywords.length, campaignResourceName };
+}
+
+// ── Advanced Segment Queries ──────────────────────────────────────────
+
+export async function getHourlyPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsHourlyRow[]> {
+  type Row = { segments: { hour: number; dayOfWeek: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
+  const { startDate, endDate } = getDateRange(dateRange);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT segments.hour, segments.day_of_week, metrics.cost_micros, metrics.clicks,
+            metrics.impressions, metrics.conversions, metrics.ctr, metrics.average_cpc
+     FROM campaign
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED'`);
+  return rows.map((r) => ({
+    hour: Number(r.segments.hour ?? 0), dayOfWeek: r.segments.dayOfWeek ?? "",
+    cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
+    impressions: Number(r.metrics.impressions ?? 0), conversions: Number(r.metrics.conversions ?? 0),
+    ctr: Number(r.metrics.ctr ?? 0), avgCpc: microsToUnit(r.metrics.averageCpc ?? 0),
+  }));
+}
+
+export async function getDevicePerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsDeviceRow[]> {
+  type Row = { segments: { device: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
+  const { startDate, endDate } = getDateRange(dateRange);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT segments.device, metrics.cost_micros, metrics.clicks, metrics.impressions,
+            metrics.conversions, metrics.ctr, metrics.average_cpc
+     FROM campaign
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED'`);
+  return rows.map((r) => ({
+    device: r.segments.device ?? "UNKNOWN", cost: microsToUnit(r.metrics.costMicros ?? 0),
+    clicks: Number(r.metrics.clicks ?? 0), impressions: Number(r.metrics.impressions ?? 0),
+    conversions: Number(r.metrics.conversions ?? 0), ctr: Number(r.metrics.ctr ?? 0),
+    avgCpc: microsToUnit(r.metrics.averageCpc ?? 0),
+  }));
+}
+
+export async function getGeoPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsGeoRow[]> {
+  type Row = { segments?: { geoTargetRegion?: string; geoTargetCity?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
+  const { startDate, endDate } = getDateRange(dateRange);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT segments.geo_target_city, segments.geo_target_region,
+            metrics.cost_micros, metrics.clicks, metrics.conversions
+     FROM geographic_view
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'`).catch(() => [] as Row[]);
+  const out = rows.map((r) => ({
+    locationId: (r.segments?.geoTargetCity || r.segments?.geoTargetRegion || "").split("/").pop() || "",
+    locationName: "", cost: microsToUnit(r.metrics.costMicros ?? 0),
+    clicks: Number(r.metrics.clicks ?? 0), conversions: Number(r.metrics.conversions ?? 0),
+  })).filter((x) => x.locationId);
+  const top = [...out].sort((a, b) => b.cost - a.cost).slice(0, 25);
+  const ids = [...new Set(top.map((x) => x.locationId))];
+  if (ids.length) {
+    type NameRow = { geoTargetConstant: { id: string; name: string } };
+    const resourceNames = ids.map((id) => `'geoTargetConstants/${id}'`).join(",");
+    const names = await gaqlSearch<NameRow>(customerId, accessToken,
+      `SELECT geo_target_constant.id, geo_target_constant.name
+       FROM geo_target_constant WHERE geo_target_constant.resource_name IN (${resourceNames})`).catch(() => [] as NameRow[]);
+    const map = new Map(names.map((n) => [String(n.geoTargetConstant.id), n.geoTargetConstant.name]));
+    for (const r of out) r.locationName = map.get(r.locationId) || r.locationId;
+  }
+  return out.sort((a, b) => b.cost - a.cost);
+}
+
+export async function getAudiencePerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsAudienceRow[]> {
+  type Row = { adGroupCriterion?: { type?: string; displayName?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
+  const { startDate, endDate } = getDateRange(dateRange);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT ad_group_criterion.type, ad_group_criterion.display_name,
+            metrics.cost_micros, metrics.clicks, metrics.conversions
+     FROM ad_group_audience_view
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'`).catch(() => [] as Row[]);
+  return rows.map((r) => ({
+    name: r.adGroupCriterion?.displayName || "(audiencia)", type: r.adGroupCriterion?.type || "",
+    cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
+    conversions: Number(r.metrics.conversions ?? 0),
+  }));
+}
+
+export async function getExtensionPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsExtensionRow[]> {
+  type Row = { asset?: { id?: string; type?: string; name?: string }; metrics: { costMicros: string; clicks: string; impressions: string } };
+  const { startDate, endDate } = getDateRange(dateRange);
+  const rows = await gaqlSearch<Row>(customerId, accessToken,
+    `SELECT asset.id, asset.type, asset.name, metrics.cost_micros, metrics.clicks, metrics.impressions
+     FROM campaign_asset
+     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign_asset.status != 'REMOVED'`).catch(() => [] as Row[]);
+  return rows.map((r) => ({
+    assetId: r.asset?.id || "", type: r.asset?.type || "", name: r.asset?.name || "",
+    cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
+    impressions: Number(r.metrics.impressions ?? 0),
+  }));
+}
+
+// ── Write Helpers ─────────────────────────────────────────────────────
+
+export async function activateCampaign(customerId: string, accessToken: string, campaignResourceName: string): Promise<void> {
+  const campaignId = extractId(campaignResourceName);
+  type AdGroupRow = { adGroup: { resourceName: string } };
+  type AdRow = { adGroupAd: { resourceName: string } };
+  const adGroups = await gaqlSearch<AdGroupRow>(customerId, accessToken,
+    `SELECT ad_group.resource_name FROM ad_group WHERE campaign.id = ${campaignId} AND ad_group.status = 'PAUSED'`);
+  const ads = await gaqlSearch<AdRow>(customerId, accessToken,
+    `SELECT ad_group_ad.resource_name FROM ad_group_ad WHERE campaign.id = ${campaignId} AND ad_group_ad.status = 'PAUSED'`);
+  await gaqlMutate(customerId, accessToken, "campaigns",
+    [{ updateMask: "status", update: { resourceName: campaignResourceName, status: "ENABLED" } }]);
+  if (adGroups.length) await gaqlMutate(customerId, accessToken, "adGroups",
+    adGroups.map((g) => ({ updateMask: "status", update: { resourceName: g.adGroup.resourceName, status: "ENABLED" } })));
+  if (ads.length) await gaqlMutate(customerId, accessToken, "adGroupAds",
+    ads.map((a) => ({ updateMask: "status", update: { resourceName: a.adGroupAd.resourceName, status: "ENABLED" } })));
+}
+
+export async function addNegativeKeywords(customerId: string, accessToken: string, campaignResourceName: string, keywords: string[]): Promise<number> {
+  const ops = keywords.filter((k) => k.trim()).map((text) => ({
+    create: { campaign: campaignResourceName, negative: true, keyword: { text: text.trim(), matchType: "BROAD" } },
+  }));
+  if (!ops.length) return 0;
+  await gaqlMutate(customerId, accessToken, "campaignCriteria", ops);
+  return ops.length;
+}
+
+export async function addLocationTargeting(customerId: string, accessToken: string, campaignResourceName: string, locationName: string): Promise<void> {
+  if (!locationName?.trim()) return;
+  type GeoRow = { geoTargetConstant: { resourceName: string } };
+  const matches = await gaqlSearch<GeoRow>(customerId, accessToken,
+    `SELECT geo_target_constant.resource_name FROM geo_target_constant
+     WHERE geo_target_constant.name = '${locationName.replace(/'/g, "")}'
+       AND geo_target_constant.status = 'ENABLED' AND geo_target_constant.target_type = 'City' LIMIT 1`).catch(() => [] as GeoRow[]);
+  const geo = matches[0]?.geoTargetConstant?.resourceName;
+  if (!geo) return;
+  await gaqlMutate(customerId, accessToken, "campaignCriteria",
+    [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo } } }]);
 }
