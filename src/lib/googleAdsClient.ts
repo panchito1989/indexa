@@ -948,15 +948,19 @@ export async function addNegativeKeywords(customerId: string, accessToken: strin
   return ops.length;
 }
 
-export async function addLocationTargeting(customerId: string, accessToken: string, campaignResourceName: string, locationName: string): Promise<void> {
-  if (!locationName?.trim()) return;
+export async function addLocationTargeting(customerId: string, accessToken: string, campaignResourceName: string, locationName: string): Promise<boolean> {
+  if (!locationName?.trim()) return false;
+  const name = locationName.trim().replace(/'/g, "\\'"); // escape apostrophes for GAQL
   type GeoRow = { geoTargetConstant: { resourceName: string } };
+  // Match any enabled geo target with this name (city, region/state, etc.), most specific first.
   const matches = await gaqlSearch<GeoRow>(customerId, accessToken,
-    `SELECT geo_target_constant.resource_name FROM geo_target_constant
-     WHERE geo_target_constant.name = '${locationName.replace(/'/g, "")}'
-       AND geo_target_constant.status = 'ENABLED' AND geo_target_constant.target_type = 'City' LIMIT 1`).catch(() => [] as GeoRow[]);
+    `SELECT geo_target_constant.resource_name
+     FROM geo_target_constant
+     WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED'
+     LIMIT 5`).catch(() => [] as GeoRow[]);
   const geo = matches[0]?.geoTargetConstant?.resourceName;
-  if (!geo) return;
+  if (!geo) return false;
   await gaqlMutate(customerId, accessToken, "campaignCriteria",
     [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo } } }]);
+  return true;
 }

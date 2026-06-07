@@ -230,8 +230,14 @@ async function executeTool(
           adDescriptions: input.descriptions as string[],
           finalUrl: input.final_url as string,
         });
-        if (input.location_name) await addLocationTargeting(customerId, accessToken, result.campaignResourceName, input.location_name as string).catch(() => {});
-        return JSON.stringify({ ...result, status: "PAUSED", note: "Campaña creada en PAUSA. Pide confirmación antes de activar." }, null, 2);
+        let locationTargeted = false;
+        if (input.location_name) locationTargeted = await addLocationTargeting(customerId, accessToken, result.campaignResourceName, input.location_name as string).catch(() => false);
+        return JSON.stringify({
+          ...result, status: "PAUSED", locationTargeted,
+          note: locationTargeted
+            ? "Campaña creada en PAUSA. Pide confirmación antes de activar."
+            : "Campaña creada en PAUSA. ⚠️ No se pudo segmentar la ubicación automáticamente — dile al usuario que confirme el nombre exacto de la ciudad o que la configure en Google Ads. Pide confirmación antes de activar.",
+        }, null, 2);
       }
       case "activate_campaign":
         await activateCampaign(customerId, accessToken, input.campaign_resource_name as string);
