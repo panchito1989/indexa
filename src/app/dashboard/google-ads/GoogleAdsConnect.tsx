@@ -32,6 +32,9 @@ interface Props {
   triggerClassName?: string;
   /** Override the trigger button label. */
   triggerLabel?: string;
+  /** If true, after OAuth success just notify (no account picker / no customerId save).
+   *  Used by the agency MCC connect, which assigns sub-accounts per-client instead. */
+  skipPicker?: boolean;
 }
 
 const SCOPES = "https://www.googleapis.com/auth/adwords";
@@ -42,6 +45,7 @@ export default function GoogleAdsConnect({
   mode = "connect",
   triggerClassName,
   triggerLabel,
+  skipPicker = false,
 }: Props) {
   const { user } = useAuth();
 
@@ -88,7 +92,12 @@ export default function GoogleAdsConnect({
       if (!data?.type) return;
       if (data.type === "google-ads-oauth-success") {
         if (pollRef.current) clearInterval(pollRef.current);
-        fetchResources();
+        if (skipPicker) {
+          setPhase("idle");
+          onConnected();
+        } else {
+          fetchResources();
+        }
       } else if (data.type === "google-ads-oauth-error") {
         if (pollRef.current) clearInterval(pollRef.current);
         setError(data.error || "Conexión cancelada.");
@@ -97,7 +106,7 @@ export default function GoogleAdsConnect({
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [fetchResources]);
+  }, [fetchResources, skipPicker, onConnected]);
 
   const startOAuth = useCallback(async () => {
     if (!user) return;
