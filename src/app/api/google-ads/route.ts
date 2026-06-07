@@ -19,6 +19,8 @@ import {
   getGeoPerformance,
   getAudiencePerformance,
   getExtensionPerformance,
+  getKeywordPerformance,
+  getSearchTerms,
   activateCampaign,
   addNegativeKeywords,
   setDeviceBidModifier,
@@ -60,6 +62,23 @@ export async function GET(request: NextRequest) {
   }
   const campaignId = rawCampaignId ?? undefined;
   const dateRange = searchParams.get("dateRange") || "LAST_7_DAYS";
+  const rawStart = searchParams.get("startDate");
+  const rawEnd = searchParams.get("endDate");
+  let custom: { startDate: string; endDate: string } | undefined;
+  if (dateRange === "CUSTOM") {
+    const ISO = /^\d{4}-\d{2}-\d{2}$/;
+    if (!rawStart || !rawEnd || !ISO.test(rawStart) || !ISO.test(rawEnd)) {
+      return NextResponse.json({ error: "Rango de fechas inválido." }, { status: 400 });
+    }
+    const todayIso = new Date().toISOString().split("T")[0];
+    if (rawStart > rawEnd) {
+      return NextResponse.json({ error: "La fecha inicial no puede ser posterior a la final." }, { status: 400 });
+    }
+    if (rawEnd > todayIso) {
+      return NextResponse.json({ error: "La fecha final no puede ser futura." }, { status: 400 });
+    }
+    custom = { startDate: rawStart, endDate: rawEnd };
+  }
 
   try {
     const [accessToken, customerId] = await Promise.all([
@@ -85,7 +104,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ keywords });
       }
       case "reporting": {
-        const rows = await getReporting(customerId, accessToken, dateRange);
+        const rows = await getReporting(customerId, accessToken, dateRange, custom);
         return NextResponse.json({ rows });
       }
       case "account_info": {
@@ -97,15 +116,19 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ budget });
       }
       case "hourly":
-        return NextResponse.json({ rows: await getHourlyPerformance(customerId, accessToken, dateRange) });
+        return NextResponse.json({ rows: await getHourlyPerformance(customerId, accessToken, dateRange, custom) });
       case "device":
-        return NextResponse.json({ rows: await getDevicePerformance(customerId, accessToken, dateRange) });
+        return NextResponse.json({ rows: await getDevicePerformance(customerId, accessToken, dateRange, custom) });
       case "geo":
-        return NextResponse.json({ rows: await getGeoPerformance(customerId, accessToken, dateRange) });
+        return NextResponse.json({ rows: await getGeoPerformance(customerId, accessToken, dateRange, custom) });
       case "audiences":
-        return NextResponse.json({ rows: await getAudiencePerformance(customerId, accessToken, dateRange) });
+        return NextResponse.json({ rows: await getAudiencePerformance(customerId, accessToken, dateRange, custom) });
       case "extensions":
-        return NextResponse.json({ rows: await getExtensionPerformance(customerId, accessToken, dateRange) });
+        return NextResponse.json({ rows: await getExtensionPerformance(customerId, accessToken, dateRange, custom) });
+      case "keyword_performance":
+        return NextResponse.json({ rows: await getKeywordPerformance(customerId, accessToken, dateRange, custom) });
+      case "search_terms":
+        return NextResponse.json({ rows: await getSearchTerms(customerId, accessToken, dateRange, custom) });
       default:
         return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
     }
