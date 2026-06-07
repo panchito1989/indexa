@@ -60,6 +60,12 @@ export interface UsuarioDoc {
   sitioId?: string; // for "client" — their linked site
   agencyId?: string; // for "client" — references agencias/{id}; null for agency/superadmin
   createdAt?: string;
+  // Google Ads (agency-managed clients): the agency assigns the client a
+  // sub-account under its MCC. When googleAdsManagedByAgency is true, the
+  // client uses the agency owner's token (resolved via agencyId) instead of
+  // connecting their own. See getValidAccessToken in lib/googleAdsClient.ts.
+  googleAdsCustomerId?: string; // assigned sub-account id (digits only)
+  googleAdsManagedByAgency?: boolean;
 }
 
 // ── Firestore: sitios/{id} (new fields only) ─────────────────────────
