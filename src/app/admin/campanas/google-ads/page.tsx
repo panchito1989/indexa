@@ -111,13 +111,14 @@ export default function AdminGoogleAdsPage() {
   // PDF export
   const [pdfLoading, setPdfLoading] = useState(false);
 
-  // ── Load tokens on mount (sets pageLoading) ──────────────────────────
+  // ── Clear pageLoading once auth is settled ───────────────────────────
+  // The hook loads customerId internally; we just wait for auth to resolve.
+  // Clear regardless of whether a user exists, so an unauthenticated visit
+  // doesn't get stuck on the spinner forever.
   useEffect(() => {
-    if (authLoading || !user) return;
-    // The hook already loads customerId; here we just clear pageLoading.
-    // We watch authLoading to know when auth is settled.
+    if (authLoading) return;
     setPageLoading(false);
-  }, [user, authLoading]);
+  }, [authLoading]);
 
   // ── Load ads ─────────────────────────────────────────────────────────
   const loadAds = useCallback(async () => {
