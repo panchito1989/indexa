@@ -32,7 +32,7 @@ y la IA: **crea** una campaña de búsqueda completa (en PAUSA), la **analiza** 
 
 | Acción | Archivo | Responsabilidad |
 |--------|---------|-----------------|
-| ✏️ | `src/lib/googleAdsClient.ts` | 5 queries de segmentos + tipos (+ resolución de nombres geo). `createFullCampaign` ya existe y crea en PAUSA. Añadir `activateCampaign(customerId, token, campaignResourceName)` (set ENABLED en campaña + ad group + ad) y, si falta, targeting de ubicación dentro de la creación. |
+| ✏️ | `src/lib/googleAdsClient.ts` | 5 queries de segmentos + tipos (+ resolución de nombres geo). `createFullCampaign` ya existe y crea en PAUSA. Añadir `activateCampaign(...)` (ENABLED en campaña+adGroup+ad), `addNegativeKeywords(...)` (criterios `negative:true`), y, si falta, targeting de ubicación en la creación. |
 | ✏️ | `src/app/api/google-ads/route.ts` | GET: 5 acciones de segmentos. POST: `create_search_campaign`, `activate_campaign`. |
 | ✏️ | `src/app/api/google-ads/ai/route.ts` | Tools nuevas (5 segmentos + `create_search_campaign` + `activate_campaign`) + `executeTool` + **system prompt reescrito** (flujo conversacional no-experto + generación de keywords/copy + confirmación). |
 | ✏️ | `src/app/admin/campanas/google-ads/page.tsx` | Pestaña "Segmentos" con sub-vistas (tablas) por segmento. |
@@ -71,7 +71,12 @@ Flujo:
 
 Tools existentes reutilizadas con reglas de confirmación: `pause_campaign`/`resume_campaign`,
 `update_campaign_budget`. La IA usa los **segmentos** para diagnosticar y, cuando recomiende subir presupuesto o
-activar, pide confirmación antes de ejecutar. (Aplicar bid modifiers = Fase 1.5.)
+activar, pide confirmación antes de ejecutar.
+
+**Tool nueva `add_negative_keywords`** `{ campaignId|adGroupId, keywords:[string] }` → crea criterios negativos
+(`adGroupCriterion`/`campaignCriterion` con `negative: true`, mismo patrón que la creación de keywords). Es
+**seguro** (solo evita búsquedas irrelevantes → reduce gasto desperdiciado, nunca lo aumenta), así que se aplica
+**directo sin confirmación**; la IA explica qué agregó. Aplicar **bid modifiers** (device/geo/horario) = Fase 1.5.
 
 ## 7. System prompt (reescrito — el cerebro del producto)
 
