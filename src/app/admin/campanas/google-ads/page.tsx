@@ -245,6 +245,9 @@ export default function AdminGoogleAdsPage() {
         body: JSON.stringify({
           message: userMsg,
           history: aiHistory.map((m) => ({ role: m.role, content: m.content })),
+          dateRange,
+          customStart,
+          customEnd,
         }),
       });
       const data = await res.json();
