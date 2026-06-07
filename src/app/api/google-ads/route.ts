@@ -21,6 +21,9 @@ import {
   getExtensionPerformance,
   activateCampaign,
   addNegativeKeywords,
+  setDeviceBidModifier,
+  setAdScheduleBidModifier,
+  setLocationBidModifier,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 60;
@@ -202,6 +205,25 @@ export async function POST(request: NextRequest) {
       if (!campaignResourceName || !keywords?.length) return NextResponse.json({ error: "Faltan campaignResourceName o keywords." }, { status: 400 });
       const added = await addNegativeKeywords(customerId, accessToken, campaignResourceName, keywords);
       return NextResponse.json({ success: true, added });
+    }
+
+    if (action === "set_device_bid_modifier") {
+      const { campaignResourceName, device, bidModifier } = body as { campaignResourceName?: string; device?: string; bidModifier?: number };
+      if (!campaignResourceName || !device || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
+      const applied = await setDeviceBidModifier(customerId, accessToken, campaignResourceName, device, bidModifier);
+      return NextResponse.json({ success: true, applied });
+    }
+    if (action === "set_ad_schedule_bid_modifier") {
+      const { campaignResourceName, schedule, bidModifier } = body as { campaignResourceName?: string; schedule?: { dayOfWeek: string; startHour: number; endHour: number }; bidModifier?: number };
+      if (!campaignResourceName || !schedule || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
+      await setAdScheduleBidModifier(customerId, accessToken, campaignResourceName, schedule, bidModifier);
+      return NextResponse.json({ success: true });
+    }
+    if (action === "set_location_bid_modifier") {
+      const { campaignResourceName, locationName, bidModifier } = body as { campaignResourceName?: string; locationName?: string; bidModifier?: number };
+      if (!campaignResourceName || !locationName || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
+      await setLocationBidModifier(customerId, accessToken, campaignResourceName, locationName, bidModifier);
+      return NextResponse.json({ success: true });
     }
 
     return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
