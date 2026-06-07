@@ -131,6 +131,11 @@ export interface GoogleAdsGeoRow { locationId: string; locationName: string; cos
 export interface GoogleAdsAudienceRow { name: string; type: string; cost: number; clicks: number; conversions: number; }
 export interface GoogleAdsExtensionRow { assetId: string; type: string; name: string; cost: number; clicks: number; impressions: number; }
 
+export interface DateRangeCustom {
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────
 
 function getEnv() {
@@ -159,7 +164,7 @@ function extractId(resourceName: string): string {
   return resourceName.split("/").pop() ?? "";
 }
 
-function getDateRange(range: string): { startDate: string; endDate: string } {
+function getDateRange(range: string, custom?: DateRangeCustom): { startDate: string; endDate: string } {
   const today = new Date();
   const fmt = (d: Date) => d.toISOString().split("T")[0];
 
@@ -174,6 +179,14 @@ function getDateRange(range: string): { startDate: string; endDate: string } {
       return { startDate: fmt(sub(7)), endDate: fmt(sub(1)) };
     case "LAST_30_DAYS":
       return { startDate: fmt(sub(30)), endDate: fmt(sub(1)) };
+    case "LAST_90_DAYS":
+      return { startDate: fmt(sub(90)), endDate: fmt(sub(1)) };
+    case "LAST_12_MONTHS":
+      return { startDate: fmt(sub(365)), endDate: fmt(sub(1)) };
+    case "THIS_YEAR": {
+      const first = new Date(today.getFullYear(), 0, 1);
+      return { startDate: fmt(first), endDate: fmt(sub(1)) };
+    }
     case "THIS_MONTH": {
       const first = new Date(today.getFullYear(), today.getMonth(), 1);
       return { startDate: fmt(first), endDate: fmt(sub(1)) };
@@ -184,6 +197,12 @@ function getDateRange(range: string): { startDate: string; endDate: string } {
       lastMonth.setDate(0);
       const firstLastMonth = new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 1);
       return { startDate: fmt(firstLastMonth), endDate: fmt(lastMonth) };
+    }
+    case "CUSTOM": {
+      if (custom?.startDate && custom?.endDate) {
+        return { startDate: custom.startDate, endDate: custom.endDate };
+      }
+      return { startDate: fmt(sub(7)), endDate: fmt(sub(1)) };
     }
     default:
       return { startDate: fmt(sub(7)), endDate: fmt(sub(1)) };
@@ -574,7 +593,8 @@ export async function getKeywords(
 export async function getReporting(
   customerId: string,
   accessToken: string,
-  dateRange: string
+  dateRange: string,
+  custom?: DateRangeCustom
 ): Promise<GoogleAdsReportRow[]> {
   type Row = {
     campaign: { id: string; name: string };
@@ -590,7 +610,7 @@ export async function getReporting(
     segments: { date: string };
   };
 
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
 
   const rows = await gaqlSearch<Row>(
     customerId,
@@ -851,9 +871,9 @@ export async function createFullCampaign(
 
 // ── Advanced Segment Queries ──────────────────────────────────────────
 
-export async function getHourlyPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsHourlyRow[]> {
+export async function getHourlyPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsHourlyRow[]> {
   type Row = { segments: { hour: number; dayOfWeek: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, accessToken,
     `SELECT segments.hour, segments.day_of_week, metrics.cost_micros, metrics.clicks,
             metrics.impressions, metrics.conversions, metrics.ctr, metrics.average_cpc
@@ -867,9 +887,9 @@ export async function getHourlyPerformance(customerId: string, accessToken: stri
   }));
 }
 
-export async function getDevicePerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsDeviceRow[]> {
+export async function getDevicePerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsDeviceRow[]> {
   type Row = { segments: { device: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, accessToken,
     `SELECT segments.device, metrics.cost_micros, metrics.clicks, metrics.impressions,
             metrics.conversions, metrics.ctr, metrics.average_cpc
@@ -883,9 +903,9 @@ export async function getDevicePerformance(customerId: string, accessToken: stri
   }));
 }
 
-export async function getGeoPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsGeoRow[]> {
+export async function getGeoPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsGeoRow[]> {
   type Row = { segments?: { geoTargetRegion?: string; geoTargetCity?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, accessToken,
     `SELECT segments.geo_target_city, segments.geo_target_region,
             metrics.cost_micros, metrics.clicks, metrics.conversions
@@ -910,9 +930,9 @@ export async function getGeoPerformance(customerId: string, accessToken: string,
   return out.sort((a, b) => b.cost - a.cost);
 }
 
-export async function getAudiencePerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsAudienceRow[]> {
+export async function getAudiencePerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsAudienceRow[]> {
   type Row = { adGroupCriterion?: { type?: string; displayName?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, accessToken,
     `SELECT ad_group_criterion.type, ad_group_criterion.display_name,
             metrics.cost_micros, metrics.clicks, metrics.conversions
@@ -925,9 +945,9 @@ export async function getAudiencePerformance(customerId: string, accessToken: st
   }));
 }
 
-export async function getExtensionPerformance(customerId: string, accessToken: string, dateRange: string): Promise<GoogleAdsExtensionRow[]> {
+export async function getExtensionPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsExtensionRow[]> {
   type Row = { asset?: { id?: string; type?: string; name?: string }; metrics: { costMicros: string; clicks: string; impressions: string } };
-  const { startDate, endDate } = getDateRange(dateRange);
+  const { startDate, endDate } = getDateRange(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, accessToken,
     `SELECT asset.id, asset.type, asset.name, metrics.cost_micros, metrics.clicks, metrics.impressions
      FROM campaign_asset
