@@ -964,3 +964,62 @@ export async function addLocationTargeting(customerId: string, accessToken: stri
     [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo } } }]);
   return true;
 }
+
+// ── Bid Modifier Setters ──────────────────────────────────────────────
+
+function clampBidModifier(m: number): number { return Math.min(3.0, Math.max(0.1, Number(m) || 1.0)); }
+
+export async function setDeviceBidModifier(customerId: string, accessToken: string, campaignResourceName: string, device: string, bidModifier: number): Promise<number> {
+  const mod = clampBidModifier(bidModifier);
+  const dev = device.toUpperCase();
+  const campaignId = extractId(campaignResourceName);
+  type AgRow = { adGroup: { id: string; resourceName: string } };
+  const adGroups = await gaqlSearch<AgRow>(customerId, accessToken,
+    `SELECT ad_group.id, ad_group.resource_name FROM ad_group WHERE campaign.id = ${campaignId} AND ad_group.status != 'REMOVED'`);
+  let applied = 0;
+  for (const ag of adGroups) {
+    type ExRow = { adGroupBidModifier: { resourceName: string } };
+    const existing = await gaqlSearch<ExRow>(customerId, accessToken,
+      `SELECT ad_group_bid_modifier.resource_name FROM ad_group_bid_modifier
+       WHERE ad_group.id = ${ag.adGroup.id} AND ad_group_bid_modifier.device.type = '${dev}'`).catch(() => [] as ExRow[]);
+    if (existing[0]) {
+      await gaqlMutate(customerId, accessToken, "adGroupBidModifiers",
+        [{ updateMask: "bidModifier", update: { resourceName: existing[0].adGroupBidModifier.resourceName, bidModifier: mod } }]);
+    } else {
+      await gaqlMutate(customerId, accessToken, "adGroupBidModifiers",
+        [{ create: { adGroup: ag.adGroup.resourceName, device: { type: dev }, bidModifier: mod } }]);
+    }
+    applied++;
+  }
+  return applied;
+}
+
+export async function setAdScheduleBidModifier(customerId: string, accessToken: string, campaignResourceName: string, schedule: { dayOfWeek: string; startHour: number; endHour: number }, bidModifier: number): Promise<void> {
+  const mod = clampBidModifier(bidModifier);
+  await gaqlMutate(customerId, accessToken, "campaignCriteria",
+    [{ create: { campaign: campaignResourceName, bidModifier: mod,
+        adSchedule: { dayOfWeek: schedule.dayOfWeek.toUpperCase(), startHour: schedule.startHour, startMinute: "ZERO", endHour: schedule.endHour, endMinute: "ZERO" } } }]);
+}
+
+export async function setLocationBidModifier(customerId: string, accessToken: string, campaignResourceName: string, locationName: string, bidModifier: number): Promise<void> {
+  const mod = clampBidModifier(bidModifier);
+  const campaignId = extractId(campaignResourceName);
+  const name = locationName.trim().replace(/'/g, "\\'");
+  type GeoRow = { geoTargetConstant: { resourceName: string } };
+  const geo = (await gaqlSearch<GeoRow>(customerId, accessToken,
+    `SELECT geo_target_constant.resource_name FROM geo_target_constant WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED' LIMIT 1`).catch(() => [] as GeoRow[]))[0]?.geoTargetConstant?.resourceName;
+  type CritRow = { campaignCriterion: { resourceName: string; location?: { geoTargetConstant?: string } } };
+  const crits = await gaqlSearch<CritRow>(customerId, accessToken,
+    `SELECT campaign_criterion.resource_name, campaign_criterion.location.geo_target_constant
+     FROM campaign_criterion WHERE campaign.id = ${campaignId} AND campaign_criterion.type = 'LOCATION'`).catch(() => [] as CritRow[]);
+  const match = crits.find((c) => geo && c.campaignCriterion.location?.geoTargetConstant === geo) || crits[0];
+  if (match) {
+    await gaqlMutate(customerId, accessToken, "campaignCriteria",
+      [{ updateMask: "bidModifier", update: { resourceName: match.campaignCriterion.resourceName, bidModifier: mod } }]);
+  } else if (geo) {
+    await gaqlMutate(customerId, accessToken, "campaignCriteria",
+      [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo }, bidModifier: mod } }]);
+  } else {
+    throw new Error("No se encontró la ubicación para aplicar el modificador.");
+  }
+}
