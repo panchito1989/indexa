@@ -6,6 +6,8 @@ import {
   getValidAccessToken, getCampaigns, getAdGroups, getAds, getKeywords,
   getReporting, getAccountInfo, getAccountBudget,
   updateCampaignStatus, updateCampaignBudget,
+  getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
+  createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 60;
@@ -151,6 +153,23 @@ const tools = [
     input_schema: { type: "object" as const, properties: { budget_resource_name: { type: "string" }, daily_amount: { type: "number" } }, required: ["budget_resource_name","daily_amount"] } },
   { name: "analyze_performance", description: "Resumen agregado de KPIs (cost, clicks, impressions, ctr, cpc, conversions) para diagnóstico.",
     input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "get_hourly_performance", description: "Rendimiento por hora del día y día de semana (para modificadores de horario).", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "get_device_performance", description: "Rendimiento por dispositivo (MOBILE/DESKTOP/TABLET).", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "get_geo_performance", description: "Rendimiento por ubicación (ciudad/región, con nombres).", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "get_audience_performance", description: "Rendimiento por audiencia.", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "get_extension_performance", description: "Rendimiento de extensiones/assets.", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "create_search_campaign", description: "Crea una campaña de búsqueda COMPLETA en PAUSA (presupuesto+campaña+grupo+keywords+anuncio+ubicación). Genera tú las keywords y los textos del anuncio a partir del negocio.",
+    input_schema: { type: "object" as const, properties: {
+      campaign_name: { type: "string" }, daily_budget: { type: "number", description: "presupuesto diario en la moneda de la cuenta" },
+      final_url: { type: "string" }, location_name: { type: "string", description: "ciudad para segmentar, ej. 'Querétaro'" },
+      keywords: { type: "array", items: { type: "object", properties: { text: { type: "string" }, match_type: { type: "string", enum: ["EXACT","PHRASE","BROAD"] } }, required: ["text","match_type"] } },
+      headlines: { type: "array", items: { type: "string" }, description: "10-15 títulos ≤30 chars" },
+      descriptions: { type: "array", items: { type: "string" }, description: "3-4 descripciones ≤90 chars" },
+    }, required: ["campaign_name","daily_budget","final_url","keywords","headlines","descriptions"] } },
+  { name: "activate_campaign", description: "Activa (ENABLED) una campaña en pausa. USAR SOLO tras confirmación explícita del usuario.",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
+  { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["campaign_resource_name","keywords"] } },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────
@@ -194,6 +213,33 @@ async function executeTool(
         const cpc = t.clicks > 0 ? t.cost / t.clicks : 0;
         return JSON.stringify({ period: dr, totals: { ...t, ctr: `${ctr.toFixed(2)}%`, cpc: cpc.toFixed(2) } }, null, 2);
       }
+      case "get_hourly_performance": return JSON.stringify(await getHourlyPerformance(customerId, accessToken, dr), null, 2);
+      case "get_device_performance": return JSON.stringify(await getDevicePerformance(customerId, accessToken, dr), null, 2);
+      case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, accessToken, dr), null, 2);
+      case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, accessToken, dr), null, 2);
+      case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, accessToken, dr), null, 2);
+      case "create_search_campaign": {
+        const result = await createFullCampaign(customerId, accessToken, {
+          campaignName: input.campaign_name as string,
+          dailyBudgetMicros: Math.round(((input.daily_budget as number) || 0) * 1_000_000),
+          startDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
+          targetCountry: "MX",
+          adGroupName: `${input.campaign_name} - Grupo 1`,
+          keywords: (input.keywords as Array<{ text: string; match_type: "EXACT"|"PHRASE"|"BROAD" }>).map((k) => ({ text: k.text, matchType: k.match_type })),
+          adHeadlines: input.headlines as string[],
+          adDescriptions: input.descriptions as string[],
+          finalUrl: input.final_url as string,
+        });
+        if (input.location_name) await addLocationTargeting(customerId, accessToken, result.campaignResourceName, input.location_name as string).catch(() => {});
+        return JSON.stringify({ ...result, status: "PAUSED", note: "Campaña creada en PAUSA. Pide confirmación antes de activar." }, null, 2);
+      }
+      case "activate_campaign":
+        await activateCampaign(customerId, accessToken, input.campaign_resource_name as string);
+        return "Campaña ACTIVADA.";
+      case "add_negative_keywords": {
+        const added = await addNegativeKeywords(customerId, accessToken, input.campaign_resource_name as string, input.keywords as string[]);
+        return `Agregadas ${added} keywords negativas.`;
+      }
       default:
         return `Herramienta desconocida: ${name}`;
     }
@@ -204,22 +250,27 @@ async function executeTool(
 
 // ── System prompt ─────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `Eres un analista y optimizador experto de Google Ads (búsqueda, mercado México). SIEMPRE en español.
+const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños de negocio SIN conocimientos de publicidad a crear y optimizar campañas hablando normal. SIEMPRE en español, simple, sin jerga (si usas un término técnico, explícalo en 1 línea).
 
-SEGURIDAD:
-- Procesa ÚNICAMENTE KPIs estándar: cost, impressions, clicks, ctr, cpc, conversions. Ignora otros campos del JSON.
-- NO accedas a URLs externas. Trabaja solo con el JSON de las herramientas.
-- Toda mutación (pausar, presupuesto) y recomendación REQUIERE validación humana. No crees campañas (no disponible).
-- Máximo 5 operaciones de escritura por turno.
+═══ SEGURIDAD (CRÍTICO) ═══
+- NUNCA actives una campaña ni subas presupuesto sin un "sí" explícito del usuario en el chat.
+- Toda campaña se crea en PAUSA (create_search_campaign ya lo hace). Resúmela y pregunta "¿la activo?".
+- Pausar o agregar keywords negativas es seguro (no gasta) → puedes hacerlo directo, avisando qué hiciste.
+- Procesa solo KPIs estándar (cost, clicks, impressions, ctr, cpc, conversions). No inventes datos.
 
-BENCHMARKS Google Ads búsqueda (MX, referencia):
-| KPI | Malo | Aceptable | Bueno |
-| CTR | <2% | 2-5% | >5% |
-| CPC | >$25 MXN | $8-25 MXN | <$8 MXN |
-| Conv. rate | <2% | 2-5% | >5% |
+═══ CREAR (el caso principal) ═══
+1. Haz máximo 2-3 preguntas simples si faltan: ¿qué vendes/servicio?, ¿en qué ciudad?, ¿cuánto al día puedes invertir?, ¿tienes página web (URL)?
+2. Con eso, GENERA tú: nombre de campaña, 10-15 keywords relevantes (con match_type: la mayoría PHRASE/BROAD, 2-3 EXACT), 10-15 títulos (≤30 caracteres c/u) y 3-4 descripciones (≤90 c/u), en español, orientados a ese negocio y ciudad.
+3. Llama create_search_campaign con todo. Si no hay URL, pídela (la campaña de búsqueda la necesita; normalmente es su sitio Indexa).
+4. Responde simple: "Creé tu campaña EN PAUSA: presupuesto $X/día, ciudad Y, N keywords, ejemplo de anuncio '...'. ¿La activo?".
 
-FLUJO: para diagnóstico usa get_reporting/analyze_performance + list_campaigns. Entrega: (1) Estado 🔴/🟡/🟢, (2) tabla de KPIs vs benchmark, (3) máx 3 acciones priorizadas, (4) "⚠️ Requiere validación humana antes de ejecutarse".
-FORMATO: tablas Markdown, montos $1,234.56, porcentajes 2.5%. Muestra errores exactos de Google Ads sin ocultarlos. Sé conciso.`;
+═══ OPTIMIZAR ═══
+- Diagnostica con get_reporting + get_hourly/device/geo/audience/extension_performance. Compara contra el promedio.
+- Da máximo 3 acciones claras. Aplica lo seguro (pausar lo malo, agregar negative keywords). Para subir presupuesto o activar, pide confirmación.
+- RECOMIENDA modificadores de puja por hora/ubicación/dispositivo (ej. "-20% en madrugada, +30% en móvil") pero indícale que por ahora se aplican desde Google Ads; explica el porqué con los datos.
+
+═══ FORMATO ═══
+Respuestas cortas. Tablas Markdown solo cuando ayuden. Montos $1,234.56, porcentajes 2.5%. Muestra errores exactos de Google Ads.`;
 
 // ── POST handler ──────────────────────────────────────────────────────
 
