@@ -22,17 +22,25 @@ const GEMINI_MODEL = "gemini-2.0-flash";
 
 // ── Groq fallback helpers (verbatim from tiktok-ads/ai/route.ts) ──────
 
+// SOLO créditos/cuota agotados → justifica caer a un proveedor más barato.
+// (Antes incluía 529/"overloaded"/"rate limit", que son TRANSITORIOS: eso hacía
+//  que a veces respondiera Claude y a veces un modelo más débil → contradicciones.)
 function isBillingError(status: number, body: string): boolean {
-  if (status === 402 || status === 529) return true;
+  if (status === 402) return true;
   const lower = body.toLowerCase();
   return (
     lower.includes("credit balance") ||
     lower.includes("billing") ||
     lower.includes("insufficient_quota") ||
-    lower.includes("quota exceeded") ||
-    lower.includes("rate limit") ||
-    lower.includes("overloaded")
+    lower.includes("quota exceeded")
   );
+}
+
+// Errores transitorios → reintentar el MISMO modelo (Claude), nunca degradar.
+function isTransientError(status: number, body: string): boolean {
+  if (status === 429 || status === 529 || status >= 500) return true;
+  const lower = body.toLowerCase();
+  return lower.includes("overloaded") || lower.includes("rate limit");
 }
 
 type AnthropicContent = string | Record<string, unknown>[];
@@ -181,8 +189,11 @@ const tools = [
 
 async function executeTool(
   name: string, input: Record<string, unknown>, customerId: string, accessToken: string,
+  dashboardRange: string, custom?: { startDate: string; endDate: string },
 ): Promise<string> {
-  const dr = (input.date_range as string) || "LAST_7_DAYS";
+  // Default = el rango que el usuario está viendo en el dashboard (no un fijo 7 días),
+  // para que la IA analice EL MISMO periodo que la pantalla.
+  const dr = (input.date_range as string) || dashboardRange;
   const campaignId = (input.campaign_id as string) || undefined;
   try {
     switch (name) {
@@ -197,7 +208,7 @@ async function executeTool(
       case "list_keywords":
         return JSON.stringify(await getKeywords(customerId, accessToken, campaignId), null, 2);
       case "get_reporting":
-        return JSON.stringify(await getReporting(customerId, accessToken, dr), null, 2);
+        return JSON.stringify(await getReporting(customerId, accessToken, dr, custom), null, 2);
       case "get_budget":
         return JSON.stringify(await getAccountBudget(customerId, accessToken), null, 2);
       case "pause_campaign":
@@ -212,17 +223,17 @@ async function executeTool(
         return `Presupuesto actualizado a ${input.daily_amount}.`;
       }
       case "analyze_performance": {
-        const rows = await getReporting(customerId, accessToken, dr);
+        const rows = await getReporting(customerId, accessToken, dr, custom);
         const t = rows.reduce((a, r) => ({ cost: a.cost + r.cost, clicks: a.clicks + r.clicks, impressions: a.impressions + r.impressions, conversions: a.conversions + r.conversions }), { cost: 0, clicks: 0, impressions: 0, conversions: 0 });
         const ctr = t.impressions > 0 ? (t.clicks / t.impressions) * 100 : 0;
         const cpc = t.clicks > 0 ? t.cost / t.clicks : 0;
         return JSON.stringify({ period: dr, totals: { ...t, ctr: `${ctr.toFixed(2)}%`, cpc: cpc.toFixed(2) } }, null, 2);
       }
-      case "get_hourly_performance": return JSON.stringify(await getHourlyPerformance(customerId, accessToken, dr), null, 2);
-      case "get_device_performance": return JSON.stringify(await getDevicePerformance(customerId, accessToken, dr), null, 2);
-      case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, accessToken, dr), null, 2);
-      case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, accessToken, dr), null, 2);
-      case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, accessToken, dr), null, 2);
+      case "get_hourly_performance": return JSON.stringify(await getHourlyPerformance(customerId, accessToken, dr, custom), null, 2);
+      case "get_device_performance": return JSON.stringify(await getDevicePerformance(customerId, accessToken, dr, custom), null, 2);
+      case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, accessToken, dr, custom), null, 2);
+      case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, accessToken, dr, custom), null, 2);
+      case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, accessToken, dr, custom), null, 2);
       case "create_search_campaign": {
         const result = await createFullCampaign(customerId, accessToken, {
           campaignName: input.campaign_name as string,
@@ -322,7 +333,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let body: { message?: string; history?: unknown };
+    let body: { message?: string; history?: unknown; dateRange?: string; customStart?: string; customEnd?: string };
     try {
       body = await request.json();
     } catch {
@@ -333,6 +344,18 @@ export async function POST(request: NextRequest) {
     if (!message?.trim()) {
       return NextResponse.json({ error: "Faltan parámetros: message." }, { status: 400 });
     }
+
+    // Ventana de análisis = la que el usuario ve en el dashboard (consistencia).
+    const dashboardRange = (typeof body.dateRange === "string" && body.dateRange) || "LAST_7_DAYS";
+    let custom: { startDate: string; endDate: string } | undefined;
+    if (dashboardRange === "CUSTOM") {
+      const ISO = /^\d{4}-\d{2}-\d{2}$/;
+      if (body.customStart && body.customEnd && ISO.test(body.customStart) && ISO.test(body.customEnd)) {
+        custom = { startDate: body.customStart, endDate: body.customEnd };
+      }
+    }
+    const rangeLabel = custom ? `${custom.startDate} a ${custom.endDate}` : dashboardRange;
+    const systemPrompt = `${SYSTEM_PROMPT}\n\n═══ VENTANA ACTIVA ═══\nEl usuario está viendo el periodo: ${rangeLabel}. Analiza ESE periodo por defecto (las herramientas ya lo usan); cambia de rango solo si lo pide explícitamente, y SIEMPRE menciona en tu respuesta qué periodo analizaste.`;
 
     let creds: { accessToken: string; customerId: string };
     try {
@@ -361,23 +384,35 @@ export async function POST(request: NextRequest) {
       let response: Record<string, unknown>;
 
       if (!useFallback) {
-        const claudeRes = await fetch(ANTHROPIC_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": anthropicKey,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: CLAUDE_MODEL,
-            max_tokens: 1536,
-            system: SYSTEM_PROMPT,
-            tools,
-            messages,
-          }),
-        });
-
-        const claudeText = await claudeRes.text();
+        let claudeRes!: Response;
+        let claudeText = "";
+        // Reintenta el MISMO modelo en errores transitorios (saturación/5xx) antes de
+        // rendirse — evita degradar a un modelo más débil por un hipo temporal.
+        for (let attempt = 0; ; attempt++) {
+          claudeRes = await fetch(ANTHROPIC_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": anthropicKey,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: CLAUDE_MODEL,
+              max_tokens: 1536,
+              temperature: 0, // determinista → recomendaciones consistentes
+              system: systemPrompt,
+              tools,
+              messages,
+            }),
+          });
+          claudeText = await claudeRes.text();
+          if (claudeRes.ok) break;
+          if (isTransientError(claudeRes.status, claudeText) && attempt < 3) {
+            await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+            continue;
+          }
+          break;
+        }
 
         if (!claudeRes.ok) {
           if (isBillingError(claudeRes.status, claudeText) && fallbackKey) {
@@ -418,10 +453,11 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             model: fallbackModel,
             max_tokens: 1536,
+            temperature: 0,
             tools: toGroqTools(tools),
             tool_choice: "auto",
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: systemPrompt },
               ...toGroqMessages(messages as AnthropicMessage[]),
             ],
           }),
@@ -474,7 +510,7 @@ export async function POST(request: NextRequest) {
 
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
-          const result = await executeTool(block.name, block.input, creds.customerId, creds.accessToken);
+          const result = await executeTool(block.name, block.input, creds.customerId, creds.accessToken, dashboardRange, custom);
           toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result });
         }
 
