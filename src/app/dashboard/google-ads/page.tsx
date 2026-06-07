@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 import {
   Loader2, AlertCircle, RefreshCw, ExternalLink, ChevronLeft,
   Play, Pause, Trash2, DollarSign, MousePointerClick, Eye,
-  TrendingUp, Search, Key, BarChart3, Check, Download, FileText,
+  TrendingUp, Search, Key, BarChart3, Check, Download, FileText, LogOut,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -83,6 +83,34 @@ export default function GoogleAdsDashboard() {
   const [tab, setTab] = useState<Tab>("resumen");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  // ── Cambiar cuenta / Desconectar Google Ads ───────────────────────
+  const handleAccountSwitched = useCallback((newId?: string) => {
+    if (newId) setCustomerId(newId);
+    loadData();
+  }, [setCustomerId, loadData]);
+
+  const handleDisconnect = useCallback(async () => {
+    if (!user) return;
+    if (typeof window !== "undefined" &&
+        !window.confirm("¿Desconectar esta cuenta de Google Ads? Tendrás que volver a autorizar para reconectar.")) return;
+    setDisconnecting(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ action: "disconnect_google_ads" }),
+      });
+      if (!res.ok) throw new Error("No se pudo desconectar.");
+      setCustomerId("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al desconectar.");
+    } finally {
+      setDisconnecting(false);
+    }
+  }, [user, setCustomerId, setError]);
 
   const isActive = sitio?.statusPago === "activo" || authRole === "superadmin";
 
@@ -351,6 +379,19 @@ export default function GoogleAdsDashboard() {
             >
               <ExternalLink size={13} /> Google Ads
             </a>
+            <GoogleAdsConnect
+              mode="switch"
+              triggerLabel="Cambiar cuenta"
+              triggerClassName="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white/60 hover:bg-white/10 disabled:opacity-50"
+              onConnected={handleAccountSwitched}
+            />
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="flex items-center gap-1.5 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-1.5 text-xs text-red-300/80 hover:bg-red-500/10 disabled:opacity-50"
+            >
+              {disconnecting ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />} Desconectar
+            </button>
           </div>
         </div>
 

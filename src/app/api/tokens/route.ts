@@ -111,6 +111,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true });
     }
 
+    // ── Disconnect Google Ads only: wipe its account + tokens ────
+    if (action === "disconnect_google_ads") {
+      await docRef.set(
+        {
+          googleAdsCustomerId: "",
+          googleAdsRefreshToken: "",
+          googleAdsAccessToken: "",
+          googleAdsTokenExpiresAt: 0,
+        },
+        { merge: true }
+      );
+      return NextResponse.json({ success: true });
+    }
+
     return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
   } catch (err) {
     console.error("[api/tokens] error:", err instanceof Error ? err.message : "unknown");

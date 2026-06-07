@@ -10,7 +10,7 @@ import {
   Loader2, AlertCircle, RefreshCw, ExternalLink,
   Play, Pause, Trash2, DollarSign, MousePointerClick, Eye,
   TrendingUp, Search, Key, BarChart3, Check,
-  MessageSquare, Send, Download, FileText,
+  MessageSquare, Send, Download, FileText, LogOut,
 } from "lucide-react";
 import GoogleAdsConnect from "@/app/dashboard/google-ads/GoogleAdsConnect";
 import type {
@@ -110,6 +110,33 @@ export default function AdminGoogleAdsPage() {
 
   // PDF export
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Cambiar cuenta / Desconectar
+  const [disconnecting, setDisconnecting] = useState(false);
+  const handleAccountSwitched = useCallback((newId?: string) => {
+    if (newId) setCustomerId(newId);
+    loadData();
+  }, [setCustomerId, loadData]);
+  const handleDisconnect = useCallback(async () => {
+    if (!user) return;
+    if (typeof window !== "undefined" &&
+        !window.confirm("¿Desconectar esta cuenta de Google Ads? Tendrás que volver a autorizar para reconectar.")) return;
+    setDisconnecting(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ action: "disconnect_google_ads" }),
+      });
+      if (!res.ok) throw new Error("No se pudo desconectar.");
+      setCustomerId("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al desconectar.");
+    } finally {
+      setDisconnecting(false);
+    }
+  }, [user, setCustomerId, setError]);
 
   // ── Clear pageLoading once auth is settled ───────────────────────────
   // The hook loads customerId internally; we just wait for auth to resolve.
@@ -429,6 +456,20 @@ export default function AdminGoogleAdsPage() {
           >
             <ExternalLink size={13} /> Google Ads
           </a>
+
+          <GoogleAdsConnect
+            mode="switch"
+            triggerLabel="Cambiar cuenta"
+            triggerClassName="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            onConnected={handleAccountSwitched}
+          />
+          <button
+            onClick={handleDisconnect}
+            disabled={disconnecting}
+            className="flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+          >
+            {disconnecting ? <Loader2 size={13} className="animate-spin" /> : <LogOut size={13} />} Desconectar
+          </button>
         </div>
       </div>
 
