@@ -8,6 +8,7 @@ import {
   updateCampaignStatus, updateCampaignBudget,
   getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
+  setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 60;
@@ -170,6 +171,12 @@ const tools = [
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
   { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["campaign_resource_name","keywords"] } },
+  { name: "set_device_bid_modifier", description: "Aplica un modificador de puja por dispositivo a una campaña. USAR SOLO tras confirmación. bid_modifier: 1.0=sin cambio, 0.8=-20%, 1.3=+30% (se acota a 0.1-3.0).",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, device: { type: "string", enum: ["MOBILE","DESKTOP","TABLET"] }, bid_modifier: { type: "number" } }, required: ["campaign_resource_name","device","bid_modifier"] } },
+  { name: "set_ad_schedule_bid_modifier", description: "Aplica un modificador de puja por horario (día + franja horaria). USAR SOLO tras confirmación.",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, day_of_week: { type: "string", enum: ["MONDAY","TUESDAY","WEDNESDAY","THURSDAY","FRIDAY","SATURDAY","SUNDAY"] }, start_hour: { type: "number" }, end_hour: { type: "number" }, bid_modifier: { type: "number" } }, required: ["campaign_resource_name","day_of_week","start_hour","end_hour","bid_modifier"] } },
+  { name: "set_location_bid_modifier", description: "Aplica un modificador de puja por ubicación. USAR SOLO tras confirmación.",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, location_name: { type: "string" }, bid_modifier: { type: "number" } }, required: ["campaign_resource_name","location_name","bid_modifier"] } },
 ];
 
 // ── Tool executor ─────────────────────────────────────────────────────
@@ -246,6 +253,16 @@ async function executeTool(
         const added = await addNegativeKeywords(customerId, accessToken, input.campaign_resource_name as string, input.keywords as string[]);
         return `Agregadas ${added} keywords negativas.`;
       }
+      case "set_device_bid_modifier": {
+        const n = await setDeviceBidModifier(customerId, accessToken, input.campaign_resource_name as string, input.device as string, input.bid_modifier as number);
+        return `Modificador de dispositivo aplicado a ${n} grupo(s).`;
+      }
+      case "set_ad_schedule_bid_modifier":
+        await setAdScheduleBidModifier(customerId, accessToken, input.campaign_resource_name as string, { dayOfWeek: input.day_of_week as string, startHour: input.start_hour as number, endHour: input.end_hour as number }, input.bid_modifier as number);
+        return "Modificador de horario aplicado.";
+      case "set_location_bid_modifier":
+        await setLocationBidModifier(customerId, accessToken, input.campaign_resource_name as string, input.location_name as string, input.bid_modifier as number);
+        return "Modificador de ubicación aplicado.";
       default:
         return `Herramienta desconocida: ${name}`;
     }
@@ -274,6 +291,7 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 - Diagnostica con get_reporting + get_hourly/device/geo/audience/extension_performance. Compara contra el promedio.
 - Da máximo 3 acciones claras. Aplica lo seguro (pausar lo malo, agregar negative keywords). Para subir presupuesto o activar, pide confirmación.
 - RECOMIENDA modificadores de puja por hora/ubicación/dispositivo (ej. "-20% en madrugada, +30% en móvil") pero indícale que por ahora se aplican desde Google Ads; explica el porqué con los datos.
+- Los modificadores de puja CAMBIAN cuánto se gasta → aplícalos (set_*_bid_modifier) SOLO tras un "sí" explícito. Recomienda primero con los segmentos, confirma, luego aplica. El valor se acota a 0.1–3.0 (−90%..+200%); si la API rechaza algo, avísale al usuario que no se aplicó.
 
 ═══ FORMATO ═══
 Respuestas cortas. Tablas Markdown solo cuando ayuden. Montos $1,234.56, porcentajes 2.5%. Muestra errores exactos de Google Ads.`;
