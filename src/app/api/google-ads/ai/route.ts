@@ -135,6 +135,24 @@ async function getGoogleAdsCreds(uid: string): Promise<{ accessToken: string; cu
   return { accessToken, customerId };
 }
 
+// ── Persistencia de la conversación (memoria entre sesiones) ───────────
+type ChatTurn = { role: "user" | "assistant"; content: string };
+const MAX_HISTORY = 20; // tope de turnos guardados (acota tamaño/tokens)
+
+async function loadAiHistory(uid: string): Promise<ChatTurn[]> {
+  const snap = await getAdminDb().collection("usuarios").doc(uid).get();
+  const h = snap.data()?.googleAdsAiHistory;
+  return Array.isArray(h) ? (h as ChatTurn[]) : [];
+}
+
+async function saveAiHistory(uid: string, history: { role: "user" | "assistant"; content: unknown }[]): Promise<void> {
+  const slim: ChatTurn[] = history
+    .map((m) => ({ role: m.role, content: typeof m.content === "string" ? m.content : "" }))
+    .filter((m) => m.content)
+    .slice(-MAX_HISTORY);
+  await getAdminDb().collection("usuarios").doc(uid).set({ googleAdsAiHistory: slim }, { merge: true });
+}
+
 // ── Tool definitions ──────────────────────────────────────────────────
 
 const tools = [
@@ -165,6 +183,11 @@ const tools = [
   { name: "get_geo_performance", description: "Rendimiento por ubicación (ciudad/región, con nombres).", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
   { name: "get_audience_performance", description: "Rendimiento por audiencia.", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
   { name: "get_extension_performance", description: "Rendimiento de extensiones/assets.", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
+  { name: "compare_performance", description: "Compara KPIs (gasto, clics, impresiones, CTR, CPC, conversiones, CPA) entre DOS periodos. Úsalo cuando el usuario pida comparar (ej. '¿mejoré vs el mes pasado?', 'este año vs el anterior'). Es la ÚNICA herramienta que ve un periodo distinto al del panel.",
+    input_schema: { type: "object" as const, properties: {
+      range_a: { type: "string", enum: ["LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo A (ej. THIS_MONTH)" },
+      range_b: { type: "string", enum: ["LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo B contra el que comparar (ej. LAST_MONTH)" },
+    }, required: ["range_a","range_b"] } },
   { name: "create_search_campaign", description: "Crea una campaña de búsqueda COMPLETA en PAUSA (presupuesto+campaña+grupo+keywords+anuncio+ubicación). Genera tú las keywords y los textos del anuncio a partir del negocio.",
     input_schema: { type: "object" as const, properties: {
       campaign_name: { type: "string" }, daily_budget: { type: "number", description: "presupuesto diario en la moneda de la cuenta" },
@@ -235,6 +258,22 @@ async function executeTool(
       case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, accessToken, dr, custom), null, 2);
       case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, accessToken, dr, custom), null, 2);
       case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, accessToken, dr, custom), null, 2);
+      case "compare_performance": {
+        const agg = async (range: string) => {
+          const rows = await getReporting(customerId, accessToken, range);
+          const t = rows.reduce((a, r) => ({ cost: a.cost + r.cost, clicks: a.clicks + r.clicks, impressions: a.impressions + r.impressions, conversions: a.conversions + r.conversions }), { cost: 0, clicks: 0, impressions: 0, conversions: 0 });
+          return {
+            period: range,
+            cost: Number(t.cost.toFixed(2)), clicks: t.clicks, impressions: t.impressions, conversions: t.conversions,
+            ctr: t.impressions > 0 ? `${((t.clicks / t.impressions) * 100).toFixed(2)}%` : "0%",
+            cpc: Number((t.clicks > 0 ? t.cost / t.clicks : 0).toFixed(2)),
+            cpa: t.conversions > 0 ? Number((t.cost / t.conversions).toFixed(2)) : null,
+          };
+        };
+        const ra = (input.range_a as string) || dashboardRange;
+        const rb = (input.range_b as string) || "LAST_MONTH";
+        return JSON.stringify({ a: await agg(ra), b: await agg(rb) }, null, 2);
+      }
       case "create_search_campaign": {
         const result = await createFullCampaign(customerId, accessToken, {
           campaignName: input.campaign_name as string,
@@ -299,6 +338,7 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 
 ═══ OPTIMIZAR ═══
 - Diagnostica con get_reporting + get_hourly/device/geo/audience/extension_performance. Compara contra el promedio.
+- Para COMPARAR dos periodos (ej. "¿mejoré vs el mes pasado?", "este año vs el anterior") usa compare_performance(range_a, range_b). Es la única herramienta que ve un periodo distinto al del panel; el resto SIEMPRE usan el periodo activo.
 - Da máximo 3 acciones claras. Aplica lo seguro (pausar lo malo, agregar negative keywords). Para subir presupuesto o activar, pide confirmación.
 - Modificadores de puja por hora/ubicación/dispositivo: primero RECOMIENDA con datos (ej. "-20% en madrugada, +30% en móvil"); CAMBIAN cuánto se gasta → aplícalos (set_*_bid_modifier) SOLO tras un "sí" explícito. El valor se acota a 0.1–3.0 (−90%..+200%).
 - IMPORTANTE (puja automática): los modificadores MANUALES de horario y ubicación solo funcionan con puja MANUAL (CPC manual). La mayoría de campañas usan puja AUTOMÁTICA (Smart Bidding), donde Google YA optimiza horario/ubicación/dispositivo en cada subasta → ahí estos modificadores se RECHAZAN o se IGNORAN (no es error tuyo). Si un set_*_bid_modifier falla por estrategia/permiso, explícalo simple: "tu campaña usa puja automática; Google ya ajusta esto solo, no hace falta", y optimiza con lo que SÍ sirve: presupuesto, negative keywords, pausar lo que no rinde, o excluir un dispositivo entero (−100%).
@@ -491,14 +531,13 @@ export async function POST(request: NextRequest) {
       if (textBlock?.text) lastText = textBlock.text;
 
       if (response.stop_reason === "end_turn") {
-        return NextResponse.json({
-          reply: lastText,
-          history: [
-            ...(Array.isArray(history) ? history : []),
-            { role: "user", content: message },
-            { role: "assistant", content: lastText },
-          ],
-        });
+        const finalHistory: { role: "user" | "assistant"; content: unknown }[] = [
+          ...(Array.isArray(history) ? (history as { role: "user" | "assistant"; content: unknown }[]) : []),
+          { role: "user", content: message },
+          { role: "assistant", content: lastText },
+        ];
+        await saveAiHistory(user.uid, finalHistory);
+        return NextResponse.json({ reply: lastText, history: finalHistory });
       }
 
       if (response.stop_reason === "tool_use") {
@@ -524,17 +563,43 @@ export async function POST(request: NextRequest) {
 
     // Exhausted loop — return last captured text or fallback message
     const fallback = lastText || "No se pudo completar la solicitud. Intenta de nuevo.";
-    return NextResponse.json({
-      reply: fallback,
-      history: [
-        ...(Array.isArray(history) ? history : []),
-        { role: "user", content: message },
-        { role: "assistant", content: fallback },
-      ],
-    });
+    const finalHistory: { role: "user" | "assistant"; content: unknown }[] = [
+      ...(Array.isArray(history) ? (history as { role: "user" | "assistant"; content: unknown }[]) : []),
+      { role: "user", content: message },
+      { role: "assistant", content: fallback },
+    ];
+    await saveAiHistory(user.uid, finalHistory);
+    return NextResponse.json({ reply: fallback, history: finalHistory });
 
   } catch (err) {
     console.error("[google-ads/ai] unhandled error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Error del asistente. Intenta de nuevo." }, { status: 400 });
   }
+}
+
+// ── GET: cargar la conversación guardada (memoria entre sesiones) ───────
+export async function GET(request: NextRequest) {
+  const authHeader = request.headers.get("authorization") || "";
+  const fbToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!fbToken) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const user = await verifyIdToken(fbToken);
+  if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+  try {
+    return NextResponse.json({ history: await loadAiHistory(user.uid) });
+  } catch {
+    return NextResponse.json({ history: [] });
+  }
+}
+
+// ── DELETE: borrar la conversación (botón "Nueva conversación") ─────────
+export async function DELETE(request: NextRequest) {
+  const authHeader = request.headers.get("authorization") || "";
+  const fbToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!fbToken) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+  const user = await verifyIdToken(fbToken);
+  if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
+  try {
+    await getAdminDb().collection("usuarios").doc(user.uid).set({ googleAdsAiHistory: [] }, { merge: true });
+  } catch { /* noop */ }
+  return NextResponse.json({ success: true });
 }
