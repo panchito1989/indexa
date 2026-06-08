@@ -813,6 +813,53 @@ export async function getAccessibleCustomers(
   return out;
 }
 
+// ── Diagnóstico de acceso (para depurar 403 USER_PERMISSION_DENIED) ──────
+// Revela QUÉ cuentas puede ver el Google conectado y CUÁL es manager (MCC),
+// sin depender del login-customer-id global (que puede estar mal configurado).
+export async function diagnoseAccess(accessToken: string): Promise<{
+  envLoginCustomerId: string;
+  accounts: { id: string; name?: string; isManager?: boolean; note?: string }[];
+}> {
+  const { developerToken, loginCustomerId } = getEnv();
+  // listAccessibleCustomers depende SOLO del token OAuth (sin login-customer-id).
+  const listRes = await fetch(`${GOOGLE_ADS_API_BASE}/customers:listAccessibleCustomers`, {
+    headers: { "Authorization": `Bearer ${accessToken}`, "developer-token": developerToken },
+  });
+  if (!listRes.ok) {
+    const t = await listRes.text().catch(() => "");
+    throw new Error(`listAccessibleCustomers HTTP ${listRes.status}: ${t.slice(0, 200)}`);
+  }
+  const { resourceNames } = await listRes.json() as { resourceNames?: string[] };
+  const ids = (resourceNames ?? []).map((rn) => rn.split("/").pop() || "").filter(Boolean);
+  const accounts: { id: string; name?: string; isManager?: boolean; note?: string }[] = [];
+  for (const id of ids.slice(0, 20)) {
+    try {
+      // Consulta cada cuenta como ella misma (login-customer-id = su propio id).
+      const r = await fetch(`${GOOGLE_ADS_API_BASE}/customers/${id}/googleAds:search`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "developer-token": developerToken,
+          "login-customer-id": id,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ query: "SELECT customer.descriptive_name, customer.manager FROM customer LIMIT 1" }),
+      });
+      if (!r.ok) {
+        const { code } = describeGoogleAdsError(await r.text().catch(() => ""));
+        accounts.push({ id, note: code || `HTTP ${r.status}` });
+        continue;
+      }
+      const d = await r.json() as { results?: { customer?: { descriptiveName?: string; manager?: boolean } }[] };
+      const c = d.results?.[0]?.customer;
+      accounts.push({ id, name: c?.descriptiveName, isManager: c?.manager });
+    } catch {
+      accounts.push({ id, note: "no accesible directamente" });
+    }
+  }
+  return { envLoginCustomerId: loginCustomerId || "(no configurada)", accounts };
+}
+
 // ── Write Functions ───────────────────────────────────────────────────
 
 export async function updateCampaignStatus(
