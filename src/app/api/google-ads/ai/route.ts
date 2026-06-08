@@ -3,12 +3,13 @@ import { verifyIdToken } from "@/lib/verifyAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { checkRateLimit } from "@/lib/rateLimit";
 import {
-  getValidAccessToken, getCampaigns, getAdGroups, getAds, getKeywords,
+  getGoogleAdsContext, getCampaigns, getAdGroups, getAds, getKeywords,
   getReporting, getAccountInfo, getAccountBudget,
   updateCampaignStatus, updateCampaignBudget,
   getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
   setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
+  type GoogleAdsAuth,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 60;
@@ -125,14 +126,8 @@ function fromGroqResponse(groqData: Record<string, unknown>): Record<string, unk
 
 // ── Auth + creds helper ───────────────────────────────────────────────
 
-async function getGoogleAdsCreds(uid: string): Promise<{ accessToken: string; customerId: string }> {
-  const snap = await getAdminDb().collection("usuarios").doc(uid).get();
-  const customerId = snap.data()?.googleAdsCustomerId as string | undefined;
-  if (!customerId || !/^\d+$/.test(customerId)) {
-    throw new Error("No hay Customer ID de Google Ads configurado.");
-  }
-  const accessToken = await getValidAccessToken(uid);
-  return { accessToken, customerId };
+async function getGoogleAdsCreds(uid: string): Promise<{ accessToken: string; customerId: string; loginCustomerId: string }> {
+  return getGoogleAdsContext(uid);
 }
 
 // ── Persistencia de la conversación (memoria entre sesiones) ───────────
@@ -211,7 +206,7 @@ const tools = [
 // ── Tool executor ─────────────────────────────────────────────────────
 
 async function executeTool(
-  name: string, input: Record<string, unknown>, customerId: string, accessToken: string,
+  name: string, input: Record<string, unknown>, customerId: string, auth: GoogleAdsAuth,
   dashboardRange: string, custom?: { startDate: string; endDate: string },
 ): Promise<string> {
   // El periodo SIEMPRE es el que el usuario ve en el dashboard. NO dejamos que el
@@ -222,45 +217,45 @@ async function executeTool(
   try {
     switch (name) {
       case "get_account_info":
-        return JSON.stringify(await getAccountInfo(customerId, accessToken), null, 2);
+        return JSON.stringify(await getAccountInfo(customerId, auth), null, 2);
       case "list_campaigns":
-        return JSON.stringify(await getCampaigns(customerId, accessToken), null, 2);
+        return JSON.stringify(await getCampaigns(customerId, auth), null, 2);
       case "list_ad_groups":
-        return JSON.stringify(await getAdGroups(customerId, accessToken, campaignId), null, 2);
+        return JSON.stringify(await getAdGroups(customerId, auth, campaignId), null, 2);
       case "list_ads":
-        return JSON.stringify(await getAds(customerId, accessToken, campaignId), null, 2);
+        return JSON.stringify(await getAds(customerId, auth, campaignId), null, 2);
       case "list_keywords":
-        return JSON.stringify(await getKeywords(customerId, accessToken, campaignId), null, 2);
+        return JSON.stringify(await getKeywords(customerId, auth, campaignId), null, 2);
       case "get_reporting":
-        return JSON.stringify(await getReporting(customerId, accessToken, dr, custom), null, 2);
+        return JSON.stringify(await getReporting(customerId, auth, dr, custom), null, 2);
       case "get_budget":
-        return JSON.stringify(await getAccountBudget(customerId, accessToken), null, 2);
+        return JSON.stringify(await getAccountBudget(customerId, auth), null, 2);
       case "pause_campaign":
-        await updateCampaignStatus(customerId, accessToken, input.campaign_resource_name as string, "PAUSED");
+        await updateCampaignStatus(customerId, auth, input.campaign_resource_name as string, "PAUSED");
         return "Campaña pausada.";
       case "resume_campaign":
-        await updateCampaignStatus(customerId, accessToken, input.campaign_resource_name as string, "ENABLED");
+        await updateCampaignStatus(customerId, auth, input.campaign_resource_name as string, "ENABLED");
         return "Campaña reactivada.";
       case "update_campaign_budget": {
         const micros = Math.round((input.daily_amount as number) * 1_000_000);
-        await updateCampaignBudget(customerId, accessToken, input.budget_resource_name as string, micros);
+        await updateCampaignBudget(customerId, auth, input.budget_resource_name as string, micros);
         return `Presupuesto actualizado a ${input.daily_amount}.`;
       }
       case "analyze_performance": {
-        const rows = await getReporting(customerId, accessToken, dr, custom);
+        const rows = await getReporting(customerId, auth, dr, custom);
         const t = rows.reduce((a, r) => ({ cost: a.cost + r.cost, clicks: a.clicks + r.clicks, impressions: a.impressions + r.impressions, conversions: a.conversions + r.conversions }), { cost: 0, clicks: 0, impressions: 0, conversions: 0 });
         const ctr = t.impressions > 0 ? (t.clicks / t.impressions) * 100 : 0;
         const cpc = t.clicks > 0 ? t.cost / t.clicks : 0;
         return JSON.stringify({ period: dr, totals: { ...t, ctr: `${ctr.toFixed(2)}%`, cpc: cpc.toFixed(2) } }, null, 2);
       }
-      case "get_hourly_performance": return JSON.stringify(await getHourlyPerformance(customerId, accessToken, dr, custom), null, 2);
-      case "get_device_performance": return JSON.stringify(await getDevicePerformance(customerId, accessToken, dr, custom), null, 2);
-      case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, accessToken, dr, custom), null, 2);
-      case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, accessToken, dr, custom), null, 2);
-      case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, accessToken, dr, custom), null, 2);
+      case "get_hourly_performance": return JSON.stringify(await getHourlyPerformance(customerId, auth, dr, custom), null, 2);
+      case "get_device_performance": return JSON.stringify(await getDevicePerformance(customerId, auth, dr, custom), null, 2);
+      case "get_geo_performance": return JSON.stringify(await getGeoPerformance(customerId, auth, dr, custom), null, 2);
+      case "get_audience_performance": return JSON.stringify(await getAudiencePerformance(customerId, auth, dr, custom), null, 2);
+      case "get_extension_performance": return JSON.stringify(await getExtensionPerformance(customerId, auth, dr, custom), null, 2);
       case "compare_performance": {
         const agg = async (range: string) => {
-          const rows = await getReporting(customerId, accessToken, range);
+          const rows = await getReporting(customerId, auth, range);
           const t = rows.reduce((a, r) => ({ cost: a.cost + r.cost, clicks: a.clicks + r.clicks, impressions: a.impressions + r.impressions, conversions: a.conversions + r.conversions }), { cost: 0, clicks: 0, impressions: 0, conversions: 0 });
           return {
             period: range,
@@ -275,7 +270,7 @@ async function executeTool(
         return JSON.stringify({ a: await agg(ra), b: await agg(rb) }, null, 2);
       }
       case "create_search_campaign": {
-        const result = await createFullCampaign(customerId, accessToken, {
+        const result = await createFullCampaign(customerId, auth, {
           campaignName: input.campaign_name as string,
           dailyBudgetMicros: Math.round(((input.daily_budget as number) || 0) * 1_000_000),
           startDate: new Date().toISOString().slice(0, 10).replace(/-/g, ""),
@@ -287,7 +282,7 @@ async function executeTool(
           finalUrl: input.final_url as string,
         });
         let locationTargeted = false;
-        if (input.location_name) locationTargeted = await addLocationTargeting(customerId, accessToken, result.campaignResourceName, input.location_name as string).catch(() => false);
+        if (input.location_name) locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch(() => false);
         return JSON.stringify({
           ...result, status: "PAUSED", locationTargeted,
           note: locationTargeted
@@ -296,21 +291,21 @@ async function executeTool(
         }, null, 2);
       }
       case "activate_campaign":
-        await activateCampaign(customerId, accessToken, input.campaign_resource_name as string);
+        await activateCampaign(customerId, auth, input.campaign_resource_name as string);
         return "Campaña ACTIVADA.";
       case "add_negative_keywords": {
-        const added = await addNegativeKeywords(customerId, accessToken, input.campaign_resource_name as string, input.keywords as string[]);
+        const added = await addNegativeKeywords(customerId, auth, input.campaign_resource_name as string, input.keywords as string[]);
         return `Agregadas ${added} keywords negativas.`;
       }
       case "set_device_bid_modifier": {
-        const n = await setDeviceBidModifier(customerId, accessToken, input.campaign_resource_name as string, input.device as string, input.bid_modifier as number);
+        const n = await setDeviceBidModifier(customerId, auth, input.campaign_resource_name as string, input.device as string, input.bid_modifier as number);
         return `Modificador de dispositivo aplicado a ${n} grupo(s).`;
       }
       case "set_ad_schedule_bid_modifier":
-        await setAdScheduleBidModifier(customerId, accessToken, input.campaign_resource_name as string, { dayOfWeek: input.day_of_week as string, startHour: input.start_hour as number, endHour: input.end_hour as number }, input.bid_modifier as number);
+        await setAdScheduleBidModifier(customerId, auth, input.campaign_resource_name as string, { dayOfWeek: input.day_of_week as string, startHour: input.start_hour as number, endHour: input.end_hour as number }, input.bid_modifier as number);
         return "Modificador de horario aplicado.";
       case "set_location_bid_modifier":
-        await setLocationBidModifier(customerId, accessToken, input.campaign_resource_name as string, input.location_name as string, input.bid_modifier as number);
+        await setLocationBidModifier(customerId, auth, input.campaign_resource_name as string, input.location_name as string, input.bid_modifier as number);
         return "Modificador de ubicación aplicado.";
       default:
         return `Herramienta desconocida: ${name}`;
@@ -405,7 +400,7 @@ export async function POST(request: NextRequest) {
     const rangeLabel = custom ? `${custom.startDate} a ${custom.endDate}` : dashboardRange;
     const systemPrompt = `${SYSTEM_PROMPT}\n\n═══ VENTANA ACTIVA ═══\nTODOS los datos que devuelven las herramientas corresponden al periodo: ${rangeLabel}. NO puedes cambiar ese periodo desde aquí — si el usuario quiere otro, dile que lo ajuste en el selector de fechas del panel. SIEMPRE menciona en tu respuesta que analizaste el periodo: ${rangeLabel}.`;
 
-    let creds: { accessToken: string; customerId: string };
+    let creds: { accessToken: string; customerId: string; loginCustomerId: string };
     try {
       creds = await getGoogleAdsCreds(user.uid);
     } catch (e) {
@@ -414,6 +409,7 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const auth: GoogleAdsAuth = { accessToken: creds.accessToken, loginCustomerId: creds.loginCustomerId };
 
     type MsgContent = string | Record<string, unknown>[];
     const messages: { role: "user" | "assistant"; content: MsgContent }[] = [
@@ -557,7 +553,7 @@ export async function POST(request: NextRequest) {
 
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
-          const result = await executeTool(block.name, block.input, creds.customerId, creds.accessToken, dashboardRange, custom);
+          const result = await executeTool(block.name, block.input, creds.customerId, auth, dashboardRange, custom);
           toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result });
         }
 

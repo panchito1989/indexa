@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
-import { getAdminDb } from "@/lib/firebaseAdmin";
 import { createRateLimiter } from "@/lib/rateLimit";
 import {
-  getValidAccessToken,
+  getGoogleAdsContext,
   getCampaigns,
   getAdGroups,
   getAds,
@@ -32,14 +31,6 @@ export const maxDuration = 60;
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 20 });
 const writeLimiter = createRateLimiter({ windowMs: 60_000, max: 10 });
-
-async function getCustomerId(uid: string): Promise<string> {
-  const snap = await getAdminDb().collection("usuarios").doc(uid).get();
-  const customerId = snap.data()?.googleAdsCustomerId as string | undefined;
-  if (!customerId) throw new Error("No hay Customer ID de Google Ads configurado.");
-  if (!/^\d+$/.test(customerId)) throw new Error("Customer ID de Google Ads inválido.");
-  return customerId;
-}
 
 export async function GET(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -81,54 +72,52 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [accessToken, customerId] = await Promise.all([
-      getValidAccessToken(user.uid),
-      getCustomerId(user.uid),
-    ]);
+    const { accessToken, customerId, loginCustomerId } = await getGoogleAdsContext(user.uid);
+    const auth = { accessToken, loginCustomerId };
 
     switch (action) {
       case "campaigns": {
-        const campaigns = await getCampaigns(customerId, accessToken);
+        const campaigns = await getCampaigns(customerId, auth);
         return NextResponse.json({ campaigns });
       }
       case "ad_groups": {
-        const adGroups = await getAdGroups(customerId, accessToken, campaignId);
+        const adGroups = await getAdGroups(customerId, auth, campaignId);
         return NextResponse.json({ adGroups });
       }
       case "ads": {
-        const ads = await getAds(customerId, accessToken, campaignId);
+        const ads = await getAds(customerId, auth, campaignId);
         return NextResponse.json({ ads });
       }
       case "keywords": {
-        const keywords = await getKeywords(customerId, accessToken, campaignId);
+        const keywords = await getKeywords(customerId, auth, campaignId);
         return NextResponse.json({ keywords });
       }
       case "reporting": {
-        const rows = await getReporting(customerId, accessToken, dateRange, custom);
+        const rows = await getReporting(customerId, auth, dateRange, custom);
         return NextResponse.json({ rows });
       }
       case "account_info": {
-        const info = await getAccountInfo(customerId, accessToken);
+        const info = await getAccountInfo(customerId, auth);
         return NextResponse.json({ info });
       }
       case "account_budget": {
-        const budget = await getAccountBudget(customerId, accessToken);
+        const budget = await getAccountBudget(customerId, auth);
         return NextResponse.json({ budget });
       }
       case "hourly":
-        return NextResponse.json({ rows: await getHourlyPerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getHourlyPerformance(customerId, auth, dateRange, custom) });
       case "device":
-        return NextResponse.json({ rows: await getDevicePerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getDevicePerformance(customerId, auth, dateRange, custom) });
       case "geo":
-        return NextResponse.json({ rows: await getGeoPerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getGeoPerformance(customerId, auth, dateRange, custom) });
       case "audiences":
-        return NextResponse.json({ rows: await getAudiencePerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getAudiencePerformance(customerId, auth, dateRange, custom) });
       case "extensions":
-        return NextResponse.json({ rows: await getExtensionPerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getExtensionPerformance(customerId, auth, dateRange, custom) });
       case "keyword_performance":
-        return NextResponse.json({ rows: await getKeywordPerformance(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getKeywordPerformance(customerId, auth, dateRange, custom) });
       case "search_terms":
-        return NextResponse.json({ rows: await getSearchTerms(customerId, accessToken, dateRange, custom) });
+        return NextResponse.json({ rows: await getSearchTerms(customerId, auth, dateRange, custom) });
       default:
         return NextResponse.json({ error: "Acción no válida." }, { status: 400 });
     }
@@ -164,10 +153,8 @@ export async function POST(request: NextRequest) {
   const { action } = body as { action?: string };
 
   try {
-    const [accessToken, customerId] = await Promise.all([
-      getValidAccessToken(user.uid),
-      getCustomerId(user.uid),
-    ]);
+    const { accessToken, customerId, loginCustomerId } = await getGoogleAdsContext(user.uid);
+    const auth = { accessToken, loginCustomerId };
 
     if (action === "pause" || action === "enable" || action === "remove") {
       const { campaignResourceName } = body as { campaignResourceName?: string };
@@ -175,7 +162,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Falta campaignResourceName." }, { status: 400 });
       }
       const statusMap = { pause: "PAUSED", enable: "ENABLED", remove: "REMOVED" } as const;
-      await updateCampaignStatus(customerId, accessToken, campaignResourceName, statusMap[action as keyof typeof statusMap]);
+      await updateCampaignStatus(customerId, auth, campaignResourceName, statusMap[action as keyof typeof statusMap]);
       return NextResponse.json({ success: true, status: statusMap[action as keyof typeof statusMap] });
     }
 
@@ -187,7 +174,7 @@ export async function POST(request: NextRequest) {
       if (!budgetResourceName || amountMicros === undefined) {
         return NextResponse.json({ error: "Faltan budgetResourceName o amountMicros." }, { status: 400 });
       }
-      await updateCampaignBudget(customerId, accessToken, budgetResourceName, amountMicros);
+      await updateCampaignBudget(customerId, auth, budgetResourceName, amountMicros);
       return NextResponse.json({ success: true });
     }
 
@@ -207,7 +194,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Faltan parámetros para crear la campaña." }, { status: 400 });
       }
 
-      const result = await createFullCampaign(customerId, accessToken, {
+      const result = await createFullCampaign(customerId, auth, {
         campaignName, dailyBudgetMicros, startDate, endDate,
         targetCountry: targetCountry ?? "MX",
         adGroupName, keywords, adHeadlines, adDescriptions, finalUrl,
@@ -219,33 +206,33 @@ export async function POST(request: NextRequest) {
     if (action === "activate") {
       const { campaignResourceName } = body as { campaignResourceName?: string };
       if (!campaignResourceName) return NextResponse.json({ error: "Falta campaignResourceName." }, { status: 400 });
-      await activateCampaign(customerId, accessToken, campaignResourceName);
+      await activateCampaign(customerId, auth, campaignResourceName);
       return NextResponse.json({ success: true });
     }
 
     if (action === "add_negative_keywords") {
       const { campaignResourceName, keywords } = body as { campaignResourceName?: string; keywords?: string[] };
       if (!campaignResourceName || !keywords?.length) return NextResponse.json({ error: "Faltan campaignResourceName o keywords." }, { status: 400 });
-      const added = await addNegativeKeywords(customerId, accessToken, campaignResourceName, keywords);
+      const added = await addNegativeKeywords(customerId, auth, campaignResourceName, keywords);
       return NextResponse.json({ success: true, added });
     }
 
     if (action === "set_device_bid_modifier") {
       const { campaignResourceName, device, bidModifier } = body as { campaignResourceName?: string; device?: string; bidModifier?: number };
       if (!campaignResourceName || !device || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
-      const applied = await setDeviceBidModifier(customerId, accessToken, campaignResourceName, device, bidModifier);
+      const applied = await setDeviceBidModifier(customerId, auth, campaignResourceName, device, bidModifier);
       return NextResponse.json({ success: true, applied });
     }
     if (action === "set_ad_schedule_bid_modifier") {
       const { campaignResourceName, schedule, bidModifier } = body as { campaignResourceName?: string; schedule?: { dayOfWeek: string; startHour: number; endHour: number }; bidModifier?: number };
       if (!campaignResourceName || !schedule || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
-      await setAdScheduleBidModifier(customerId, accessToken, campaignResourceName, schedule, bidModifier);
+      await setAdScheduleBidModifier(customerId, auth, campaignResourceName, schedule, bidModifier);
       return NextResponse.json({ success: true });
     }
     if (action === "set_location_bid_modifier") {
       const { campaignResourceName, locationName, bidModifier } = body as { campaignResourceName?: string; locationName?: string; bidModifier?: number };
       if (!campaignResourceName || !locationName || bidModifier === undefined) return NextResponse.json({ error: "Faltan parámetros." }, { status: 400 });
-      await setLocationBidModifier(customerId, accessToken, campaignResourceName, locationName, bidModifier);
+      await setLocationBidModifier(customerId, auth, campaignResourceName, locationName, bidModifier);
       return NextResponse.json({ success: true });
     }
 

@@ -25,6 +25,11 @@ const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refrescar si expira en < 5 min
 
 // ── Types ─────────────────────────────────────────────────────────────
 
+export interface GoogleAdsAuth {
+  accessToken: string;
+  loginCustomerId: string; // "" = direct mode (header falls back to the queried customerId)
+}
+
 export interface GoogleAdsCampaign {
   campaignId: string;
   campaignName: string;
@@ -101,6 +106,7 @@ export interface GoogleAdsCustomer {
   currencyCode: string;
   timeZone: string;
   status: string;
+  loginCustomerId: string;
 }
 
 export interface CreateCampaignParams {
@@ -319,6 +325,46 @@ export async function getValidAccessToken(uid: string): Promise<string> {
   return tokenData.access_token;
 }
 
+/**
+ * Resolves everything needed to call the Google Ads API on behalf of `uid`:
+ *   - accessToken: a valid OAuth token (owner's token for agency-managed clients).
+ *   - customerId: the CLIENT's own assigned account (usuarios/{uid}.googleAdsCustomerId).
+ *   - loginCustomerId: the manager (MCC) to send in the `login-customer-id` header,
+ *     read from the doc that OWNS the token (the agency owner for managed clients,
+ *     else the user themselves). Falls back to the GOOGLE_ADS_LOGIN_CUSTOMER_ID env
+ *     var so existing env-based setups keep working until users re-pick an account.
+ *
+ * Mirrors the agency-managed resolution in getValidAccessToken: a managed client
+ * (usuarios/{uid}.googleAdsManagedByAgency === true) reads its loginCustomerId from
+ * the agency owner's doc (usuarios/{uid}.agencyId → agencias/{agencyId}.uid → owner).
+ */
+export async function getGoogleAdsContext(uid: string): Promise<{ accessToken: string; customerId: string; loginCustomerId: string }> {
+  const db = getAdminDb();
+
+  const userSnap = await db.collection("usuarios").doc(uid).get();
+  if (!userSnap.exists) throw new Error("Usuario no encontrado en Firestore.");
+  const userData = userSnap.data()!;
+
+  // customerId + loginCustomerId are properties of THIS user's account assignment:
+  // set on pick (self-serve) or by the agency in assign-google-ads (managed client).
+  // The TOKEN is resolved separately below — getValidAccessToken already swaps to the
+  // agency owner's token for managed clients, so login-customer-id stays per-user here.
+  const customerId = String(userData.googleAdsCustomerId ?? "").trim();
+  if (!/^\d+$/.test(customerId)) {
+    throw new Error("No hay Customer ID de Google Ads configurado.");
+  }
+
+  const accessToken = await getValidAccessToken(uid);
+
+  // login-customer-id must be digits only (the UI shows the MCC with dashes).
+  // Falls back to the global env for legacy setups that haven't re-picked yet.
+  const loginCustomerId =
+    String(userData.googleAdsLoginCustomerId ?? "").replace(/\D/g, "") ||
+    (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "") || "");
+
+  return { accessToken, customerId, loginCustomerId };
+}
+
 // ── Core API Helpers ──────────────────────────────────────────────────
 
 interface SearchResponse<T> {
@@ -349,10 +395,10 @@ function describeGoogleAdsError(text: string): { code?: string; message?: string
 
 async function gaqlSearch<T>(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   query: string
 ): Promise<T[]> {
-  const { developerToken, loginCustomerId } = getEnv();
+  const { developerToken } = getEnv();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
@@ -364,9 +410,9 @@ async function gaqlSearch<T>(
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
+          "Authorization": `Bearer ${auth.accessToken}`,
           "developer-token": developerToken,
-          "login-customer-id": loginCustomerId || customerId,
+          "login-customer-id": auth.loginCustomerId || customerId,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ query }),
@@ -386,7 +432,7 @@ async function gaqlSearch<T>(
   if (!res.ok) {
     const text = await res.text().catch(() => "(sin cuerpo)");
     const { code, message } = describeGoogleAdsError(text);
-    const lc = loginCustomerId || customerId;
+    const lc = auth.loginCustomerId || customerId;
     throw new Error(
       `Google Ads API HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
     );
@@ -398,11 +444,11 @@ async function gaqlSearch<T>(
 
 async function gaqlMutate<T>(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   resource: string,
   operations: unknown[]
 ): Promise<T> {
-  const { developerToken, loginCustomerId } = getEnv();
+  const { developerToken } = getEnv();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
@@ -414,9 +460,9 @@ async function gaqlMutate<T>(
       {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${accessToken}`,
+          "Authorization": `Bearer ${auth.accessToken}`,
           "developer-token": developerToken,
-          "login-customer-id": loginCustomerId || customerId,
+          "login-customer-id": auth.loginCustomerId || customerId,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ operations }),
@@ -436,7 +482,7 @@ async function gaqlMutate<T>(
   if (!res.ok) {
     const text = await res.text().catch(() => "(sin cuerpo)");
     const { code, message } = describeGoogleAdsError(text);
-    const lc = loginCustomerId || customerId;
+    const lc = auth.loginCustomerId || customerId;
     throw new Error(
       `Google Ads mutate ${resource} HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
     );
@@ -449,7 +495,7 @@ async function gaqlMutate<T>(
 
 export async function getAccountInfo(
   customerId: string,
-  accessToken: string
+  auth: GoogleAdsAuth
 ): Promise<GoogleAdsAccountInfo> {
   type Row = {
     customer: {
@@ -463,7 +509,7 @@ export async function getAccountInfo(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT customer.id, customer.descriptive_name,
             customer.currency_code, customer.time_zone
      FROM customer LIMIT 1`
@@ -480,7 +526,7 @@ export async function getAccountInfo(
 
 export async function getCampaigns(
   customerId: string,
-  accessToken: string
+  auth: GoogleAdsAuth
 ): Promise<GoogleAdsCampaign[]> {
   type Row = {
     campaign: {
@@ -500,7 +546,7 @@ export async function getCampaigns(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT campaign.id, campaign.name, campaign.status,
             campaign.advertising_channel_type,
             campaign.start_date, campaign.end_date,
@@ -527,7 +573,7 @@ export async function getCampaigns(
 
 export async function getAdGroups(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   campaignId?: string
 ): Promise<GoogleAdsAdGroup[]> {
   type Row = {
@@ -547,7 +593,7 @@ export async function getAdGroups(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT ad_group.id, ad_group.name, ad_group.status, ad_group.type,
             campaign.id
      FROM ad_group
@@ -568,7 +614,7 @@ export async function getAdGroups(
 
 export async function getAds(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   campaignId?: string
 ): Promise<GoogleAdsAd[]> {
   type Row = {
@@ -587,7 +633,7 @@ export async function getAds(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT ad_group_ad.ad.id, ad_group_ad.ad.name, ad_group_ad.ad.type,
             ad_group_ad.status, ad_group.id, campaign.id
      FROM ad_group_ad
@@ -608,7 +654,7 @@ export async function getAds(
 
 export async function getKeywords(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   campaignId?: string
 ): Promise<GoogleAdsKeyword[]> {
   type Row = {
@@ -632,7 +678,7 @@ export async function getKeywords(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT ad_group_criterion.criterion_id,
             ad_group_criterion.keyword.text,
             ad_group_criterion.keyword.match_type,
@@ -658,7 +704,7 @@ export async function getKeywords(
 
 export async function getReporting(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   dateRange: string,
   custom?: DateRangeCustom
 ): Promise<GoogleAdsReportRow[]> {
@@ -680,7 +726,7 @@ export async function getReporting(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT campaign.id, campaign.name,
             metrics.cost_micros, metrics.clicks, metrics.impressions,
             metrics.ctr, metrics.average_cpc, metrics.conversions,
@@ -708,7 +754,7 @@ export async function getReporting(
 
 export async function getAccountBudget(
   customerId: string,
-  accessToken: string
+  auth: GoogleAdsAuth
 ): Promise<GoogleAdsAccountBudget | null> {
   type Row = {
     accountBudget: {
@@ -719,7 +765,7 @@ export async function getAccountBudget(
 
   const rows = await gaqlSearch<Row>(
     customerId,
-    accessToken,
+    auth,
     `SELECT account_budget.amount_served_micros, account_budget.status
      FROM account_budget
      WHERE account_budget.status = 'APPROVED'
@@ -739,9 +785,10 @@ export async function getAccountBudget(
 // ── List accessible customers from MCC ──────────────────────────────
 
 export async function getAccessibleCustomers(
-  accessToken: string
+  accessToken: string,
+  loginCustomerId: string
 ): Promise<GoogleAdsCustomer[]> {
-  const { developerToken, loginCustomerId } = getEnv();
+  const { developerToken } = getEnv();
 
   // Step 1: Get resource names list
   const headers: Record<string, string> = {
@@ -770,7 +817,7 @@ export async function getAccessibleCustomers(
     };
     const rows = await gaqlSearch<Row>(
       loginCustomerId,
-      accessToken,
+      { accessToken, loginCustomerId },
       `SELECT customer_client.id, customer_client.descriptive_name,
               customer_client.currency_code, customer_client.time_zone,
               customer_client.status
@@ -785,32 +832,42 @@ export async function getAccessibleCustomers(
       currencyCode: r.customerClient.currencyCode,
       timeZone: r.customerClient.timeZone,
       status: r.customerClient.status,
+      loginCustomerId,
     }));
   }
 
-  // Step 2b — direct mode (no MCC): the accessible customers ARE the user's own
-  // accounts; fetch each account's details directly (login-customer-id falls back
-  // to the account's own id inside gaqlSearch).
+  // Step 2b — discover/self-serve mode (no MCC passed): the accessible customers
+  // ARE the user's own accounts; fetch each account's details directly, querying
+  // each account as itself (login-customer-id = its own id). We also detect which
+  // account is a manager (MCC) so non-manager accounts can be addressed THROUGH it.
   type CustRow = {
-    customer: { id: string; descriptiveName: string; currencyCode: string; timeZone: string; status: string };
+    customer: { id: string; descriptiveName: string; currencyCode: string; timeZone: string; status: string; manager: boolean };
   };
-  const out: GoogleAdsCustomer[] = [];
+  const discovered: Array<{ c: CustRow["customer"]; isManager: boolean }> = [];
   for (const rn of resourceNames) {
     const id = rn.split("/").pop() || "";
     if (!id) continue;
     try {
       const rows = await gaqlSearch<CustRow>(
         id,
-        accessToken,
-        `SELECT customer.id, customer.descriptive_name, customer.currency_code,
-                customer.time_zone, customer.status
+        { accessToken, loginCustomerId: id },
+        `SELECT customer.descriptive_name, customer.manager
          FROM customer LIMIT 1`
       );
       const c = rows[0]?.customer;
-      if (c) out.push({ id: c.id, name: c.descriptiveName, currencyCode: c.currencyCode, timeZone: c.timeZone, status: c.status });
-    } catch { /* skip accounts we can't read */ }
+      if (c) discovered.push({ c: { ...c, id }, isManager: c.manager === true });
+    } catch { /* skip accounts we can't read (CUSTOMER_NOT_ENABLED, etc.) */ }
   }
-  return out;
+
+  const mccId = discovered.find((d) => d.isManager)?.c.id || "";
+  return discovered.map(({ c, isManager }) => ({
+    id: c.id,
+    name: c.descriptiveName,
+    currencyCode: c.currencyCode,
+    timeZone: c.timeZone,
+    status: c.status,
+    loginCustomerId: isManager ? "" : (mccId || ""),
+  }));
 }
 
 // ── Diagnóstico de acceso (para depurar 403 USER_PERMISSION_DENIED) ──────
@@ -864,11 +921,11 @@ export async function diagnoseAccess(accessToken: string): Promise<{
 
 export async function updateCampaignStatus(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   campaignResourceName: string,
   status: "ENABLED" | "PAUSED" | "REMOVED"
 ): Promise<void> {
-  await gaqlMutate(customerId, accessToken, "campaigns", [
+  await gaqlMutate(customerId, auth, "campaigns", [
     {
       updateMask: "status",
       update: { resourceName: campaignResourceName, status },
@@ -878,11 +935,11 @@ export async function updateCampaignStatus(
 
 export async function updateCampaignBudget(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   budgetResourceName: string,
   amountMicros: number
 ): Promise<void> {
-  await gaqlMutate(customerId, accessToken, "campaignBudgets", [
+  await gaqlMutate(customerId, auth, "campaignBudgets", [
     {
       updateMask: "amountMicros",
       update: { resourceName: budgetResourceName, amountMicros: String(amountMicros) },
@@ -892,7 +949,7 @@ export async function updateCampaignBudget(
 
 export async function createFullCampaign(
   customerId: string,
-  accessToken: string,
+  auth: GoogleAdsAuth,
   params: CreateCampaignParams
 ): Promise<CreateCampaignResult> {
   type MutateResponse = {
@@ -901,7 +958,7 @@ export async function createFullCampaign(
 
   // 1. Create budget
   const budgetRes = await gaqlMutate<MutateResponse>(
-    customerId, accessToken, "campaignBudgets",
+    customerId, auth, "campaignBudgets",
     [{
       create: {
         name: `${params.campaignName} - Budget`,
@@ -929,7 +986,7 @@ export async function createFullCampaign(
   if (params.endDate) campaignPayload.endDate = params.endDate;
 
   const campaignRes = await gaqlMutate<MutateResponse>(
-    customerId, accessToken, "campaigns",
+    customerId, auth, "campaigns",
     [{ create: campaignPayload }]
   );
   const campaignResourceName = campaignRes.results[0].resourceName;
@@ -937,7 +994,7 @@ export async function createFullCampaign(
 
   // 3. Create ad group
   const adGroupRes = await gaqlMutate<MutateResponse>(
-    customerId, accessToken, "adGroups",
+    customerId, auth, "adGroups",
     [{
       create: {
         name: params.adGroupName,
@@ -958,14 +1015,14 @@ export async function createFullCampaign(
       keyword: { text: kw.text, matchType: kw.matchType },
     },
   }));
-  await gaqlMutate(customerId, accessToken, "adGroupCriteria", keywordOps);
+  await gaqlMutate(customerId, auth, "adGroupCriteria", keywordOps);
 
   // 5. Create responsive search ad (max 15 headlines, 4 descriptions)
   const headlines = params.adHeadlines.slice(0, 15).map((text) => ({ text }));
   const descriptions = params.adDescriptions.slice(0, 4).map((text) => ({ text }));
 
   const adRes = await gaqlMutate<MutateResponse>(
-    customerId, accessToken, "adGroupAds",
+    customerId, auth, "adGroupAds",
     [{
       create: {
         adGroup: adGroupResourceName,
@@ -984,10 +1041,10 @@ export async function createFullCampaign(
 
 // ── Advanced Segment Queries ──────────────────────────────────────────
 
-export async function getHourlyPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsHourlyRow[]> {
+export async function getHourlyPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsHourlyRow[]> {
   type Row = { segments: { hour: number; dayOfWeek: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.hour, segments.day_of_week, metrics.cost_micros, metrics.clicks,
             metrics.impressions, metrics.conversions, metrics.ctr, metrics.average_cpc
      FROM campaign
@@ -1000,10 +1057,10 @@ export async function getHourlyPerformance(customerId: string, accessToken: stri
   }));
 }
 
-export async function getDevicePerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsDeviceRow[]> {
+export async function getDevicePerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsDeviceRow[]> {
   type Row = { segments: { device: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.device, metrics.cost_micros, metrics.clicks, metrics.impressions,
             metrics.conversions, metrics.ctr, metrics.average_cpc
      FROM campaign
@@ -1016,10 +1073,10 @@ export async function getDevicePerformance(customerId: string, accessToken: stri
   }));
 }
 
-export async function getGeoPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsGeoRow[]> {
+export async function getGeoPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsGeoRow[]> {
   type Row = { segments?: { geoTargetRegion?: string; geoTargetCity?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.geo_target_city, segments.geo_target_region,
             metrics.cost_micros, metrics.clicks, metrics.conversions
      FROM geographic_view
@@ -1034,7 +1091,7 @@ export async function getGeoPerformance(customerId: string, accessToken: string,
   if (ids.length) {
     type NameRow = { geoTargetConstant: { id: string; name: string } };
     const resourceNames = ids.map((id) => `'geoTargetConstants/${id}'`).join(",");
-    const names = await gaqlSearch<NameRow>(customerId, accessToken,
+    const names = await gaqlSearch<NameRow>(customerId, auth,
       `SELECT geo_target_constant.id, geo_target_constant.name
        FROM geo_target_constant WHERE geo_target_constant.resource_name IN (${resourceNames})`).catch(() => [] as NameRow[]);
     const map = new Map(names.map((n) => [String(n.geoTargetConstant.id), n.geoTargetConstant.name]));
@@ -1043,10 +1100,10 @@ export async function getGeoPerformance(customerId: string, accessToken: string,
   return out.sort((a, b) => b.cost - a.cost);
 }
 
-export async function getAudiencePerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsAudienceRow[]> {
+export async function getAudiencePerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsAudienceRow[]> {
   type Row = { adGroupCriterion?: { type?: string; displayName?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT ad_group_criterion.type, ad_group_criterion.display_name,
             metrics.cost_micros, metrics.clicks, metrics.conversions
      FROM ad_group_audience_view
@@ -1058,10 +1115,10 @@ export async function getAudiencePerformance(customerId: string, accessToken: st
   }));
 }
 
-export async function getExtensionPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsExtensionRow[]> {
+export async function getExtensionPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsExtensionRow[]> {
   type Row = { asset?: { id?: string; type?: string; name?: string }; metrics: { costMicros: string; clicks: string; impressions: string } };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT asset.id, asset.type, asset.name, metrics.cost_micros, metrics.clicks, metrics.impressions
      FROM campaign_asset
      WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign_asset.status != 'REMOVED'`).catch(() => [] as Row[]);
@@ -1074,44 +1131,44 @@ export async function getExtensionPerformance(customerId: string, accessToken: s
 
 // ── Write Helpers ─────────────────────────────────────────────────────
 
-export async function activateCampaign(customerId: string, accessToken: string, campaignResourceName: string): Promise<void> {
+export async function activateCampaign(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string): Promise<void> {
   const campaignId = extractId(campaignResourceName);
   type AdGroupRow = { adGroup: { resourceName: string } };
   type AdRow = { adGroupAd: { resourceName: string } };
-  const adGroups = await gaqlSearch<AdGroupRow>(customerId, accessToken,
+  const adGroups = await gaqlSearch<AdGroupRow>(customerId, auth,
     `SELECT ad_group.resource_name FROM ad_group WHERE campaign.id = ${campaignId} AND ad_group.status = 'PAUSED'`);
-  const ads = await gaqlSearch<AdRow>(customerId, accessToken,
+  const ads = await gaqlSearch<AdRow>(customerId, auth,
     `SELECT ad_group_ad.resource_name FROM ad_group_ad WHERE campaign.id = ${campaignId} AND ad_group_ad.status = 'PAUSED'`);
-  await gaqlMutate(customerId, accessToken, "campaigns",
+  await gaqlMutate(customerId, auth, "campaigns",
     [{ updateMask: "status", update: { resourceName: campaignResourceName, status: "ENABLED" } }]);
-  if (adGroups.length) await gaqlMutate(customerId, accessToken, "adGroups",
+  if (adGroups.length) await gaqlMutate(customerId, auth, "adGroups",
     adGroups.map((g) => ({ updateMask: "status", update: { resourceName: g.adGroup.resourceName, status: "ENABLED" } })));
-  if (ads.length) await gaqlMutate(customerId, accessToken, "adGroupAds",
+  if (ads.length) await gaqlMutate(customerId, auth, "adGroupAds",
     ads.map((a) => ({ updateMask: "status", update: { resourceName: a.adGroupAd.resourceName, status: "ENABLED" } })));
 }
 
-export async function addNegativeKeywords(customerId: string, accessToken: string, campaignResourceName: string, keywords: string[]): Promise<number> {
+export async function addNegativeKeywords(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, keywords: string[]): Promise<number> {
   const ops = keywords.filter((k) => k.trim()).map((text) => ({
     create: { campaign: campaignResourceName, negative: true, keyword: { text: text.trim(), matchType: "BROAD" } },
   }));
   if (!ops.length) return 0;
-  await gaqlMutate(customerId, accessToken, "campaignCriteria", ops);
+  await gaqlMutate(customerId, auth, "campaignCriteria", ops);
   return ops.length;
 }
 
-export async function addLocationTargeting(customerId: string, accessToken: string, campaignResourceName: string, locationName: string): Promise<boolean> {
+export async function addLocationTargeting(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string): Promise<boolean> {
   if (!locationName?.trim()) return false;
   const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard — geo names never contain them)
   type GeoRow = { geoTargetConstant: { resourceName: string } };
   // Match any enabled geo target with this name (city, region/state, etc.), most specific first.
-  const matches = await gaqlSearch<GeoRow>(customerId, accessToken,
+  const matches = await gaqlSearch<GeoRow>(customerId, auth,
     `SELECT geo_target_constant.resource_name
      FROM geo_target_constant
      WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED'
      LIMIT 5`).catch(() => [] as GeoRow[]);
   const geo = matches[0]?.geoTargetConstant?.resourceName;
   if (!geo) return false;
-  await gaqlMutate(customerId, accessToken, "campaignCriteria",
+  await gaqlMutate(customerId, auth, "campaignCriteria",
     [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo } } }]);
   return true;
 }
@@ -1120,25 +1177,25 @@ export async function addLocationTargeting(customerId: string, accessToken: stri
 
 function clampBidModifier(m: number): number { return Math.min(3.0, Math.max(0.1, Number(m) || 1.0)); }
 
-export async function setDeviceBidModifier(customerId: string, accessToken: string, campaignResourceName: string, device: string, bidModifier: number): Promise<number> {
+export async function setDeviceBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, device: string, bidModifier: number): Promise<number> {
   const mod = clampBidModifier(bidModifier);
   const dev = device.toUpperCase();
   if (!["MOBILE", "DESKTOP", "TABLET"].includes(dev)) throw new Error("Dispositivo inválido (usa MOBILE/DESKTOP/TABLET).");
   const campaignId = extractId(campaignResourceName);
   type AgRow = { adGroup: { id: string; resourceName: string } };
-  const adGroups = await gaqlSearch<AgRow>(customerId, accessToken,
+  const adGroups = await gaqlSearch<AgRow>(customerId, auth,
     `SELECT ad_group.id, ad_group.resource_name FROM ad_group WHERE campaign.id = ${campaignId} AND ad_group.status != 'REMOVED'`);
   let applied = 0;
   for (const ag of adGroups) {
     type ExRow = { adGroupBidModifier: { resourceName: string } };
-    const existing = await gaqlSearch<ExRow>(customerId, accessToken,
+    const existing = await gaqlSearch<ExRow>(customerId, auth,
       `SELECT ad_group_bid_modifier.resource_name FROM ad_group_bid_modifier
        WHERE ad_group.id = ${ag.adGroup.id} AND ad_group_bid_modifier.device.type = '${dev}'`).catch(() => [] as ExRow[]);
     if (existing[0]) {
-      await gaqlMutate(customerId, accessToken, "adGroupBidModifiers",
+      await gaqlMutate(customerId, auth, "adGroupBidModifiers",
         [{ updateMask: "bidModifier", update: { resourceName: existing[0].adGroupBidModifier.resourceName, bidModifier: mod } }]);
     } else {
-      await gaqlMutate(customerId, accessToken, "adGroupBidModifiers",
+      await gaqlMutate(customerId, auth, "adGroupBidModifiers",
         [{ create: { adGroup: ag.adGroup.resourceName, device: { type: dev }, bidModifier: mod } }]);
     }
     applied++;
@@ -1146,37 +1203,37 @@ export async function setDeviceBidModifier(customerId: string, accessToken: stri
   return applied;
 }
 
-export async function setAdScheduleBidModifier(customerId: string, accessToken: string, campaignResourceName: string, schedule: { dayOfWeek: string; startHour: number; endHour: number }, bidModifier: number): Promise<void> {
+export async function setAdScheduleBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, schedule: { dayOfWeek: string; startHour: number; endHour: number }, bidModifier: number): Promise<void> {
   const mod = clampBidModifier(bidModifier);
-  await gaqlMutate(customerId, accessToken, "campaignCriteria",
+  await gaqlMutate(customerId, auth, "campaignCriteria",
     [{ create: { campaign: campaignResourceName, bidModifier: mod,
         adSchedule: { dayOfWeek: schedule.dayOfWeek.toUpperCase(), startHour: schedule.startHour, startMinute: "ZERO", endHour: schedule.endHour, endMinute: "ZERO" } } }]);
 }
 
-export async function setLocationBidModifier(customerId: string, accessToken: string, campaignResourceName: string, locationName: string, bidModifier: number): Promise<void> {
+export async function setLocationBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string, bidModifier: number): Promise<void> {
   const mod = clampBidModifier(bidModifier);
   const campaignId = extractId(campaignResourceName);
   const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard)
   type GeoRow = { geoTargetConstant: { resourceName: string } };
-  const geo = (await gaqlSearch<GeoRow>(customerId, accessToken,
+  const geo = (await gaqlSearch<GeoRow>(customerId, auth,
     `SELECT geo_target_constant.resource_name FROM geo_target_constant WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED' LIMIT 1`).catch(() => [] as GeoRow[]))[0]?.geoTargetConstant?.resourceName;
   type CritRow = { campaignCriterion: { resourceName: string; location?: { geoTargetConstant?: string } } };
-  const crits = await gaqlSearch<CritRow>(customerId, accessToken,
+  const crits = await gaqlSearch<CritRow>(customerId, auth,
     `SELECT campaign_criterion.resource_name, campaign_criterion.location.geo_target_constant
      FROM campaign_criterion WHERE campaign.id = ${campaignId} AND campaign_criterion.type = 'LOCATION'`).catch(() => [] as CritRow[]);
   const match = crits.find((c) => geo && c.campaignCriterion.location?.geoTargetConstant === geo) || crits[0];
   if (match) {
-    await gaqlMutate(customerId, accessToken, "campaignCriteria",
+    await gaqlMutate(customerId, auth, "campaignCriteria",
       [{ updateMask: "bidModifier", update: { resourceName: match.campaignCriterion.resourceName, bidModifier: mod } }]);
   } else if (geo) {
-    await gaqlMutate(customerId, accessToken, "campaignCriteria",
+    await gaqlMutate(customerId, auth, "campaignCriteria",
       [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo }, bidModifier: mod } }]);
   } else {
     throw new Error("No se encontró la ubicación para aplicar el modificador.");
   }
 }
 
-export async function getKeywordPerformance(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsKeywordPerfRow[]> {
+export async function getKeywordPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsKeywordPerfRow[]> {
   type Row = {
     adGroupCriterion: {
       criterionId: string;
@@ -1189,7 +1246,7 @@ export async function getKeywordPerformance(customerId: string, accessToken: str
     };
   };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT ad_group_criterion.criterion_id, ad_group_criterion.keyword.text,
             ad_group_criterion.keyword.match_type, campaign.id, campaign.name,
             metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
@@ -1215,7 +1272,7 @@ export async function getKeywordPerformance(customerId: string, accessToken: str
   }));
 }
 
-export async function getSearchTerms(customerId: string, accessToken: string, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsSearchTermRow[]> {
+export async function getSearchTerms(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsSearchTermRow[]> {
   type Row = {
     searchTermView: { searchTerm?: string; status?: string };
     campaign?: { name?: string };
@@ -1225,7 +1282,7 @@ export async function getSearchTerms(customerId: string, accessToken: string, da
     };
   };
   const { startDate, endDate } = getDateRange(dateRange, custom);
-  const rows = await gaqlSearch<Row>(customerId, accessToken,
+  const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT search_term_view.search_term, search_term_view.status, campaign.name,
             metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
             metrics.conversions, metrics.cost_per_conversion

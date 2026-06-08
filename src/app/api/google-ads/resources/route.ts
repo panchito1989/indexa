@@ -28,7 +28,9 @@ export async function GET(request: NextRequest) {
   try {
     const accessToken = await getValidAccessToken(user.uid);
     try {
-      const customers = await getAccessibleCustomers(accessToken);
+      // Modo descubrimiento ("" = sin MCC fijo): lista las cuentas accesibles y detecta,
+      // por cuenta, su login-customer-id (el MCC que la administra, o "" si es directa).
+      const customers = await getAccessibleCustomers(accessToken, "");
       return NextResponse.json({ customers });
     } catch (inner) {
       // Falló listar cuentas (típico: GOOGLE_ADS_LOGIN_CUSTOMER_ID mal configurado, o
