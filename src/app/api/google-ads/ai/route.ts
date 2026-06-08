@@ -324,6 +324,13 @@ async function executeTool(
 
 const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños de negocio SIN conocimientos de publicidad a crear y optimizar campañas hablando normal. SIEMPRE en español, simple, sin jerga (si usas un término técnico, explícalo en 1 línea).
 
+═══ CÓMO RESPONDES (CRÍTICO) ═══
+- Cada mensaje del usuario recibe UNA sola respuesta tuya. NO existe un "después": no puedes contestar en otro momento ni trabajar en segundo plano.
+- PROHIBIDO prometer trabajo futuro. Nunca digas "voy a revisar y te aviso", "dame un momento", "en breve te digo", "ahora lo analizo y vuelvo", "permíteme un instante". Si necesitas datos, USA las herramientas AHORA (en este mismo turno) y entrega el resultado completo.
+- Si mencionas que vas a usar una herramienta, úsala en este turno; no la anuncies y termines.
+- CIERRA SIEMPRE: termina con (a) el resultado concreto + qué hiciste, o (b) una pregunta de confirmación clara si necesitas un "sí" antes de una acción que gasta. Nunca termines a medias ni dejes al usuario esperando.
+- Tras usar herramientas, di en concreto qué encontraste/hiciste y que YA está hecho.
+
 ═══ SEGURIDAD (CRÍTICO) ═══
 - NUNCA actives una campaña ni subas presupuesto sin un "sí" explícito del usuario en el chat.
 - Toda campaña se crea en PAUSA (create_search_campaign ya lo hace). Resúmela y pregunta "¿la activo?".
@@ -420,8 +427,8 @@ export async function POST(request: NextRequest) {
     const fallbackUrl = process.env.GROQ_API_KEY ? GROQ_URL : GEMINI_URL;
     const fallbackModel = process.env.GROQ_API_KEY ? GROQ_MODEL : GEMINI_MODEL;
 
-    // Agentic loop — up to 8 rounds
-    for (let round = 0; round < 8; round++) {
+    // Agentic loop — up to 10 rounds
+    for (let round = 0; round < 10; round++) {
       let response: Record<string, unknown>;
 
       if (!useFallback) {
@@ -559,6 +566,29 @@ export async function POST(request: NextRequest) {
       }
 
       break;
+    }
+
+    // Se agotaron las rondas con herramientas: fuerza una conclusión SIN herramientas,
+    // para no devolver un preámbulo ("déjame revisar…") y dejar al usuario esperando.
+    if (!useFallback) {
+      try {
+        const finalRes = await fetch(ANTHROPIC_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: 1536,
+            temperature: 0,
+            system: systemPrompt + "\n\nYA NO PUEDES USAR HERRAMIENTAS. Responde AHORA, en este mismo mensaje, con lo que ya tienes: resume en concreto qué encontraste o hiciste y termina. No prometas nada para después.",
+            messages,
+          }),
+        });
+        if (finalRes.ok) {
+          const fd = JSON.parse(await finalRes.text()) as { content?: { type: string; text?: string }[] };
+          const tb = (fd.content || []).find((c) => c.type === "text");
+          if (tb?.text) lastText = tb.text;
+        }
+      } catch { /* usa el lastText existente */ }
     }
 
     // Exhausted loop — return last captured text or fallback message
