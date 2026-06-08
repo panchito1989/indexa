@@ -326,6 +326,27 @@ interface SearchResponse<T> {
   totalResultsCount?: string;
 }
 
+/** Extrae el errorCode específico de Google Ads (p.ej. USER_PERMISSION_DENIED,
+ *  DEVELOPER_TOKEN_NOT_APPROVED, CUSTOMER_NOT_ENABLED) y el mensaje detallado de la
+ *  estructura GoogleAdsFailure — mucho más útil para diagnosticar que el genérico
+ *  "The caller does not have permission". */
+function describeGoogleAdsError(text: string): { code?: string; message?: string } {
+  try {
+    const parsed = JSON.parse(text) as {
+      error?: {
+        message?: string;
+        details?: Array<{ errors?: Array<{ errorCode?: Record<string, unknown>; message?: string }> }>;
+      };
+    };
+    const detail = parsed.error?.details?.find((d) => Array.isArray(d.errors) && d.errors.length);
+    const first = detail?.errors?.[0];
+    const code = first?.errorCode ? String(Object.values(first.errorCode)[0]) : undefined;
+    return { code, message: first?.message || parsed.error?.message };
+  } catch {
+    return {};
+  }
+}
+
 async function gaqlSearch<T>(
   customerId: string,
   accessToken: string,
@@ -364,10 +385,10 @@ async function gaqlSearch<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "(sin cuerpo)");
-    let parsed: { error?: { message?: string; status?: string } } = {};
-    try { parsed = JSON.parse(text); } catch { /* ignore */ }
+    const { code, message } = describeGoogleAdsError(text);
+    const lc = loginCustomerId || customerId;
     throw new Error(
-      `Google Ads API HTTP ${res.status}: ${parsed.error?.message || text.slice(0, 300)}`
+      `Google Ads API HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
     );
   }
 
@@ -414,10 +435,10 @@ async function gaqlMutate<T>(
 
   if (!res.ok) {
     const text = await res.text().catch(() => "(sin cuerpo)");
-    let parsed: { error?: { message?: string } } = {};
-    try { parsed = JSON.parse(text); } catch { /* ignore */ }
+    const { code, message } = describeGoogleAdsError(text);
+    const lc = loginCustomerId || customerId;
     throw new Error(
-      `Google Ads mutate ${resource} HTTP ${res.status}: ${parsed.error?.message || text.slice(0, 300)}`
+      `Google Ads mutate ${resource} HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
     );
   }
 
