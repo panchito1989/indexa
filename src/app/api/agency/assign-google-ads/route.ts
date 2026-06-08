@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
       await db.collection("usuarios").doc(clientUid).update({
         googleAdsCustomerId: "",
         googleAdsManagedByAgency: false,
+        googleAdsLoginCustomerId: "",
       });
       return NextResponse.json({ success: true, message: "Cuenta de Google Ads desvinculada." });
     }
@@ -96,14 +97,26 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    const customers = await getAccessibleCustomers(accessToken);
-    if (!customers.some((c) => c.id === customerId)) {
+    // El MCC de la agencia: su googleAdsLoginCustomerId (o el env como fallback en F1).
+    const ownerSnap = await db.collection("usuarios").doc(agencyUser.uid).get();
+    const agencyMcc = (
+      (ownerSnap.data()?.googleAdsLoginCustomerId as string | undefined) ||
+      process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID ||
+      ""
+    ).replace(/\D/g, "");
+
+    const customers = await getAccessibleCustomers(accessToken, agencyMcc);
+    const match = customers.find((c) => c.id === customerId);
+    if (!match) {
       return NextResponse.json({ success: false, message: "Esa cuenta no pertenece a tu MCC." }, { status: 400 });
     }
 
+    // El login-customer-id del cliente = el MCC que administra esa subcuenta.
+    const clientLoginCustomerId = match.loginCustomerId || agencyMcc;
     await db.collection("usuarios").doc(clientUid).update({
       googleAdsCustomerId: customerId,
       googleAdsManagedByAgency: true,
+      googleAdsLoginCustomerId: clientLoginCustomerId,
     });
     return NextResponse.json({ success: true, message: "Cuenta de Google Ads asignada." });
   } catch (err) {

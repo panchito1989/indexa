@@ -66,6 +66,10 @@ export interface UsuarioDoc {
   // connecting their own. See getValidAccessToken in lib/googleAdsClient.ts.
   googleAdsCustomerId?: string; // assigned sub-account id (digits only)
   googleAdsManagedByAgency?: boolean;
+  // The MCC (manager) account id to send as login-customer-id when querying this
+  // user's account. "" / absent = direct mode (login-customer-id = the account itself).
+  // Resolved per-user by getGoogleAdsContext (falls back to env GOOGLE_ADS_LOGIN_CUSTOMER_ID).
+  googleAdsLoginCustomerId?: string;
 }
 
 // ── Firestore: sitios/{id} (new fields only) ─────────────────────────

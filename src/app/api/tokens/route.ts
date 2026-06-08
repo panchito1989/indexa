@@ -20,6 +20,7 @@ const PLAIN_FIELDS = [
   "metaPageId",
   "tiktokAdvertiserId",
   "googleAdsCustomerId",
+  "googleAdsLoginCustomerId",
 ] as const;
 const ALL_FIELDS = [...ENCRYPTED_FIELDS, ...PLAIN_FIELDS] as const;
 
@@ -71,12 +72,14 @@ export async function POST(request: NextRequest) {
       }
 
       // Anti-IDOR: a client whose Google Ads is managed by their agency must NOT
-      // be able to change their own assigned Customer ID (they could otherwise point
-      // at another client's sub-account under the shared MCC, served by the agency token).
-      if ("googleAdsCustomerId" in update) {
+      // be able to change their own assigned Customer ID OR its login-customer-id
+      // (they could otherwise point at another client's sub-account under the shared
+      // MCC, served by the agency token). The agency sets both via assign-google-ads.
+      if ("googleAdsCustomerId" in update || "googleAdsLoginCustomerId" in update) {
         const cur = await docRef.get();
         if (cur.data()?.googleAdsManagedByAgency === true) {
           delete update.googleAdsCustomerId;
+          delete update.googleAdsLoginCustomerId;
         }
       }
 

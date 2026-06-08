@@ -20,6 +20,7 @@ interface GoogleCustomer {
   name: string;
   currencyCode: string;
   timeZone: string;
+  loginCustomerId?: string; // MCC que administra esta cuenta ("" / ausente = directa)
 }
 
 interface Props {
@@ -177,12 +178,18 @@ export default function GoogleAdsConnect({
     setError("");
     try {
       const idToken = await user.getIdToken();
+      // login-customer-id de la cuenta elegida (el MCC que la administra, o "" si es directa).
+      const pickedLoginCustomerId =
+        customers.find((c) => c.id === pickedCustomer)?.loginCustomerId ?? "";
       const res = await fetch("/api/tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({
           action: "save",
-          tokens: { googleAdsCustomerId: pickedCustomer },
+          tokens: {
+            googleAdsCustomerId: pickedCustomer,
+            googleAdsLoginCustomerId: pickedLoginCustomerId,
+          },
         }),
       });
       if (!res.ok) {
@@ -197,7 +204,7 @@ export default function GoogleAdsConnect({
       setError(err instanceof Error ? err.message : "Error al guardar.");
       setPhase("error");
     }
-  }, [user, pickedCustomer, onConnected]);
+  }, [user, pickedCustomer, customers, onConnected]);
 
   const closeSelector = () => {
     setPhase("idle");
