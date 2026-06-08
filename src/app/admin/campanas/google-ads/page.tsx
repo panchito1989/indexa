@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "@/lib/AuthContext";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -271,6 +271,39 @@ export default function AdminGoogleAdsPage() {
       setAiLoading(false);
     }
   }, [user, aiInput, aiLoading, aiHistory]);
+
+  // Cargar la conversación guardada (memoria entre sesiones) — una sola vez.
+  const aiHistoryLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!user || aiHistoryLoadedRef.current) return;
+    aiHistoryLoadedRef.current = true;
+    (async () => {
+      try {
+        const idToken = await user.getIdToken();
+        const res = await fetch("/api/google-ads/ai", { headers: { Authorization: `Bearer ${idToken}` } });
+        if (!res.ok) return;
+        const d = await res.json();
+        if (Array.isArray(d.history) && d.history.length) {
+          setAiHistory(
+            (d.history as Array<{ role: "user" | "assistant"; content: unknown }>).map((m) => ({
+              role: m.role,
+              content: typeof m.content === "string" ? m.content : "",
+            }))
+          );
+        }
+      } catch { /* sin historial guardado */ }
+    })();
+  }, [user]);
+
+  // Botón "Nueva conversación": limpia local + borra el historial guardado.
+  const clearAiHistory = useCallback(async () => {
+    setAiHistory([]);
+    if (!user) return;
+    try {
+      const idToken = await user.getIdToken();
+      await fetch("/api/google-ads/ai", { method: "DELETE", headers: { Authorization: `Bearer ${idToken}` } });
+    } catch { /* noop */ }
+  }, [user]);
 
   // ── Export handlers ───────────────────────────────────────────────────
   const handleExportCsv = () => {
@@ -892,11 +925,23 @@ export default function AdminGoogleAdsPage() {
       {/* ── Asistente IA ── */}
       {tab === "ia" && (
         <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
-          <div className="border-b border-gray-200 px-5 py-4">
-            <h3 className="text-sm font-bold text-indexa-gray-dark">Asistente IA — Google Ads</h3>
-            <p className="mt-0.5 text-xs text-gray-500">
-              Pregúntame sobre el rendimiento de tus campañas, optimizaciones o análisis.
-            </p>
+          <div className="flex items-start justify-between gap-3 border-b border-gray-200 px-5 py-4">
+            <div>
+              <h3 className="text-sm font-bold text-indexa-gray-dark">Asistente IA — Google Ads</h3>
+              <p className="mt-0.5 text-xs text-gray-500">
+                Pregúntame sobre el rendimiento de tus campañas, optimizaciones o análisis.
+              </p>
+            </div>
+            {aiHistory.length > 0 && (
+              <button
+                onClick={clearAiHistory}
+                disabled={aiLoading}
+                title="Borrar esta conversación y empezar de cero"
+                className="flex flex-shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-40"
+              >
+                <RefreshCw size={13} /> Nueva conversación
+              </button>
+            )}
           </div>
 
           {/* Message list */}
