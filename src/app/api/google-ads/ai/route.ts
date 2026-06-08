@@ -191,9 +191,10 @@ async function executeTool(
   name: string, input: Record<string, unknown>, customerId: string, accessToken: string,
   dashboardRange: string, custom?: { startDate: string; endDate: string },
 ): Promise<string> {
-  // Default = el rango que el usuario está viendo en el dashboard (no un fijo 7 días),
-  // para que la IA analice EL MISMO periodo que la pantalla.
-  const dr = (input.date_range as string) || dashboardRange;
+  // El periodo SIEMPRE es el que el usuario ve en el dashboard. NO dejamos que el
+  // modelo lo elija (antes mandaba date_range="LAST_7_DAYS" y se ignoraba el dashboard
+  // → la IA solo veía 7 días aunque el panel mostrara un año).
+  const dr = dashboardRange;
   const campaignId = (input.campaign_id as string) || undefined;
   try {
     switch (name) {
@@ -355,7 +356,7 @@ export async function POST(request: NextRequest) {
       }
     }
     const rangeLabel = custom ? `${custom.startDate} a ${custom.endDate}` : dashboardRange;
-    const systemPrompt = `${SYSTEM_PROMPT}\n\n═══ VENTANA ACTIVA ═══\nEl usuario está viendo el periodo: ${rangeLabel}. Analiza ESE periodo por defecto (las herramientas ya lo usan); cambia de rango solo si lo pide explícitamente, y SIEMPRE menciona en tu respuesta qué periodo analizaste.`;
+    const systemPrompt = `${SYSTEM_PROMPT}\n\n═══ VENTANA ACTIVA ═══\nTODOS los datos que devuelven las herramientas corresponden al periodo: ${rangeLabel}. NO puedes cambiar ese periodo desde aquí — si el usuario quiere otro, dile que lo ajuste en el selector de fechas del panel. SIEMPRE menciona en tu respuesta que analizaste el periodo: ${rangeLabel}.`;
 
     let creds: { accessToken: string; customerId: string };
     try {
