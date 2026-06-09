@@ -161,8 +161,8 @@ const tools = [
     input_schema: { type: "object" as const, properties: { campaign_id: { type: "string" } } } },
   { name: "list_keywords", description: "Lista keywords con tipo de concordancia y Quality Score.",
     input_schema: { type: "object" as const, properties: { campaign_id: { type: "string" } } } },
-  { name: "get_reporting", description: "Métricas por rango: LAST_7_DAYS, LAST_30_DAYS, THIS_MONTH, LAST_MONTH.",
-    input_schema: { type: "object" as const, properties: { date_range: { type: "string", enum: ["LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH"] } } } },
+  { name: "get_reporting", description: "Métricas por rango: TODAY, YESTERDAY, LAST_7_DAYS, LAST_30_DAYS, THIS_MONTH, LAST_MONTH.",
+    input_schema: { type: "object" as const, properties: { date_range: { type: "string", enum: ["TODAY","YESTERDAY","LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH"] } } } },
   { name: "get_budget", description: "Presupuesto de la cuenta.",
     input_schema: { type: "object" as const, properties: {} } },
   { name: "pause_campaign", description: "Pausa una campaña (requiere campaign_resource_name).",
@@ -180,8 +180,8 @@ const tools = [
   { name: "get_extension_performance", description: "Rendimiento de extensiones/assets.", input_schema: { type: "object" as const, properties: { date_range: { type: "string" } } } },
   { name: "compare_performance", description: "Compara KPIs (gasto, clics, impresiones, CTR, CPC, conversiones, CPA) entre DOS periodos. Úsalo cuando el usuario pida comparar (ej. '¿mejoré vs el mes pasado?', 'este año vs el anterior'). Es la ÚNICA herramienta que ve un periodo distinto al del panel.",
     input_schema: { type: "object" as const, properties: {
-      range_a: { type: "string", enum: ["LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo A (ej. THIS_MONTH)" },
-      range_b: { type: "string", enum: ["LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo B contra el que comparar (ej. LAST_MONTH)" },
+      range_a: { type: "string", enum: ["TODAY","YESTERDAY","LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo A (ej. TODAY, THIS_MONTH)" },
+      range_b: { type: "string", enum: ["TODAY","YESTERDAY","LAST_7_DAYS","LAST_30_DAYS","THIS_MONTH","LAST_MONTH","LAST_90_DAYS","LAST_12_MONTHS","THIS_YEAR"], description: "periodo B contra el que comparar (ej. YESTERDAY, LAST_MONTH)" },
     }, required: ["range_a","range_b"] } },
   { name: "create_search_campaign", description: "Crea una campaña de búsqueda COMPLETA en PAUSA (presupuesto+campaña+grupo+keywords+anuncio+ubicación). Genera tú las keywords y los textos del anuncio a partir del negocio.",
     input_schema: { type: "object" as const, properties: {

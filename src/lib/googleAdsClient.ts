@@ -208,6 +208,10 @@ function getDateRange(range: string, custom?: DateRangeCustom): { startDate: str
   };
 
   switch (range) {
+    case "TODAY":
+      return { startDate: fmt(today), endDate: fmt(today) };
+    case "YESTERDAY":
+      return { startDate: fmt(sub(1)), endDate: fmt(sub(1)) };
     case "LAST_7_DAYS":
       return { startDate: fmt(sub(7)), endDate: fmt(sub(1)) };
     case "LAST_30_DAYS":
