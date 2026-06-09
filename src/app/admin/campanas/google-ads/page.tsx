@@ -45,6 +45,8 @@ function matchTypeLabel(t: string): string {
 }
 
 const DATE_RANGES = [
+  { value: "TODAY",          label: "Hoy"               },
+  { value: "YESTERDAY",      label: "Ayer"              },
   { value: "LAST_7_DAYS",    label: "Últimos 7 días"   },
   { value: "LAST_30_DAYS",   label: "Últimos 30 días"  },
   { value: "LAST_90_DAYS",   label: "Últimos 90 días"  },
