@@ -361,10 +361,14 @@ export async function getGoogleAdsContext(uid: string): Promise<{ accessToken: s
   const accessToken = await getValidAccessToken(uid);
 
   // login-customer-id must be digits only (the UI shows the MCC with dashes).
-  // Falls back to the global env for legacy setups that haven't re-picked yet.
+  // The env fallback applies ONLY to legacy docs that never saved the field: an
+  // explicit "" means the picker chose direct mode (no MCC), and a global MCC the
+  // connected Google doesn't belong to would turn every call into USER_PERMISSION_DENIED.
+  const rawLoginCustomerId = userData.googleAdsLoginCustomerId;
   const loginCustomerId =
-    String(userData.googleAdsLoginCustomerId ?? "").replace(/\D/g, "") ||
-    (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "") || "");
+    rawLoginCustomerId !== undefined && rawLoginCustomerId !== null
+      ? String(rawLoginCustomerId).replace(/\D/g, "")
+      : (process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID?.replace(/\D/g, "") || "");
 
   return { accessToken, customerId, loginCustomerId };
 }
@@ -385,13 +389,23 @@ function describeGoogleAdsError(text: string): { code?: string; message?: string
     const parsed = JSON.parse(text) as {
       error?: {
         message?: string;
-        details?: Array<{ errors?: Array<{ errorCode?: Record<string, unknown>; message?: string }> }>;
+        details?: Array<{ errors?: Array<{
+          errorCode?: Record<string, unknown>;
+          message?: string;
+          location?: { fieldPathElements?: Array<{ fieldName?: string; index?: number }> };
+        }> }>;
       };
     };
     const detail = parsed.error?.details?.find((d) => Array.isArray(d.errors) && d.errors.length);
     const first = detail?.errors?.[0];
     const code = first?.errorCode ? String(Object.values(first.errorCode)[0]) : undefined;
-    return { code, message: first?.message || parsed.error?.message };
+    // El campo exacto que falló (clave en errores REQUIRED, cuyo message genérico
+    // "The required field was not present" no dice cuál es).
+    const fieldPath = first?.location?.fieldPathElements
+      ?.map((p) => `${p.fieldName ?? "?"}${p.index !== undefined ? `[${p.index}]` : ""}`)
+      .join(".");
+    const message = first?.message || parsed.error?.message;
+    return { code, message: fieldPath ? `${message} — campo: ${fieldPath}` : message };
   } catch {
     return {};
   }
@@ -981,6 +995,14 @@ export async function createFullCampaign(
     status: "PAUSED",
     campaignBudget: budgetResourceName,
     startDate: params.startDate,
+    // Obligatorios al crear una campaña (la API responde [REQUIRED] sin ellos):
+    // - estrategia de puja: targetSpend = Maximizar clics, la única automática que
+    //   funciona sin tracking de conversiones (las cuentas pyme recién conectadas
+    //   no lo tienen configurado).
+    // - declaración TTPA de anuncios políticos UE (v20+): nuestras campañas son
+    //   locales MX/USA, nunca publicidad política dirigida a la UE.
+    targetSpend: {},
+    containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
     networkSettings: {
       targetGoogleSearch: true,
       targetSearchNetwork: true,

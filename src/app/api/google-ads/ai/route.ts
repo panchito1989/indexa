@@ -12,7 +12,7 @@ import {
   type GoogleAdsAuth,
 } from "@/lib/googleAdsClient";
 
-export const maxDuration = 60;
+export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de campañas (igual que meta-ads/ai y tiktok-ads/ai)
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const CLAUDE_MODEL = "claude-sonnet-4-20250514";
@@ -311,7 +311,13 @@ async function executeTool(
         return `Herramienta desconocida: ${name}`;
     }
   } catch (e) {
-    return `ERROR: ${e instanceof Error ? e.message : String(e)}`;
+    // JSON.stringify para throws que no son Error: String(objeto) produce
+    // "[object Object]" y destruye el diagnóstico.
+    const msg = e instanceof Error ? e.message : JSON.stringify(e);
+    // Sin este log, los errores de herramientas solo los ve el modelo y no
+    // quedan rastro en los logs de Vercel.
+    console.error(`[google-ads/ai] tool error (${name}):`, msg);
+    return `ERROR: ${msg}`;
   }
 }
 
