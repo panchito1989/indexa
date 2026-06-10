@@ -498,6 +498,13 @@ async function executeTool(
     // Sin este log, los errores de herramientas solo los ve el modelo y no
     // quedan rastro en los logs de Vercel.
     console.error(`[google-ads/ai] tool error (${name}):`, msg);
+    // Persistencia best-effort: los logs de Vercel viven en otra cuenta/retención
+    // corta — el último error de herramienta queda consultable en Firestore.
+    try {
+      await getAdminDb().collection("usuarios").doc(uid).set({
+        googleAdsAiLastToolError: { tool: name, msg: msg.slice(0, 1500), at: Date.now() },
+      }, { merge: true });
+    } catch { /* nunca bloquear el chat por el log */ }
     return `ERROR: ${msg}`;
   }
 }
@@ -548,6 +555,9 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 - Toda campaña se crea en PAUSA (create_search_campaign ya lo hace). Resúmela y pregunta "¿la activo?".
 - Pausar o agregar keywords negativas es seguro (no gasta) → puedes hacerlo directo, avisando qué hiciste.
 - Procesa solo KPIs estándar (cost, clicks, impressions, ctr, cpc, conversions). No inventes datos.
+- HAZ LO QUE TE PIDEN, NO OTRA COSA: si el usuario pide un tipo de campaña (p.ej. Performance Max) y la herramienta falla, PROHIBIDO crear o modificar otro tipo de campaña "como alternativa" sin que él lo pida. Reporta el error y PREGUNTA cómo seguir.
+- ERRORES TEXTUALES: cuando un tool_result empiece con "ERROR:", CITA el mensaje completo y textual en tu respuesta (código, campo y todo). PROHIBIDO resumirlo como "restricciones técnicas" o "problema del sistema" — el usuario necesita el error exacto para reportarlo.
+- TELÉFONOS: en extensiones de llamada usa SOLO el teléfono del sitio Indexa o uno que el usuario escriba textual en el chat. NUNCA pongas un número inventado o deducido.
 
 ═══ CREAR (el caso principal) ═══
 1. Haz máximo 2-3 preguntas simples si faltan: ¿qué vendes/servicio?, ¿en qué ciudad?, ¿cuánto al día puedes invertir?, ¿tienes página web (URL)?

@@ -46,32 +46,62 @@ const GEMINI_IMAGE_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
 
 /**
- * Genera una foto publicitaria con IA (mismo modelo que /api/generate-image)
- * y la devuelve en base64 — para clientes cuyo sitio no tiene fotos o que
- * piden una imagen nueva para sus anuncios.
+ * Genera una foto publicitaria con IA y la devuelve en base64 — para clientes
+ * cuyo sitio no tiene fotos o que piden una imagen nueva para sus anuncios.
+ * Intenta Gemini (mismo modelo que /api/generate-image) y cae a DALL-E 3:
+ * OPENAI_API_KEY sí está configurada en prod (la usan meta-ads y tiktok-ads),
+ * GEMINI_API_KEY puede no estarlo.
  */
 export async function generateAdPhotoBase64(description: string): Promise<string> {
-  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-  if (!geminiKey) throw new Error("Generación de imágenes no configurada (falta GEMINI_API_KEY).");
-
   const prompt = `${description.trim()}. Fotografía realista de alta calidad para anuncio publicitario, bien iluminada, sin texto, sin logotipos ni marcas de agua, encuadre amplio.`;
-  const res = await fetch(`${GEMINI_IMAGE_ENDPOINT}?key=${geminiKey}`, {
+
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  let geminiError = "GEMINI_API_KEY no configurada";
+  if (geminiKey) {
+    try {
+      const res = await fetch(`${GEMINI_IMAGE_ENDPOINT}?key=${geminiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        }),
+      });
+      const data = await res.json().catch(() => null) as {
+        error?: { message?: string };
+        candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+      } | null;
+      const img = data?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+      if (img) return img;
+      geminiError = data?.error?.message || `HTTP ${res.status} sin imagen`;
+    } catch (e) {
+      geminiError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    throw new Error(`No pude generar la imagen (Gemini: ${geminiError}; OPENAI_API_KEY tampoco está configurada).`);
+  }
+  const res = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${openaiKey}` },
     body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+      model: "dall-e-3",
+      prompt,
+      n: 1,
+      size: "1792x1024", // horizontal: mejor base para el recorte 1.91:1 de Google
+      response_format: "b64_json",
     }),
   });
   const data = await res.json().catch(() => null) as {
     error?: { message?: string };
-    candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+    data?: Array<{ b64_json?: string }>;
   } | null;
-  if (!data || data.error) {
-    throw new Error(`No pude generar la imagen: ${data?.error?.message || `HTTP ${res.status}`}`);
+  const img = data?.data?.[0]?.b64_json;
+  if (!img) {
+    throw new Error(`No pude generar la imagen (Gemini: ${geminiError}; DALL-E: ${data?.error?.message || `HTTP ${res.status}`}).`);
   }
-  const img = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
-  if (!img) throw new Error("La IA no devolvió imagen; intenta con otra descripción.");
   return img;
 }
 
