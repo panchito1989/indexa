@@ -9,7 +9,8 @@ import {
   getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
   setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
-  type GoogleAdsAuth,
+  createConversionSetup, getConversionSetup,
+  type GoogleAdsAuth, type ConversionSetup,
 } from "@/lib/googleAdsClient";
 
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de campañas (igual que meta-ads/ai y tiktok-ads/ai)
@@ -148,6 +149,32 @@ async function saveAiHistory(uid: string, history: { role: "user" | "assistant";
   await getAdminDb().collection("usuarios").doc(uid).set({ googleAdsAiHistory: slim }, { merge: true });
 }
 
+// ── Conversiones: instalar la etiqueta en los sitios Indexa del usuario ──
+// Denormaliza { awId, label } a sitios/{id}.googleAdsTag para que el render
+// del sitio (y la bio) inyecten gtag sin lecturas extra. Devuelve cuántos
+// sitios quedaron con etiqueta.
+async function installTagOnUserSites(uid: string, setup: ConversionSetup): Promise<number> {
+  const db = getAdminDb();
+  const tag = { awId: setup.awId, label: setup.label };
+
+  const byOwner = await db.collection("sitios").where("ownerId", "==", uid).limit(20).get();
+  const ids = new Set(byOwner.docs.map((d) => d.id));
+
+  // Fallback legacy: usuarios/{uid}.sitioId apunta a su sitio aunque ownerId falte.
+  if (ids.size === 0) {
+    const userSnap = await db.collection("usuarios").doc(uid).get();
+    const sitioId = userSnap.data()?.sitioId;
+    if (typeof sitioId === "string" && sitioId) ids.add(sitioId);
+  }
+
+  let installed = 0;
+  for (const id of ids) {
+    await db.collection("sitios").doc(id).set({ googleAdsTag: tag }, { merge: true });
+    installed++;
+  }
+  return installed;
+}
+
 // ── Tool definitions ──────────────────────────────────────────────────
 
 const tools = [
@@ -190,7 +217,12 @@ const tools = [
       keywords: { type: "array", items: { type: "object", properties: { text: { type: "string" }, match_type: { type: "string", enum: ["EXACT","PHRASE","BROAD"] } }, required: ["text","match_type"] } },
       headlines: { type: "array", items: { type: "string" }, description: "10-15 títulos ≤30 chars" },
       descriptions: { type: "array", items: { type: "string" }, description: "3-4 descripciones ≤90 chars" },
+      bidding_strategy: { type: "string", enum: ["MAXIMIZE_CLICKS","MAXIMIZE_CONVERSIONS"], description: "MAXIMIZE_CLICKS por defecto. MAXIMIZE_CONVERSIONS SOLO si la cuenta ya mide conversiones (setup_conversion_tracking hecho) y el usuario lo confirmó." },
     }, required: ["campaign_name","daily_budget","final_url","keywords","headlines","descriptions"] } },
+  { name: "setup_conversion_tracking", description: "Configura la medición de conversiones (el 'píxel' de Google): crea la acción 'Lead WhatsApp (Indexa)' en la cuenta y deja la etiqueta instalada AUTOMÁTICAMENTE en el sitio Indexa del usuario — cada clic al WhatsApp del sitio contará como conversión. Seguro: no gasta. Úsalo cuando el usuario quiera medir resultados/leads o antes de cambiar a puja por conversiones. Idempotente (si ya existe, la reutiliza).",
+    input_schema: { type: "object" as const, properties: {} } },
+  { name: "get_conversion_tracking_status", description: "Estado de la medición de conversiones: si existe la acción de conversión de Indexa y su etiqueta (awId/label).",
+    input_schema: { type: "object" as const, properties: {} } },
   { name: "activate_campaign", description: "Activa (ENABLED) una campaña en pausa. USAR SOLO tras confirmación explícita del usuario.",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
   { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
@@ -207,7 +239,7 @@ const tools = [
 
 async function executeTool(
   name: string, input: Record<string, unknown>, customerId: string, auth: GoogleAdsAuth,
-  dashboardRange: string, custom?: { startDate: string; endDate: string },
+  uid: string, dashboardRange: string, custom?: { startDate: string; endDate: string },
 ): Promise<string> {
   // El periodo SIEMPRE es el que el usuario ve en el dashboard. NO dejamos que el
   // modelo lo elija (antes mandaba date_range="LAST_7_DAYS" y se ignoraba el dashboard
@@ -280,6 +312,7 @@ async function executeTool(
           adHeadlines: input.headlines as string[],
           adDescriptions: input.descriptions as string[],
           finalUrl: input.final_url as string,
+          biddingStrategy: (input.bidding_strategy as "MAXIMIZE_CLICKS" | "MAXIMIZE_CONVERSIONS") || "MAXIMIZE_CLICKS",
         });
         let locationTargeted = false;
         if (input.location_name) locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch(() => false);
@@ -307,6 +340,31 @@ async function executeTool(
       case "set_location_bid_modifier":
         await setLocationBidModifier(customerId, auth, input.campaign_resource_name as string, input.location_name as string, input.bid_modifier as number);
         return "Modificador de ubicación aplicado.";
+      case "setup_conversion_tracking": {
+        const setup = await createConversionSetup(customerId, auth);
+        const sitiosConEtiqueta = await installTagOnUserSites(uid, setup);
+        await getAdminDb().collection("usuarios").doc(uid).set({
+          googleAdsConversion: {
+            resourceName: setup.resourceName, name: setup.name,
+            awId: setup.awId, label: setup.label, configuredAt: Date.now(),
+          },
+        }, { merge: true });
+        return JSON.stringify({
+          conversionAction: setup.name,
+          status: setup.status,
+          etiqueta: `${setup.awId}/${setup.label}`,
+          yaExistia: !setup.created,
+          sitiosConEtiqueta,
+          note: sitiosConEtiqueta > 0
+            ? "Etiqueta instalada automáticamente en el sitio Indexa: cada clic al WhatsApp del sitio contará como conversión. Las primeras conversiones pueden tardar hasta 24h en reflejarse."
+            : "La acción de conversión quedó creada, pero este usuario no tiene un sitio Indexa vinculado donde instalar la etiqueta — dile que la medición funcionará cuando su sitio Indexa esté activo.",
+        }, null, 2);
+      }
+      case "get_conversion_tracking_status": {
+        const setup = await getConversionSetup(customerId, auth);
+        if (!setup) return JSON.stringify({ configurado: false, note: "Sin medición de conversiones. Ofrece configurarla con setup_conversion_tracking (no gasta)." });
+        return JSON.stringify({ configurado: true, conversionAction: setup.name, status: setup.status, etiqueta: `${setup.awId}/${setup.label}` }, null, 2);
+      }
       default:
         return `Herramienta desconocida: ${name}`;
     }
@@ -343,6 +401,12 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 2. Con eso, GENERA tú: nombre de campaña, 10-15 keywords relevantes (con match_type: la mayoría PHRASE/BROAD, 2-3 EXACT), 10-15 títulos (≤30 caracteres c/u) y 3-4 descripciones (≤90 c/u), en español, orientados a ese negocio y ciudad.
 3. Llama create_search_campaign con todo. Si no hay URL, pídela (la campaña de búsqueda la necesita; normalmente es su sitio Indexa).
 4. Responde simple: "Creé tu campaña EN PAUSA: presupuesto $X/día, ciudad Y, N keywords, ejemplo de anuncio '...'. ¿La activo?".
+
+═══ CONVERSIONES (medición) ═══
+- setup_conversion_tracking configura el "píxel" de Google en UN paso: crea la acción "Lead WhatsApp (Indexa)" y deja la etiqueta instalada SOLA en el sitio Indexa del usuario (cada clic al botón de WhatsApp del sitio = 1 conversión). No gasta nada → puedes hacerlo directo cuando el usuario quiera "medir resultados/leads/conversiones", avisando qué hiciste.
+- Tras crear la primera campaña de un usuario, RECOMIENDA configurar la medición (1 línea, simple: "¿quieres que cada WhatsApp que te llegue del anuncio se cuente como conversión? Lo dejo listo yo").
+- Las campañas nuevas usan Maximizar clics por defecto. Sugiere bidding_strategy=MAXIMIZE_CONVERSIONS SOLO cuando: la medición ya está configurada Y la cuenta acumula ~30+ conversiones en 30 días. Cambiar la puja afecta el gasto → pide confirmación.
+- Si el usuario pregunta "¿cuántos leads/conversiones tengo?", usa get_reporting (columna conversions) y aclara el periodo.
 
 ═══ OPTIMIZAR ═══
 - Diagnostica con get_reporting + get_hourly/device/geo/audience/extension_performance. Compara contra el promedio.
@@ -559,7 +623,7 @@ export async function POST(request: NextRequest) {
 
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
-          const result = await executeTool(block.name, block.input, creds.customerId, auth, dashboardRange, custom);
+          const result = await executeTool(block.name, block.input, creds.customerId, auth, user.uid, dashboardRange, custom);
           toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result });
         }
 

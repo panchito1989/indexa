@@ -97,6 +97,10 @@ export interface SitioData {
   ofertasActivas: Oferta[];
   bioLinks: BioLink[];
   bioStats: BioStats;
+  // Etiqueta de conversión de Google Ads del dueño (denormalizada desde
+  // usuarios/{ownerId}.googleAdsConversion por el asistente IA). Si existe,
+  // el sitio inyecta gtag y reporta conversión en cada clic a WhatsApp.
+  googleAdsTag?: { awId: string; label: string } | null;
 }
 
 export interface UserProfile {
