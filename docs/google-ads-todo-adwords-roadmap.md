@@ -18,18 +18,22 @@ El multiplicador de todo lo demás. Sin conversiones medidas, las campañas puja
   `MAXIMIZE_CONVERSIONS` (solo con medición activa + confirmación).
 - Herramientas IA: `setup_conversion_tracking`, `get_conversion_tracking_status`.
 
-## Fase B — Performance Max (siguiente)
+## Fase B — Performance Max ✅
 
 Una sola campaña que cubre Búsqueda + Display + YouTube + Gmail + Maps. Para pymes suele
 rendir más que armar cada canal por separado.
 
-- AssetService: subir imágenes (ya tenemos generador: `/api/generate-image` con Gemini, o
-  DALL-E como en meta-ads/ai) + textos. Crear en UN solo mutate: campaña PMax (PAUSED,
-  maximizeConversions) + AssetGroup + AssetGroupAssets mínimos (3-5 headlines, 1 long
-  headline 90c, 2-5 descriptions, business name, logo 1:1 ≥128px, marketing 1.91:1
-  ≥600x314, square 1:1 ≥300x300). Requisito práctico: Fase A hecha (PMax vive de conversiones).
-- Patrón de referencia: `create_full_campaign` de `src/app/api/meta-ads/ai/route.ts`
-  (genera imagen → sube → crea estructura completa) + guard `DEADLINE_MS`.
+- `createPerformanceMaxCampaign` (`src/lib/googleAdsClient.ts`): bulk mutate atómico
+  (`googleAds:mutate` con temp resource names negativos) — presupuesto NO compartido +
+  campaña PMax (PAUSED, maximizeConversions, declaración UE) + AssetGroup + assets
+  mínimos (3-5 headlines, long headline, 2-5 descriptions con la 1ª ≤60, business name
+  ≤25, marketing 1.91:1, square 1:1, logo 1:1) en UNA petición, como exige Google.
+- Imágenes automáticas del sitio Indexa del cliente (`src/lib/adImages.ts` con sharp):
+  recorte inteligente a 1200x628 / 1200x1200 / logo 512 contain. Fallbacks: galería,
+  image_url/logo_url del usuario, logo desde la foto.
+- Herramienta IA `create_performance_max_campaign` — exige Fase A hecha (PMax puja a
+  conversiones); PAUSED + confirmación para activar; segmenta ubicación con
+  addLocationTargeting.
 
 ## Fase C — Remarketing y audiencias
 

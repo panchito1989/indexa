@@ -134,6 +134,26 @@ export interface CreateCampaignResult {
   campaignResourceName: string;
 }
 
+export interface CreatePmaxParams {
+  campaignName: string;
+  dailyBudgetMicros: number;
+  finalUrl: string;
+  businessName: string; // ≤25 chars (límite de Google)
+  headlines: string[]; // 3-5, ≤30 chars c/u
+  longHeadline: string; // ≤90 chars
+  descriptions: string[]; // 2-5; la primera ≤60 chars, el resto ≤90
+  marketingImageB64: string; // JPEG/PNG 1.91:1 (p.ej. 1200x628)
+  squareImageB64: string; // 1:1 (p.ej. 1200x1200)
+  logoImageB64: string; // 1:1 (p.ej. 512x512)
+}
+
+export interface CreatePmaxResult {
+  campaignId: string;
+  budgetId: string;
+  assetGroupId: string;
+  campaignResourceName: string;
+}
+
 export interface GoogleAdsHourlyRow { hour: number; dayOfWeek: string; cost: number; clicks: number; impressions: number; conversions: number; ctr: number; avgCpc: number; }
 export interface GoogleAdsDeviceRow { device: string; cost: number; clicks: number; impressions: number; conversions: number; ctr: number; avgCpc: number; }
 export interface GoogleAdsGeoRow { locationId: string; locationName: string; cost: number; clicks: number; conversions: number; }
@@ -506,6 +526,59 @@ async function gaqlMutate<T>(
     const lc = auth.loginCustomerId || customerId;
     throw new Error(
       `Google Ads mutate ${resource} HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
+    );
+  }
+
+  return res.json() as Promise<T>;
+}
+
+// Endpoint general googleAds:mutate — acepta operaciones de VARIOS recursos en
+// UNA petición atómica. Performance Max lo exige: el AssetGroup y sus assets
+// mínimos deben crearse en el mismo request (y los temp resource names con id
+// negativo solo se resuelven dentro de una misma petición).
+async function googleAdsBulkMutate<T>(
+  customerId: string,
+  auth: GoogleAdsAuth,
+  mutateOperations: unknown[]
+): Promise<T> {
+  const { developerToken } = getEnv();
+
+  const controller = new AbortController();
+  // Más margen que gaqlMutate: el payload lleva imágenes en base64.
+  const timeout = setTimeout(() => controller.abort(), 60_000);
+
+  let res: Response;
+  try {
+    res = await fetch(
+      `${GOOGLE_ADS_API_BASE}/customers/${customerId}/googleAds:mutate`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${auth.accessToken}`,
+          "developer-token": developerToken,
+          "login-customer-id": auth.loginCustomerId || customerId,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mutateOperations }),
+        signal: controller.signal,
+      }
+    );
+  } catch (err) {
+    clearTimeout(timeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error("Google Ads bulk mutate timeout (60s)");
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "(sin cuerpo)");
+    const { code, message } = describeGoogleAdsError(text);
+    const lc = auth.loginCustomerId || customerId;
+    throw new Error(
+      `Google Ads bulk mutate HTTP ${res.status}${code ? ` [${code}]` : ""}: ${message || text.slice(0, 300)} (customer ${customerId}, login-customer-id ${lc})`
     );
   }
 
@@ -1143,6 +1216,125 @@ export async function createFullCampaign(
   const adId = extractId(adRes.results[0].resourceName);
 
   return { campaignId, budgetId, adGroupId, adId, keywordCount: params.keywords.length, campaignResourceName };
+}
+
+/**
+ * Crea una campaña Performance Max COMPLETA (presupuesto + campaña + asset group
+ * con textos e imágenes) en UNA petición atómica, como exige Google: el asset
+ * group debe nacer con sus assets mínimos en el mismo bulk mutate.
+ * La campaña queda PAUSED; puja maximizeConversions (PMax vive de conversiones —
+ * valida antes que la cuenta tenga medición con getConversionSetup).
+ */
+export async function createPerformanceMaxCampaign(
+  customerId: string,
+  auth: GoogleAdsAuth,
+  params: CreatePmaxParams
+): Promise<CreatePmaxResult> {
+  // Saneo a los límites de Google (recorta en vez de fallar por 1 carácter).
+  const headlines = params.headlines.map((t) => t.trim().slice(0, 30)).filter(Boolean).slice(0, 5);
+  if (headlines.length < 3) throw new Error("Performance Max necesita al menos 3 títulos (≤30 caracteres).");
+  const descriptions = params.descriptions
+    .map((t, i) => t.trim().slice(0, i === 0 ? 60 : 90))
+    .filter(Boolean)
+    .slice(0, 5);
+  if (descriptions.length < 2) throw new Error("Performance Max necesita al menos 2 descripciones (la primera ≤60 caracteres).");
+  const longHeadline = params.longHeadline.trim().slice(0, 90);
+  const businessName = params.businessName.trim().slice(0, 25);
+  if (!longHeadline || !businessName) throw new Error("Faltan long_headline o business_name.");
+
+  const rn = (kind: string, id: number) => `customers/${customerId}/${kind}/${id}`;
+  const ops: unknown[] = [];
+  let tempId = 0;
+
+  const budgetRn = rn("campaignBudgets", --tempId);
+  ops.push({
+    campaignBudgetOperation: {
+      create: {
+        resourceName: budgetRn,
+        name: `${params.campaignName} - Budget`,
+        amountMicros: String(params.dailyBudgetMicros),
+        deliveryMethod: "STANDARD",
+        explicitlyShared: false, // PMax exige presupuesto NO compartido
+      },
+    },
+  });
+
+  const campaignRn = rn("campaigns", --tempId);
+  ops.push({
+    campaignOperation: {
+      create: {
+        resourceName: campaignRn,
+        name: params.campaignName,
+        advertisingChannelType: "PERFORMANCE_MAX",
+        status: "PAUSED",
+        campaignBudget: budgetRn,
+        maximizeConversions: {},
+        containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
+      },
+    },
+  });
+
+  const textAsset = (text: string): string => {
+    const r = rn("assets", --tempId);
+    ops.push({ assetOperation: { create: { resourceName: r, textAsset: { text } } } });
+    return r;
+  };
+  // Los assets de imagen requieren nombre único; el timestamp evita chocar con
+  // assets de intentos anteriores (los assets no se borran al fallar la campaña).
+  const stamp = Date.now();
+  const imageAsset = (label: string, dataB64: string): string => {
+    const r = rn("assets", --tempId);
+    ops.push({
+      assetOperation: {
+        create: { resourceName: r, name: `${params.campaignName} ${label} ${stamp}`, imageAsset: { data: dataB64 } },
+      },
+    });
+    return r;
+  };
+
+  const headlineRns = headlines.map(textAsset);
+  const longHeadlineRn = textAsset(longHeadline);
+  const descriptionRns = descriptions.map(textAsset);
+  const businessNameRn = textAsset(businessName);
+  const marketingRn = imageAsset("marketing", params.marketingImageB64);
+  const squareRn = imageAsset("square", params.squareImageB64);
+  const logoRn = imageAsset("logo", params.logoImageB64);
+
+  const assetGroupRn = rn("assetGroups", --tempId);
+  ops.push({
+    assetGroupOperation: {
+      create: {
+        resourceName: assetGroupRn,
+        campaign: campaignRn,
+        name: `${params.campaignName} - Assets`,
+        finalUrls: [params.finalUrl],
+        status: "PAUSED",
+      },
+    },
+  });
+
+  const link = (asset: string, fieldType: string) =>
+    ops.push({ assetGroupAssetOperation: { create: { assetGroup: assetGroupRn, asset, fieldType } } });
+  headlineRns.forEach((r) => link(r, "HEADLINE"));
+  link(longHeadlineRn, "LONG_HEADLINE");
+  descriptionRns.forEach((r) => link(r, "DESCRIPTION"));
+  link(businessNameRn, "BUSINESS_NAME");
+  link(marketingRn, "MARKETING_IMAGE");
+  link(squareRn, "SQUARE_MARKETING_IMAGE");
+  link(logoRn, "LOGO");
+
+  type BulkResponse = { mutateOperationResponses?: Array<Record<string, { resourceName?: string } | undefined>> };
+  const res = await googleAdsBulkMutate<BulkResponse>(customerId, auth, ops);
+  const responses = res.mutateOperationResponses ?? [];
+  const find = (key: string) => responses.find((r) => r[key]?.resourceName)?.[key]?.resourceName || "";
+
+  const campaignResourceName = find("campaignResult");
+  return {
+    campaignId: extractId(campaignResourceName),
+    budgetId: extractId(find("campaignBudgetResult")),
+    assetGroupId: extractId(find("assetGroupResult")),
+    campaignResourceName,
+  };
 }
 
 // ── Advanced Segment Queries ──────────────────────────────────────────
