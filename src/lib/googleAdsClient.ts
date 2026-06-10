@@ -1270,6 +1270,10 @@ export async function createPerformanceMaxCampaign(
         campaignBudget: budgetRn,
         maximizeConversions: {},
         containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
+        // Google activa Brand Guidelines en las PMax nuevas: el business name y
+        // el logo se vinculan a NIVEL CAMPAÑA (CampaignAsset), ya no en el asset
+        // group — sin ellos ahí: [REQUIRED_BUSINESS_NAME_ASSET_NOT_LINKED].
+        brandGuidelinesEnabled: true,
       },
     },
   });
@@ -1318,10 +1322,14 @@ export async function createPerformanceMaxCampaign(
   headlineRns.forEach((r) => link(r, "HEADLINE"));
   link(longHeadlineRn, "LONG_HEADLINE");
   descriptionRns.forEach((r) => link(r, "DESCRIPTION"));
-  link(businessNameRn, "BUSINESS_NAME");
   link(marketingRn, "MARKETING_IMAGE");
   link(squareRn, "SQUARE_MARKETING_IMAGE");
-  link(logoRn, "LOGO");
+
+  // Brand Guidelines: business name y logo van como assets DE LA CAMPAÑA.
+  const linkCampaign = (asset: string, fieldType: string) =>
+    ops.push({ campaignAssetOperation: { create: { campaign: campaignRn, asset, fieldType } } });
+  linkCampaign(businessNameRn, "BUSINESS_NAME");
+  linkCampaign(logoRn, "LOGO");
 
   type BulkResponse = { mutateOperationResponses?: Array<Record<string, { resourceName?: string } | undefined>> };
   const res = await googleAdsBulkMutate<BulkResponse>(customerId, auth, ops);
