@@ -35,15 +35,16 @@ rendir más que armar cada canal por separado.
   conversiones); PAUSED + confirmación para activar; segmenta ubicación con
   addLocationTargeting.
 
-## Fase C — Remarketing y audiencias
+## Fase C — Remarketing y audiencias ✅ (listas base) / pendiente: adjuntar + Customer Match
 
-- UserListService: lista "Visitantes del sitio" (rule-based; la etiqueta de Fase A ya
-  alimenta el remarketing tag). Mínimos de Google: ~100 usuarios activos (Display) /
-  1,000 (Search RLSA) antes de servir.
-- Customer Match (subir emails/teléfonos de leads del CRM Indexa) — requiere cumplir
-  política y mínimos; los leads ya viven en Firestore (`leads`).
-- Adjuntar audiencias a campañas/grupos (campaignCriteria/adGroupCriteria con userList,
-  affinity, in-market) en modo observación o segmentación.
+- ✅ `createRemarketingLists`: "Visitantes del sitio (Indexa)" (flexibleRule url__
+  CONTAINS /sitio/{slug}, lifespan 90d, prepopulación solicitada) + "Convirtieron"
+  (basicUserList sobre la acción de conversión de Fase A). Idempotente. Herramientas
+  IA `create_remarketing_lists` y `list_audiences` (tamaños Display/Search).
+- Pendiente: adjuntar audiencias a campañas (observación con targeting_setting
+  bidOnly) cuando las listas tengan volumen (~100 Display / ~1,000 Search).
+- Pendiente: Customer Match (subir emails/teléfonos de leads del CRM Indexa) —
+  requiere política y mínimos; los leads ya viven en Firestore (`leads`).
 
 ## Fase D — Display
 
@@ -55,11 +56,14 @@ rendir más que armar cada canal por separado.
 - Campañas VIDEO/DEMAND_GEN vía API; el video debe existir como YouTube video ID
   (fricción pyme: pedir el link de YouTube; futuro: generar video con IA y subirlo).
 
-## Fase F — Assets/extensiones y quick wins de Search
+## Fase F — Assets/extensiones y quick wins de Search ✅ (callouts/snippet/llamada)
 
-- Sitelinks, callouts, llamadas (teléfono del sitio), snippets estructurados, imagen —
-  suben CTR sin costo. AssetService + CampaignAsset/CustomerAsset. MUY barato de agregar.
-- Call ads / conversiones de llamada (categoría PHONE_CALL_LEAD).
+- ✅ `addCampaignExtensions` (bulk mutate assets + CampaignAsset): callouts (2-10,
+  ≤25c), snippet estructurado ('Servicios' + 3-10 valores) y botón de llamada (usa el
+  teléfono del sitio Indexa automáticamente; limpia lada 52/1). Herramienta IA
+  `add_campaign_extensions` — el asistente la aplica tras crear campañas.
+- Pendiente: sitelinks (los sitios Indexa son one-page; necesitan URLs distintas —
+  evaluar /bio + anclas), asset de imagen en Search, call ads dedicados (PHONE_CALL_LEAD).
 
 ## Fase G — Inteligencia y mantenimiento
 

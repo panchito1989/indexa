@@ -10,6 +10,7 @@ import {
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
   setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
   createConversionSetup, getConversionSetup, createPerformanceMaxCampaign,
+  addCampaignExtensions, createRemarketingLists, listAudiences,
   type GoogleAdsAuth, type ConversionSetup,
 } from "@/lib/googleAdsClient";
 import { preparePmaxImages } from "@/lib/adImages";
@@ -176,8 +177,9 @@ async function installTagOnUserSites(uid: string, setup: ConversionSetup): Promi
   return installed;
 }
 
-// Imágenes del sitio Indexa del usuario (fuente para los assets de PMax/Display).
-async function getUserSiteImages(uid: string): Promise<{ logoUrl: string; heroImageUrl: string; galeria: string[] }> {
+// Datos del sitio Indexa del usuario: imágenes (assets PMax/Display), slug
+// (regla de la lista de remarketing) y teléfono (extensión de llamada).
+async function getUserSiteImages(uid: string): Promise<{ logoUrl: string; heroImageUrl: string; galeria: string[]; slug: string; whatsapp: string }> {
   const db = getAdminDb();
   let data: Record<string, unknown> | undefined =
     (await db.collection("sitios").where("ownerId", "==", uid).limit(1).get()).docs[0]?.data();
@@ -193,6 +195,8 @@ async function getUserSiteImages(uid: string): Promise<{ logoUrl: string; heroIm
     galeria: Array.isArray(data?.galeria)
       ? (data.galeria as unknown[]).filter((g): g is string => typeof g === "string")
       : [],
+    slug: typeof data?.slug === "string" ? (data.slug as string) : "",
+    whatsapp: typeof data?.whatsapp === "string" ? (data.whatsapp as string) : "",
   };
 }
 
@@ -254,6 +258,19 @@ const tools = [
       logo_url: { type: "string", description: "OPCIONAL: URL del logo si el usuario da uno distinto" },
     }, required: ["campaign_name","daily_budget","final_url","business_name","headlines","long_headline","descriptions"] } },
   { name: "get_conversion_tracking_status", description: "Estado de la medición de conversiones: si existe la acción de conversión de Indexa y su etiqueta (awId/label).",
+    input_schema: { type: "object" as const, properties: {} } },
+  { name: "add_campaign_extensions", description: "Agrega extensiones a una campaña (suben CTR sin costo extra, seguro): callouts (frases cortas tipo 'Atención inmediata'), snippet estructurado (encabezado 'Servicios' + 3-10 valores) y/o botón de llamada (teléfono del negocio). Genera tú los textos a partir del negocio. Aplícalo directo tras crear una campaña, avisando qué agregaste.",
+    input_schema: { type: "object" as const, properties: {
+      campaign_resource_name: { type: "string" },
+      callouts: { type: "array", items: { type: "string" }, description: "2-10 frases ≤25 chars" },
+      snippet_header: { type: "string", description: "encabezado aprobado en español, casi siempre 'Servicios'" },
+      snippet_values: { type: "array", items: { type: "string" }, description: "3-10 valores ≤25 chars (los servicios del negocio)" },
+      phone_number: { type: "string", description: "teléfono del negocio (el del sitio Indexa si no dan otro)" },
+      country_code: { type: "string", description: "MX (default) o US" },
+    }, required: ["campaign_resource_name"] } },
+  { name: "create_remarketing_lists", description: "Crea las listas base de remarketing (seguro, no gasta): 'Visitantes del sitio' (se llena sola con la etiqueta de Indexa) y 'Convirtieron' (quienes ya dieron clic a WhatsApp). Google las empieza a usar al juntar ~100 usuarios (Display) / ~1,000 (Búsqueda). Idempotente.",
+    input_schema: { type: "object" as const, properties: {} } },
+  { name: "list_audiences", description: "Lista las audiencias/listas de remarketing de la cuenta con su tamaño actual (Display y Búsqueda).",
     input_schema: { type: "object" as const, properties: {} } },
   { name: "activate_campaign", description: "Activa (ENABLED) una campaña en pausa. USAR SOLO tras confirmación explícita del usuario.",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
@@ -434,6 +451,34 @@ async function executeTool(
         if (!setup) return JSON.stringify({ configurado: false, note: "Sin medición de conversiones. Ofrece configurarla con setup_conversion_tracking (no gasta)." });
         return JSON.stringify({ configurado: true, conversionAction: setup.name, status: setup.status, etiqueta: `${setup.awId}/${setup.label}` }, null, 2);
       }
+      case "add_campaign_extensions": {
+        const site = await getUserSiteImages(uid);
+        const result = await addCampaignExtensions(customerId, auth, input.campaign_resource_name as string, {
+          callouts: input.callouts as string[] | undefined,
+          snippetHeader: input.snippet_header as string | undefined,
+          snippetValues: input.snippet_values as string[] | undefined,
+          phoneNumber: (input.phone_number as string) || site.whatsapp || undefined,
+          countryCode: input.country_code as string | undefined,
+        });
+        return JSON.stringify({ ...result, note: "Extensiones agregadas a la campaña. Google las muestra cuando ayudan al anuncio (sin costo extra por mostrarlas)." }, null, 2);
+      }
+      case "create_remarketing_lists": {
+        const site = await getUserSiteImages(uid);
+        const conv = await getConversionSetup(customerId, auth).catch(() => null);
+        const fragment = site.slug ? `/sitio/${site.slug}` : "";
+        if (!fragment) {
+          return "ERROR: El usuario no tiene un sitio Indexa vinculado — la lista de visitantes se basa en la URL de su sitio. Verifica su sitio primero.";
+        }
+        const lists = await createRemarketingLists(customerId, auth, fragment, conv?.resourceName);
+        return JSON.stringify({
+          ...lists,
+          note: conv
+            ? "Listas creadas. Se llenan SOLAS con la etiqueta del sitio; usables al juntar ~100 usuarios (Display) / ~1,000 (Búsqueda). Revísalas luego con list_audiences."
+            : "Lista de visitantes creada. La de 'Convirtieron' requiere la medición de conversiones (setup_conversion_tracking) — ofrécelo.",
+        }, null, 2);
+      }
+      case "list_audiences":
+        return JSON.stringify(await listAudiences(customerId, auth), null, 2);
       default:
         return `Herramienta desconocida: ${name}`;
     }
@@ -477,6 +522,13 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 - Las imágenes salen SOLAS del sitio Indexa del usuario (logo + foto, recortadas automático). No le pidas imágenes salvo que su sitio no tenga.
 - Genera tú los textos: business_name ≤25, 3-5 headlines ≤30, long_headline ≤90, 2-5 descriptions (la PRIMERA ≤60). Igual que búsqueda: nace en PAUSA → resume y pregunta "¿la activo?".
 - ¿Búsqueda o PMax? Búsqueda = control fino por keyword (mejor primer paso). PMax = alcance máximo cuando ya hay conversiones midiendo. Si dudas, recomienda empezar con búsqueda y sumar PMax después.
+
+═══ EXTENSIONES (tras crear campañas) ═══
+- Después de crear cualquier campaña de búsqueda, agrega extensiones con add_campaign_extensions (es seguro y sube el CTR gratis): genera 4-6 callouts (≤25 chars, beneficios concretos del negocio), snippet 'Servicios' con sus servicios, y el teléfono (usa el del sitio Indexa automáticamente). Avísale al usuario qué agregaste.
+
+═══ REMARKETING (audiencias) ═══
+- create_remarketing_lists crea las listas base (no gasta): 'Visitantes del sitio' (la llena la etiqueta de Indexa sola) y 'Convirtieron'. Ofrécelo junto con la medición de conversiones.
+- Las listas tardan en llenarse: usables con ~100 usuarios (Display) / ~1,000 (Búsqueda). Si el usuario pregunta "¿ya sirven mis audiencias?", revisa con list_audiences y dile los tamaños.
 
 ═══ CONVERSIONES (medición) ═══
 - setup_conversion_tracking configura el "píxel" de Google en UN paso: crea la acción "Lead WhatsApp (Indexa)" y deja la etiqueta instalada SOLA en el sitio Indexa del usuario (cada clic al botón de WhatsApp del sitio = 1 conversión). No gasta nada → puedes hacerlo directo cuando el usuario quiera "medir resultados/leads/conversiones", avisando qué hiciste.

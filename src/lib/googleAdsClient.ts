@@ -1337,6 +1337,188 @@ export async function createPerformanceMaxCampaign(
   };
 }
 
+// ── Extensiones / assets de campaña (Fase F) ─────────────────────────
+// Callouts, snippets estructurados y teléfono: suben CTR sin costo extra.
+// Se crean los assets y se vinculan a la campaña en un solo bulk mutate.
+
+export interface CampaignExtensionsParams {
+  callouts?: string[]; // 2-10 textos ≤25 chars
+  snippetHeader?: string; // encabezado aprobado por Google en español, p.ej. "Servicios"
+  snippetValues?: string[]; // ≥3 valores ≤25 chars
+  phoneNumber?: string; // teléfono nacional (se limpian separadores y lada 52)
+  countryCode?: string; // ISO-3166 alpha-2; default MX
+}
+
+export async function addCampaignExtensions(
+  customerId: string,
+  auth: GoogleAdsAuth,
+  campaignResourceName: string,
+  params: CampaignExtensionsParams
+): Promise<{ callouts: number; snippet: boolean; call: boolean }> {
+  const rn = (kind: string, id: number) => `customers/${customerId}/${kind}/${id}`;
+  const ops: unknown[] = [];
+  let tempId = 0;
+
+  const link = (asset: string, fieldType: string) =>
+    ops.push({ campaignAssetOperation: { create: { campaign: campaignResourceName, asset, fieldType } } });
+
+  const callouts = (params.callouts ?? []).map((t) => t.trim().slice(0, 25)).filter(Boolean).slice(0, 10);
+  for (const text of callouts) {
+    const r = rn("assets", --tempId);
+    ops.push({ assetOperation: { create: { resourceName: r, calloutAsset: { calloutText: text } } } });
+    link(r, "CALLOUT");
+  }
+
+  const snippetValues = (params.snippetValues ?? []).map((t) => t.trim().slice(0, 25)).filter(Boolean).slice(0, 10);
+  const snippet = Boolean(params.snippetHeader && snippetValues.length >= 3);
+  if (snippet) {
+    const r = rn("assets", --tempId);
+    ops.push({
+      assetOperation: {
+        create: { resourceName: r, structuredSnippetAsset: { header: params.snippetHeader, values: snippetValues } },
+      },
+    });
+    link(r, "STRUCTURED_SNIPPET");
+  }
+
+  // Teléfono: Google espera número nacional + countryCode aparte.
+  let call = false;
+  if (params.phoneNumber) {
+    let digits = params.phoneNumber.replace(/\D/g, "");
+    const cc = (params.countryCode || "MX").toUpperCase();
+    if (cc === "MX" && digits.length === 12 && digits.startsWith("52")) digits = digits.slice(2);
+    if (cc === "US" && digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+    if (digits.length >= 8) {
+      const r = rn("assets", --tempId);
+      ops.push({ assetOperation: { create: { resourceName: r, callAsset: { countryCode: cc, phoneNumber: digits } } } });
+      link(r, "CALL");
+      call = true;
+    }
+  }
+
+  if (!ops.length) throw new Error("Sin extensiones que agregar: pasa callouts (2+), snippet (header + 3 valores) o teléfono.");
+  await googleAdsBulkMutate(customerId, auth, ops);
+  return { callouts: callouts.length, snippet, call };
+}
+
+// ── Remarketing: listas de usuarios (Fase C) ─────────────────────────
+// La etiqueta de conversiones (Fase A) ya recolecta visitantes; estas listas
+// los agrupan. Mínimos de Google para servir: ~100 usuarios (Display) /
+// ~1,000 (Búsqueda) — se llenan solas con el tráfico del sitio.
+
+const VISITORS_LIST_NAME = "Visitantes del sitio (Indexa)";
+const CONVERTERS_LIST_NAME = "Convirtieron - Lead WhatsApp (Indexa)";
+
+export interface UserListSummary {
+  resourceName: string;
+  name: string;
+  type?: string;
+  sizeForDisplay?: number;
+  sizeForSearch?: number;
+}
+
+export async function listAudiences(customerId: string, auth: GoogleAdsAuth): Promise<UserListSummary[]> {
+  type Row = { userList: { resourceName: string; name: string; type?: string; sizeForDisplay?: string; sizeForSearch?: string } };
+  const rows = await gaqlSearch<Row>(customerId, auth,
+    `SELECT user_list.resource_name, user_list.name, user_list.type,
+            user_list.size_for_display, user_list.size_for_search
+     FROM user_list
+     ORDER BY user_list.id DESC
+     LIMIT 50`);
+  return rows.map((r) => ({
+    resourceName: r.userList.resourceName,
+    name: r.userList.name,
+    type: r.userList.type,
+    sizeForDisplay: Number(r.userList.sizeForDisplay ?? 0),
+    sizeForSearch: Number(r.userList.sizeForSearch ?? 0),
+  }));
+}
+
+async function findUserListByName(customerId: string, auth: GoogleAdsAuth, name: string): Promise<string | null> {
+  type Row = { userList: { resourceName: string } };
+  const rows = await gaqlSearch<Row>(customerId, auth,
+    `SELECT user_list.resource_name FROM user_list WHERE user_list.name = '${name.replace(/'/g, "")}' LIMIT 1`);
+  return rows[0]?.userList.resourceName ?? null;
+}
+
+export interface RemarketingListsResult {
+  visitors: { resourceName: string; name: string; created: boolean };
+  converters: { resourceName: string; name: string; created: boolean } | null;
+}
+
+/**
+ * Crea (idempotente) las dos listas base de remarketing:
+ *  - Visitantes del sitio: rule-based (url__ CONTAINS el path del sitio Indexa),
+ *    con prepopulación de los últimos 30 días cuando Google puede.
+ *  - Convirtieron: basic list ligada a la acción de conversión de Fase A (si existe).
+ */
+export async function createRemarketingLists(
+  customerId: string,
+  auth: GoogleAdsAuth,
+  siteUrlFragment: string,
+  conversionActionResourceName?: string
+): Promise<RemarketingListsResult> {
+  // Visitantes (rule-based)
+  let visitorsRn = await findUserListByName(customerId, auth, VISITORS_LIST_NAME);
+  let visitorsCreated = false;
+  if (!visitorsRn) {
+    type MutateResponse = { results: Array<{ resourceName: string }> };
+    const res = await gaqlMutate<MutateResponse>(customerId, auth, "userLists", [{
+      create: {
+        name: VISITORS_LIST_NAME,
+        description: "Visitantes del sitio Indexa (alimentada por la etiqueta de Google instalada por Indexa).",
+        membershipStatus: "OPEN",
+        membershipLifeSpan: "90",
+        prepopulationStatus: "REQUESTED",
+        flexibleRuleUserList: {
+          inclusiveRuleOperator: "AND",
+          inclusiveOperands: [{
+            rule: {
+              ruleItemGroups: [{
+                ruleItems: [{
+                  name: "url__",
+                  stringRuleItem: { operator: "CONTAINS", value: siteUrlFragment },
+                }],
+              }],
+            },
+            lookbackWindowDays: "90",
+          }],
+          exclusiveOperands: [],
+        },
+      },
+    }]);
+    visitorsRn = res.results[0].resourceName;
+    visitorsCreated = true;
+  }
+
+  // Convirtieron (basic list sobre la acción de conversión de Fase A)
+  let converters: RemarketingListsResult["converters"] = null;
+  if (conversionActionResourceName) {
+    let convRn = await findUserListByName(customerId, auth, CONVERTERS_LIST_NAME);
+    let convCreated = false;
+    if (!convRn) {
+      type MutateResponse = { results: Array<{ resourceName: string }> };
+      const res = await gaqlMutate<MutateResponse>(customerId, auth, "userLists", [{
+        create: {
+          name: CONVERTERS_LIST_NAME,
+          description: "Personas que ya convirtieron (clic a WhatsApp) — útil para excluir o recomprar.",
+          membershipStatus: "OPEN",
+          membershipLifeSpan: "180",
+          basicUserList: { actions: [{ conversionAction: conversionActionResourceName }] },
+        },
+      }]);
+      convRn = res.results[0].resourceName;
+      convCreated = true;
+    }
+    converters = { resourceName: convRn, name: CONVERTERS_LIST_NAME, created: convCreated };
+  }
+
+  return {
+    visitors: { resourceName: visitorsRn, name: VISITORS_LIST_NAME, created: visitorsCreated },
+    converters,
+  };
+}
+
 // ── Advanced Segment Queries ──────────────────────────────────────────
 
 export async function getHourlyPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsHourlyRow[]> {
