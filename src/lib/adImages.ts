@@ -42,13 +42,53 @@ export interface PmaxImages {
   logoImage: string; // base64 PNG 512x512 (1:1)
 }
 
+const GEMINI_IMAGE_ENDPOINT =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
+
+/**
+ * Genera una foto publicitaria con IA (mismo modelo que /api/generate-image)
+ * y la devuelve en base64 — para clientes cuyo sitio no tiene fotos o que
+ * piden una imagen nueva para sus anuncios.
+ */
+export async function generateAdPhotoBase64(description: string): Promise<string> {
+  const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+  if (!geminiKey) throw new Error("Generación de imágenes no configurada (falta GEMINI_API_KEY).");
+
+  const prompt = `${description.trim()}. Fotografía realista de alta calidad para anuncio publicitario, bien iluminada, sin texto, sin logotipos ni marcas de agua, encuadre amplio.`;
+  const res = await fetch(`${GEMINI_IMAGE_ENDPOINT}?key=${geminiKey}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+    }),
+  });
+  const data = await res.json().catch(() => null) as {
+    error?: { message?: string };
+    candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }>;
+  } | null;
+  if (!data || data.error) {
+    throw new Error(`No pude generar la imagen: ${data?.error?.message || `HTTP ${res.status}`}`);
+  }
+  const img = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data)?.inlineData?.data;
+  if (!img) throw new Error("La IA no devolvió imagen; intenta con otra descripción.");
+  return img;
+}
+
 /**
  * Construye el set mínimo de imágenes que exige un asset group de PMax a partir
- * de una foto (obligatoria) y un logo (opcional — sin logo, se usa un recorte
- * cuadrado de la foto para no bloquear la creación).
+ * de una foto (por URL o base64) y un logo (opcional — sin logo, se usa un
+ * recorte cuadrado de la foto para no bloquear la creación).
  */
-export async function preparePmaxImages(opts: { photoUrl: string; logoUrl?: string }): Promise<PmaxImages> {
-  const photo = await fetchImageBuffer(opts.photoUrl);
+export async function preparePmaxImages(opts: { photoUrl?: string; photoBase64?: string; logoUrl?: string }): Promise<PmaxImages> {
+  let photo: Buffer;
+  if (opts.photoBase64) {
+    photo = Buffer.from(opts.photoBase64, "base64");
+  } else if (opts.photoUrl) {
+    photo = await fetchImageBuffer(opts.photoUrl);
+  } else {
+    throw new Error("Falta la foto: pasa photoUrl o photoBase64.");
+  }
 
   const marketing = await sharp(photo)
     .resize(1200, 628, { fit: "cover", position: "attention" })
