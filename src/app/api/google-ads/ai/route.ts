@@ -313,7 +313,11 @@ async function executeTool(
   } catch (e) {
     // JSON.stringify para throws que no son Error: String(objeto) produce
     // "[object Object]" y destruye el diagnóstico.
-    return `ERROR: ${e instanceof Error ? e.message : JSON.stringify(e)}`;
+    const msg = e instanceof Error ? e.message : JSON.stringify(e);
+    // Sin este log, los errores de herramientas solo los ve el modelo y no
+    // quedan rastro en los logs de Vercel.
+    console.error(`[google-ads/ai] tool error (${name}):`, msg);
+    return `ERROR: ${msg}`;
   }
 }
 
