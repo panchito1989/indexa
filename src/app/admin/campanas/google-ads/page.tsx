@@ -253,7 +253,17 @@ export default function AdminGoogleAdsPage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error del asistente.");
+      if (!res.ok) {
+        // Los errores de la plataforma (p.ej. timeout de Vercel) traen error como
+        // objeto — new Error(objeto) mostraría "[object Object]" en el chat.
+        const errMsg =
+          typeof data.error === "string" && data.error
+            ? data.error
+            : data.error
+              ? JSON.stringify(data.error)
+              : "Error del asistente.";
+        throw new Error(errMsg);
+      }
       if (Array.isArray(data.history)) {
         setAiHistory(
           (data.history as Array<{ role: "user" | "assistant"; content: unknown }>).map((m) => ({
