@@ -9,9 +9,10 @@ import {
   getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
   setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
-  createConversionSetup, getConversionSetup,
+  createConversionSetup, getConversionSetup, createPerformanceMaxCampaign,
   type GoogleAdsAuth, type ConversionSetup,
 } from "@/lib/googleAdsClient";
+import { preparePmaxImages } from "@/lib/adImages";
 
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de campañas (igual que meta-ads/ai y tiktok-ads/ai)
 
@@ -175,6 +176,26 @@ async function installTagOnUserSites(uid: string, setup: ConversionSetup): Promi
   return installed;
 }
 
+// Imágenes del sitio Indexa del usuario (fuente para los assets de PMax/Display).
+async function getUserSiteImages(uid: string): Promise<{ logoUrl: string; heroImageUrl: string; galeria: string[] }> {
+  const db = getAdminDb();
+  let data: Record<string, unknown> | undefined =
+    (await db.collection("sitios").where("ownerId", "==", uid).limit(1).get()).docs[0]?.data();
+  if (!data) {
+    const sitioId = (await db.collection("usuarios").doc(uid).get()).data()?.sitioId;
+    if (typeof sitioId === "string" && sitioId) {
+      data = (await db.collection("sitios").doc(sitioId).get()).data();
+    }
+  }
+  return {
+    logoUrl: typeof data?.logoUrl === "string" ? (data.logoUrl as string) : "",
+    heroImageUrl: typeof data?.heroImageUrl === "string" ? (data.heroImageUrl as string) : "",
+    galeria: Array.isArray(data?.galeria)
+      ? (data.galeria as unknown[]).filter((g): g is string => typeof g === "string")
+      : [],
+  };
+}
+
 // ── Tool definitions ──────────────────────────────────────────────────
 
 const tools = [
@@ -221,6 +242,17 @@ const tools = [
     }, required: ["campaign_name","daily_budget","final_url","keywords","headlines","descriptions"] } },
   { name: "setup_conversion_tracking", description: "Configura la medición de conversiones (el 'píxel' de Google): crea la acción 'Lead WhatsApp (Indexa)' en la cuenta y deja la etiqueta instalada AUTOMÁTICAMENTE en el sitio Indexa del usuario — cada clic al WhatsApp del sitio contará como conversión. Seguro: no gasta. Úsalo cuando el usuario quiera medir resultados/leads o antes de cambiar a puja por conversiones. Idempotente (si ya existe, la reutiliza).",
     input_schema: { type: "object" as const, properties: {} } },
+  { name: "create_performance_max_campaign", description: "Crea una campaña Performance Max COMPLETA en PAUSA (presupuesto + campaña + asset group con textos e imágenes): Google la muestra en Búsqueda, Display, YouTube, Gmail y Maps optimizando a conversiones. REQUISITO: medición de conversiones configurada (setup_conversion_tracking). Las imágenes salen SOLAS del sitio Indexa del usuario (logo + foto principal, recortadas automáticamente); image_url/logo_url solo si el usuario da otras.",
+    input_schema: { type: "object" as const, properties: {
+      campaign_name: { type: "string" }, daily_budget: { type: "number", description: "presupuesto diario en la moneda de la cuenta" },
+      final_url: { type: "string" }, business_name: { type: "string", description: "nombre del negocio ≤25 chars" },
+      headlines: { type: "array", items: { type: "string" }, description: "3-5 títulos ≤30 chars" },
+      long_headline: { type: "string", description: "1 título largo ≤90 chars" },
+      descriptions: { type: "array", items: { type: "string" }, description: "2-5 descripciones; la PRIMERA ≤60 chars, el resto ≤90" },
+      location_name: { type: "string", description: "ciudad para segmentar, ej. 'Querétaro'" },
+      image_url: { type: "string", description: "OPCIONAL: URL de foto si el usuario da una distinta a las del sitio" },
+      logo_url: { type: "string", description: "OPCIONAL: URL del logo si el usuario da uno distinto" },
+    }, required: ["campaign_name","daily_budget","final_url","business_name","headlines","long_headline","descriptions"] } },
   { name: "get_conversion_tracking_status", description: "Estado de la medición de conversiones: si existe la acción de conversión de Indexa y su etiqueta (awId/label).",
     input_schema: { type: "object" as const, properties: {} } },
   { name: "activate_campaign", description: "Activa (ENABLED) una campaña en pausa. USAR SOLO tras confirmación explícita del usuario.",
@@ -340,6 +372,43 @@ async function executeTool(
       case "set_location_bid_modifier":
         await setLocationBidModifier(customerId, auth, input.campaign_resource_name as string, input.location_name as string, input.bid_modifier as number);
         return "Modificador de ubicación aplicado.";
+      case "create_performance_max_campaign": {
+        // PMax puja a conversiones: sin medición configurada es tirar dinero.
+        const conv = await getConversionSetup(customerId, auth);
+        if (!conv) {
+          return "ERROR: Performance Max requiere la medición de conversiones configurada. Ejecuta setup_conversion_tracking primero (no gasta, es 1 paso) y reintenta.";
+        }
+        const site = await getUserSiteImages(uid);
+        const photoUrl = (input.image_url as string) || site.heroImageUrl || site.galeria[0] || "";
+        const logoUrl = (input.logo_url as string) || site.logoUrl || "";
+        if (!photoUrl) {
+          return "ERROR: No hay imágenes para los anuncios: el sitio Indexa del usuario no tiene foto principal ni galería. Pide al usuario una URL de foto (image_url) o que suba fotos a su sitio Indexa.";
+        }
+        const imgs = await preparePmaxImages({ photoUrl, logoUrl: logoUrl || undefined });
+        const result = await createPerformanceMaxCampaign(customerId, auth, {
+          campaignName: input.campaign_name as string,
+          dailyBudgetMicros: Math.round(((input.daily_budget as number) || 0) * 1_000_000),
+          finalUrl: input.final_url as string,
+          businessName: input.business_name as string,
+          headlines: input.headlines as string[],
+          longHeadline: input.long_headline as string,
+          descriptions: input.descriptions as string[],
+          marketingImageB64: imgs.marketingImage,
+          squareImageB64: imgs.squareImage,
+          logoImageB64: imgs.logoImage,
+        });
+        let locationTargeted = false;
+        if (input.location_name) {
+          locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch(() => false);
+        }
+        return JSON.stringify({
+          ...result, status: "PAUSED", locationTargeted,
+          imagenes: { foto: photoUrl.slice(0, 100), logoUsado: !!logoUrl },
+          note: locationTargeted
+            ? "Campaña Performance Max creada en PAUSA con imágenes del sitio. Pide confirmación antes de activar."
+            : "Campaña Performance Max creada en PAUSA. ⚠️ La ubicación no quedó segmentada — confirma el nombre de la ciudad con el usuario. Pide confirmación antes de activar.",
+        }, null, 2);
+      }
       case "setup_conversion_tracking": {
         const setup = await createConversionSetup(customerId, auth);
         const sitiosConEtiqueta = await installTagOnUserSites(uid, setup);
@@ -401,6 +470,13 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 2. Con eso, GENERA tú: nombre de campaña, 10-15 keywords relevantes (con match_type: la mayoría PHRASE/BROAD, 2-3 EXACT), 10-15 títulos (≤30 caracteres c/u) y 3-4 descripciones (≤90 c/u), en español, orientados a ese negocio y ciudad.
 3. Llama create_search_campaign con todo. Si no hay URL, pídela (la campaña de búsqueda la necesita; normalmente es su sitio Indexa).
 4. Responde simple: "Creé tu campaña EN PAUSA: presupuesto $X/día, ciudad Y, N keywords, ejemplo de anuncio '...'. ¿La activo?".
+
+═══ PERFORMANCE MAX ═══
+- create_performance_max_campaign: para quien quiere "estar en todos lados" — UNA campaña que Google muestra en Búsqueda, Display, YouTube, Gmail y Maps optimizando a conversiones.
+- REQUIERE medición de conversiones ya configurada (setup_conversion_tracking). Si no está, ofrécelo primero (1 paso, no gasta).
+- Las imágenes salen SOLAS del sitio Indexa del usuario (logo + foto, recortadas automático). No le pidas imágenes salvo que su sitio no tenga.
+- Genera tú los textos: business_name ≤25, 3-5 headlines ≤30, long_headline ≤90, 2-5 descriptions (la PRIMERA ≤60). Igual que búsqueda: nace en PAUSA → resume y pregunta "¿la activo?".
+- ¿Búsqueda o PMax? Búsqueda = control fino por keyword (mejor primer paso). PMax = alcance máximo cuando ya hay conversiones midiendo. Si dudas, recomienda empezar con búsqueda y sumar PMax después.
 
 ═══ CONVERSIONES (medición) ═══
 - setup_conversion_tracking configura el "píxel" de Google en UN paso: crea la acción "Lead WhatsApp (Indexa)" y deja la etiqueta instalada SOLA en el sitio Indexa del usuario (cada clic al botón de WhatsApp del sitio = 1 conversión). No gasta nada → puedes hacerlo directo cuando el usuario quiera "medir resultados/leads/conversiones", avisando qué hiciste.
