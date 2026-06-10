@@ -120,6 +120,9 @@ export interface CreateCampaignParams {
   adHeadlines: string[];
   adDescriptions: string[];
   finalUrl: string;
+  // MAXIMIZE_CONVERSIONS solo tiene sentido si la cuenta ya mide conversiones
+  // (createConversionSetup); sin datos de conversión Google puja a ciegas.
+  biddingStrategy?: "MAXIMIZE_CLICKS" | "MAXIMIZE_CONVERSIONS";
 }
 
 export interface CreateCampaignResult {
@@ -935,6 +938,82 @@ export async function diagnoseAccess(accessToken: string): Promise<{
   return { envLoginCustomerId: loginCustomerId || "(no configurada)", accounts };
 }
 
+// ── Conversiones (acción de conversión + etiqueta de Google) ────────────
+// El "píxel" de Google Ads: una acción de conversión WEBPAGE cuyo tag_snippet
+// (gtag) se instala en el sitio Indexa del cliente. Cada clic al botón de
+// WhatsApp del sitio dispara gtag('event','conversion') → Google lo atribuye
+// al anuncio y habilita puja por conversiones.
+
+const INDEXA_CONVERSION_NAME = "Lead WhatsApp (Indexa)";
+
+export interface ConversionSetup {
+  resourceName: string;
+  name: string;
+  status: string;
+  awId: string; // "AW-1234567890" — id de la etiqueta de Google
+  label: string; // label del evento de conversión (send_to = awId/label)
+}
+
+/** Extrae "AW-XXXX" y el label desde el event_snippet de Google
+ *  (formato: gtag('event','conversion',{'send_to':'AW-123/AbC-dEf'})). */
+function parseSendTo(snippet: string): { awId: string; label: string } | null {
+  const m = snippet.match(/AW-(\d+)\/([\w-]+)/);
+  return m ? { awId: `AW-${m[1]}`, label: m[2] } : null;
+}
+
+export async function getConversionSetup(
+  customerId: string,
+  auth: GoogleAdsAuth
+): Promise<ConversionSetup | null> {
+  type Row = {
+    conversionAction: {
+      resourceName: string; name: string; status: string;
+      tagSnippets?: Array<{ type?: string; pageFormat?: string; eventSnippet?: string }>;
+    };
+  };
+  const rows = await gaqlSearch<Row>(customerId, auth,
+    `SELECT conversion_action.resource_name, conversion_action.name,
+            conversion_action.status, conversion_action.tag_snippets
+     FROM conversion_action
+     WHERE conversion_action.name = '${INDEXA_CONVERSION_NAME}'
+       AND conversion_action.status != 'REMOVED'
+     LIMIT 1`);
+  const ca = rows[0]?.conversionAction;
+  if (!ca) return null;
+  const snippet = (ca.tagSnippets ?? []).find(
+    (s) => s.type === "WEBPAGE" && s.pageFormat === "HTML" && s.eventSnippet
+  )?.eventSnippet;
+  const parsed = snippet ? parseSendTo(snippet) : null;
+  if (!parsed) return null;
+  return { resourceName: ca.resourceName, name: ca.name, status: ca.status, ...parsed };
+}
+
+/** Crea (o reutiliza) la acción de conversión de Indexa y devuelve awId+label
+ *  listos para instalar la etiqueta en el sitio. Idempotente. */
+export async function createConversionSetup(
+  customerId: string,
+  auth: GoogleAdsAuth
+): Promise<ConversionSetup & { created: boolean }> {
+  const existing = await getConversionSetup(customerId, auth);
+  if (existing) return { ...existing, created: false };
+
+  await gaqlMutate(customerId, auth, "conversionActions", [{
+    create: {
+      name: INDEXA_CONVERSION_NAME,
+      type: "WEBPAGE",
+      category: "CONTACT",
+      status: "ENABLED",
+      countingType: "ONE_PER_CLICK", // leads: un clic de anuncio = máx 1 conversión
+    },
+  }]);
+
+  const created = await getConversionSetup(customerId, auth);
+  if (!created) {
+    throw new Error("La acción de conversión se creó pero Google no devolvió su etiqueta (tag_snippets).");
+  }
+  return { ...created, created: true };
+}
+
 // ── Write Functions ───────────────────────────────────────────────────
 
 export async function updateCampaignStatus(
@@ -996,12 +1075,13 @@ export async function createFullCampaign(
     campaignBudget: budgetResourceName,
     startDate: params.startDate,
     // Obligatorios al crear una campaña (la API responde [REQUIRED] sin ellos):
-    // - estrategia de puja: targetSpend = Maximizar clics, la única automática que
-    //   funciona sin tracking de conversiones (las cuentas pyme recién conectadas
-    //   no lo tienen configurado).
+    // - estrategia de puja: targetSpend = Maximizar clics por defecto, la única
+    //   automática que funciona sin tracking de conversiones configurado.
     // - declaración TTPA de anuncios políticos UE (v20+): nuestras campañas son
     //   locales MX/USA, nunca publicidad política dirigida a la UE.
-    targetSpend: {},
+    ...(params.biddingStrategy === "MAXIMIZE_CONVERSIONS"
+      ? { maximizeConversions: {} }
+      : { targetSpend: {} }),
     containsEuPoliticalAdvertising: "DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING",
     networkSettings: {
       targetGoogleSearch: true,

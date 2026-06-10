@@ -137,6 +137,12 @@ export default function BioClient({ sitioId, data, source }: BioClientProps) {
       body: JSON.stringify({ sitioId, source, linkId: link.id }),
     }).catch(() => {});
 
+    // Conversión de Google Ads en CTAs que abren WhatsApp (etiqueta inyectada
+    // por GoogleAdsTag solo si el dueño configuró conversiones)
+    if (link.tipo === "whatsapp" || link.tipo === "reserva" || link.tipo === "oferta") {
+      (window as Window & { indexaReportLead?: () => void }).indexaReportLead?.();
+    }
+
     // Navigate based on type
     switch (link.tipo) {
       case "whatsapp":

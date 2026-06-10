@@ -22,6 +22,9 @@ export default function WhatsAppButton({
       }).catch(() => {});
     }
 
+    // Conversión de Google Ads (definida por GoogleAdsTag cuando el dueño la configuró)
+    (window as Window & { indexaReportLead?: () => void }).indexaReportLead?.();
+
     const digits = phone.replace(/[^\d+]/g, "");
     const num = digits.startsWith("+") ? digits : `+52${digits}`;
     const message = `Hola, vi su página web y me interesa más información sobre ${businessName}.`;

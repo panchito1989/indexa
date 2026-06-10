@@ -5,6 +5,7 @@ import { queryCollection, listCollectionFields } from "@/lib/firestoreRest";
 import type { SitioData } from "@/types/lead";
 import SitioTracker from "./SitioTracker";
 import WhatsAppButton from "./WhatsAppButton";
+import GoogleAdsTag from "./GoogleAdsTag";
 import ChatWidget from "./ChatWidget";
 import { ModernTemplate, ElegantTemplate, MinimalistTemplate } from "./templates";
 
@@ -52,6 +53,7 @@ async function getSitioBySlug(slug: string): Promise<{ id: string; data: SitioDa
       ofertasActivas: (raw.ofertasActivas as SitioData["ofertasActivas"]) ?? [],
       bioLinks: (raw.bioLinks as SitioData["bioLinks"]) ?? [],
       bioStats: (raw.bioStats as SitioData["bioStats"]) ?? { visitas: { fb: 0, ig: 0, tt: 0, wa: 0, direct: 0 }, clicks: {} },
+      googleAdsTag: (raw.googleAdsTag as SitioData["googleAdsTag"]) ?? null,
     },
   };
 }
@@ -268,6 +270,11 @@ export default async function SitioPage({ params }: SitioPageProps) {
       />
 
       <SitioTracker sitioId={id} slug={data.slug} />
+
+      {/* Etiqueta de conversiones de Google Ads (solo si el dueño la configuró) */}
+      {data.googleAdsTag?.awId && data.googleAdsTag?.label && (
+        <GoogleAdsTag awId={data.googleAdsTag.awId} label={data.googleAdsTag.label} />
+      )}
 
       {/* Demo-claim banner: unclaimed preview inviting signup */}
       {data.statusPago === "demo" && !data.ownerId && (

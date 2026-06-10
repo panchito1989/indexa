@@ -70,6 +70,16 @@ export interface UsuarioDoc {
   // user's account. "" / absent = direct mode (login-customer-id = the account itself).
   // Resolved per-user by getGoogleAdsContext (falls back to env GOOGLE_ADS_LOGIN_CUSTOMER_ID).
   googleAdsLoginCustomerId?: string;
+  // Conversiones configuradas por el asistente (acción "Lead WhatsApp (Indexa)").
+  // La etiqueta se denormaliza a sitios/{id}.googleAdsTag para que el render del
+  // sitio no pague una lectura extra de usuarios.
+  googleAdsConversion?: {
+    resourceName: string;
+    name: string;
+    awId: string; // "AW-1234567890"
+    label: string;
+    configuredAt: number;
+  };
 }
 
 // ── Firestore: sitios/{id} (new fields only) ─────────────────────────
