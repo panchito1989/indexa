@@ -1636,18 +1636,58 @@ export async function addNegativeKeywords(customerId: string, auth: GoogleAdsAut
   return ops.length;
 }
 
-export async function addLocationTargeting(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string): Promise<boolean> {
+export async function addLocationTargeting(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string, countryCode = "MX"): Promise<boolean> {
   if (!locationName?.trim()) return false;
-  const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard — geo names never contain them)
-  type GeoRow = { geoTargetConstant: { resourceName: string } };
-  // Match any enabled geo target with this name (city, region/state, etc.), most specific first.
-  const matches = await gaqlSearch<GeoRow>(customerId, auth,
-    `SELECT geo_target_constant.resource_name
-     FROM geo_target_constant
-     WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED'
-     LIMIT 5`).catch(() => [] as GeoRow[]);
-  const geo = matches[0]?.geoTargetConstant?.resourceName;
-  if (!geo) return false;
+  const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80);
+
+  // geoTargetConstants:suggest es el endpoint oficial para resolver nombres de
+  // lugar: insensible a acentos y mayúsculas ("Querétaro" → "Queretaro", el
+  // nombre canónico de Google). El match exacto por GAQL fallaba con acentos.
+  const { developerToken } = getEnv();
+  let geo = "";
+  try {
+    const res = await fetch(`${GOOGLE_ADS_API_BASE}/geoTargetConstants:suggest`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${auth.accessToken}`,
+        "developer-token": developerToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ locale: "es", countryCode, locationNames: { names: [name] } }),
+    });
+    if (res.ok) {
+      const data = await res.json() as {
+        geoTargetConstantSuggestions?: Array<{
+          geoTargetConstant?: { resourceName?: string; targetType?: string; status?: string };
+        }>;
+      };
+      const suggestions = (data.geoTargetConstantSuggestions ?? [])
+        .map((s) => s.geoTargetConstant)
+        .filter((g): g is { resourceName: string; targetType?: string; status?: string } => Boolean(g?.resourceName));
+      // Preferimos ciudad (lo que piden las pymes); si no, el primer match.
+      geo = (suggestions.find((g) => g.targetType === "City") ?? suggestions[0])?.resourceName ?? "";
+    } else {
+      console.error("[googleAds] geoTargetConstants:suggest HTTP", res.status, (await res.text().catch(() => "")).slice(0, 200));
+    }
+  } catch (e) {
+    console.error("[googleAds] geoTargetConstants:suggest:", e instanceof Error ? e.message : e);
+  }
+
+  // Fallback: match exacto por GAQL (cubre nombres que ya vienen canónicos).
+  if (!geo) {
+    type GeoRow = { geoTargetConstant: { resourceName: string } };
+    const matches = await gaqlSearch<GeoRow>(customerId, auth,
+      `SELECT geo_target_constant.resource_name
+       FROM geo_target_constant
+       WHERE geo_target_constant.name = '${name}' AND geo_target_constant.status = 'ENABLED'
+       LIMIT 5`).catch(() => [] as GeoRow[]);
+    geo = matches[0]?.geoTargetConstant?.resourceName ?? "";
+  }
+
+  if (!geo) {
+    console.warn(`[googleAds] sin geo target para "${name}" (country ${countryCode})`);
+    return false;
+  }
   await gaqlMutate(customerId, auth, "campaignCriteria",
     [{ create: { campaign: campaignResourceName, location: { geoTargetConstant: geo } } }]);
   return true;

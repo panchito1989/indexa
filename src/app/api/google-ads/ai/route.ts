@@ -13,7 +13,7 @@ import {
   addCampaignExtensions, createRemarketingLists, listAudiences,
   type GoogleAdsAuth, type ConversionSetup,
 } from "@/lib/googleAdsClient";
-import { preparePmaxImages } from "@/lib/adImages";
+import { preparePmaxImages, generateAdPhotoBase64 } from "@/lib/adImages";
 
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de campañas (igual que meta-ads/ai y tiktok-ads/ai)
 
@@ -256,6 +256,7 @@ const tools = [
       location_name: { type: "string", description: "ciudad para segmentar, ej. 'Querétaro'" },
       image_url: { type: "string", description: "OPCIONAL: URL de foto si el usuario da una distinta a las del sitio" },
       logo_url: { type: "string", description: "OPCIONAL: URL del logo si el usuario da uno distinto" },
+      image_description: { type: "string", description: "OPCIONAL: si no hay fotos (ni del sitio ni image_url), descríbela y se GENERA con IA — describe la escena del negocio en español, estilo foto real (ej: 'técnico uniformado reparando una lavadora en una cocina moderna')" },
     }, required: ["campaign_name","daily_budget","final_url","business_name","headlines","long_headline","descriptions"] } },
   { name: "get_conversion_tracking_status", description: "Estado de la medición de conversiones: si existe la acción de conversión de Indexa y su etiqueta (awId/label).",
     input_schema: { type: "object" as const, properties: {} } },
@@ -364,7 +365,7 @@ async function executeTool(
           biddingStrategy: (input.bidding_strategy as "MAXIMIZE_CLICKS" | "MAXIMIZE_CONVERSIONS") || "MAXIMIZE_CLICKS",
         });
         let locationTargeted = false;
-        if (input.location_name) locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch(() => false);
+        if (input.location_name) locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch((e) => { console.error("[google-ads/ai] location targeting:", e instanceof Error ? e.message : e); return false; });
         return JSON.stringify({
           ...result, status: "PAUSED", locationTargeted,
           note: locationTargeted
@@ -398,10 +399,18 @@ async function executeTool(
         const site = await getUserSiteImages(uid);
         const photoUrl = (input.image_url as string) || site.heroImageUrl || site.galeria[0] || "";
         const logoUrl = (input.logo_url as string) || site.logoUrl || "";
-        if (!photoUrl) {
-          return "ERROR: No hay imágenes para los anuncios: el sitio Indexa del usuario no tiene foto principal ni galería. Pide al usuario una URL de foto (image_url) o que suba fotos a su sitio Indexa.";
+        let photoBase64 = "";
+        if (!photoUrl && input.image_description) {
+          photoBase64 = await generateAdPhotoBase64(input.image_description as string);
         }
-        const imgs = await preparePmaxImages({ photoUrl, logoUrl: logoUrl || undefined });
+        if (!photoUrl && !photoBase64) {
+          return "ERROR: No hay imágenes para los anuncios: el sitio Indexa del usuario no tiene fotos. Opciones: (1) pide una URL de foto (image_url), o (2) GENERA una con IA pasando image_description — describe tú la escena del negocio y reintenta.";
+        }
+        const imgs = await preparePmaxImages({
+          photoUrl: photoUrl || undefined,
+          photoBase64: photoBase64 || undefined,
+          logoUrl: logoUrl || undefined,
+        });
         const result = await createPerformanceMaxCampaign(customerId, auth, {
           campaignName: input.campaign_name as string,
           dailyBudgetMicros: Math.round(((input.daily_budget as number) || 0) * 1_000_000),
@@ -416,11 +425,11 @@ async function executeTool(
         });
         let locationTargeted = false;
         if (input.location_name) {
-          locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch(() => false);
+          locationTargeted = await addLocationTargeting(customerId, auth, result.campaignResourceName, input.location_name as string).catch((e) => { console.error("[google-ads/ai] location targeting:", e instanceof Error ? e.message : e); return false; });
         }
         return JSON.stringify({
           ...result, status: "PAUSED", locationTargeted,
-          imagenes: { foto: photoUrl.slice(0, 100), logoUsado: !!logoUrl },
+          imagenes: { foto: photoUrl ? photoUrl.slice(0, 100) : "(generada con IA)", logoUsado: !!logoUrl },
           note: locationTargeted
             ? "Campaña Performance Max creada en PAUSA con imágenes del sitio. Pide confirmación antes de activar."
             : "Campaña Performance Max creada en PAUSA. ⚠️ La ubicación no quedó segmentada — confirma el nombre de la ciudad con el usuario. Pide confirmación antes de activar.",
@@ -493,6 +502,36 @@ async function executeTool(
   }
 }
 
+// ── Saneador de mensajes para la API ──────────────────────────────────
+// La API rechaza mensajes con contenido vacío ("user messages must have
+// non-empty content", HTTP 400) y eso tiraba turnos completos del asistente.
+// Antes de CADA llamada: fuera mensajes vacíos, y todo tool_result lleva
+// contenido string no vacío.
+type LoopMsg = { role: "user" | "assistant"; content: string | Record<string, unknown>[] };
+function sanitizeForApi(msgs: LoopMsg[]): LoopMsg[] {
+  const out: LoopMsg[] = [];
+  for (const m of msgs) {
+    if (typeof m.content === "string") {
+      if (m.content.trim()) out.push(m);
+      else console.warn(`[google-ads/ai] descartando mensaje ${m.role} con texto vacío`);
+      continue;
+    }
+    if (Array.isArray(m.content)) {
+      const blocks = m.content.filter(Boolean).map((b) => {
+        if (b.type === "tool_result" && (typeof b.content !== "string" || !b.content)) {
+          return { ...b, content: "(sin resultado)" };
+        }
+        return b;
+      });
+      if (blocks.length) out.push({ ...m, content: blocks });
+      else console.warn(`[google-ads/ai] descartando mensaje ${m.role} con bloques vacíos`);
+      continue;
+    }
+    console.warn("[google-ads/ai] descartando mensaje con contenido inválido");
+  }
+  return out;
+}
+
 // ── System prompt ─────────────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños de negocio SIN conocimientos de publicidad a crear y optimizar campañas hablando normal. SIEMPRE en español, simple, sin jerga (si usas un término técnico, explícalo en 1 línea).
@@ -519,7 +558,7 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 ═══ PERFORMANCE MAX ═══
 - create_performance_max_campaign: para quien quiere "estar en todos lados" — UNA campaña que Google muestra en Búsqueda, Display, YouTube, Gmail y Maps optimizando a conversiones.
 - REQUIERE medición de conversiones ya configurada (setup_conversion_tracking). Si no está, ofrécelo primero (1 paso, no gasta).
-- Las imágenes salen SOLAS del sitio Indexa del usuario (logo + foto, recortadas automático). No le pidas imágenes salvo que su sitio no tenga.
+- Las imágenes salen SOLAS del sitio Indexa del usuario (logo + foto, recortadas automático). Si su sitio no tiene fotos: ofrécele 2 opciones — que te pase una URL de foto (image_url) o GENERARLA con IA (image_description: describe tú la escena del negocio en español, estilo foto real; confírmale qué generarás).
 - Genera tú los textos: business_name ≤25, 3-5 headlines ≤30, long_headline ≤90, 2-5 descriptions (la PRIMERA ≤60). Igual que búsqueda: nace en PAUSA → resume y pregunta "¿la activo?".
 - ¿Búsqueda o PMax? Búsqueda = control fino por keyword (mejor primer paso). PMax = alcance máximo cuando ya hay conversiones midiendo. Si dudas, recomienda empezar con búsqueda y sumar PMax después.
 
@@ -644,7 +683,7 @@ export async function POST(request: NextRequest) {
               temperature: 0, // determinista → recomendaciones consistentes
               system: systemPrompt,
               tools,
-              messages,
+              messages: sanitizeForApi(messages as LoopMsg[]),
             }),
           });
           claudeText = await claudeRes.text();
@@ -700,7 +739,7 @@ export async function POST(request: NextRequest) {
             tool_choice: "auto",
             messages: [
               { role: "system", content: systemPrompt },
-              ...toGroqMessages(messages as AnthropicMessage[]),
+              ...toGroqMessages(sanitizeForApi(messages as LoopMsg[]) as AnthropicMessage[]),
             ],
           }),
         });
@@ -752,7 +791,7 @@ export async function POST(request: NextRequest) {
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
           const result = await executeTool(block.name, block.input, creds.customerId, auth, user.uid, dashboardRange, custom);
-          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result });
+          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result || "(sin resultado)" });
         }
 
         messages.push({ role: "user", content: toolResults });
@@ -774,7 +813,7 @@ export async function POST(request: NextRequest) {
             max_tokens: 1536,
             temperature: 0,
             system: systemPrompt + "\n\nYA NO PUEDES USAR HERRAMIENTAS. Responde AHORA, en este mismo mensaje, con lo que ya tienes: resume en concreto qué encontraste o hiciste y termina. No prometas nada para después.",
-            messages,
+            messages: sanitizeForApi(messages as LoopMsg[]),
           }),
         });
         if (finalRes.ok) {
