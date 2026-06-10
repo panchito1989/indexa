@@ -275,6 +275,8 @@ const tools = [
     input_schema: { type: "object" as const, properties: {} } },
   { name: "activate_campaign", description: "Activa (ENABLED) una campaña en pausa. USAR SOLO tras confirmación explícita del usuario.",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
+  { name: "remove_campaign", description: "ELIMINA una campaña (estado REMOVED — PERMANENTE, no se puede deshacer; deja de gastar y desaparece de la gestión, solo queda en reportes históricos). USAR SOLO tras confirmación explícita del usuario. Si solo quiere detener el gasto, recomiéndale pausarla en su lugar.",
+    input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
   { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["campaign_resource_name","keywords"] } },
   { name: "set_device_bid_modifier", description: "Aplica un modificador de puja por dispositivo a una campaña. USAR SOLO tras confirmación. bid_modifier: 1.0=sin cambio, 0.8=-20%, 1.3=+30% (se acota a 0.1-3.0).",
@@ -376,6 +378,9 @@ async function executeTool(
       case "activate_campaign":
         await activateCampaign(customerId, auth, input.campaign_resource_name as string);
         return "Campaña ACTIVADA.";
+      case "remove_campaign":
+        await updateCampaignStatus(customerId, auth, input.campaign_resource_name as string, "REMOVED");
+        return "Campaña ELIMINADA (REMOVED — permanente; ya no gasta y solo queda en reportes históricos).";
       case "add_negative_keywords": {
         const added = await addNegativeKeywords(customerId, auth, input.campaign_resource_name as string, input.keywords as string[]);
         return `Agregadas ${added} keywords negativas.`;
@@ -552,6 +557,7 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 
 ═══ SEGURIDAD (CRÍTICO) ═══
 - NUNCA actives una campaña ni subas presupuesto sin un "sí" explícito del usuario en el chat.
+- ELIMINAR una campaña (remove_campaign) es PERMANENTE: confirma SIEMPRE con el usuario nombrando la campaña exacta ("¿elimino 'X'? No se puede deshacer"), y si su intención es solo detener el gasto, ofrécele pausarla mejor.
 - Toda campaña se crea en PAUSA (create_search_campaign ya lo hace). Resúmela y pregunta "¿la activo?".
 - Pausar o agregar keywords negativas es seguro (no gasta) → puedes hacerlo directo, avisando qué hiciste.
 - Procesa solo KPIs estándar (cost, clicks, impressions, ctr, cpc, conversions). No inventes datos.
