@@ -28,6 +28,7 @@ const SUBADMIN_ALLOWED_PREFIXES = [
   "/admin/prospectos",
   "/admin/seguimientos",
   "/admin/mensajeria",
+  "/admin/outreach-usa",
 ];
 
 // API routes exempt from CSRF (webhooks need external access)

@@ -147,6 +147,12 @@ export interface SendTemplateOptions {
   languageCode?: string; // default es_MX
   headerParams?: TemplateParam[];
   bodyParams?: TemplateParam[];
+  /**
+   * País del destinatario. Default "MX" (legacy). IMPORTANTE: pasar "US" para
+   * números USA — sin esto, un número ya normalizado "1XXXXXXXXXX" (11 dígitos
+   * empezando en 1) se re-normaliza como móvil MX viejo y termina en "52...".
+   */
+  country?: PhoneCountry;
 }
 
 export interface SendResult {
@@ -163,7 +169,7 @@ export interface SendResult {
 export async function sendTemplateMessage(opts: SendTemplateOptions): Promise<SendResult> {
   const { phoneNumberId, accessToken } = getEnv();
 
-  const to = normalizePhoneMx(opts.to);
+  const to = normalizePhone(opts.to, opts.country || "MX");
   if (!to) {
     return { success: false, error: `Número inválido: ${opts.to}` };
   }
@@ -231,9 +237,13 @@ export async function sendTemplateMessage(opts: SendTemplateOptions): Promise<Se
  * Envía texto libre (sólo válido si el destinatario te escribió en las últimas 24h).
  * Fuera de esa ventana Meta rechaza el mensaje.
  */
-export async function sendTextMessage(toRaw: string, text: string): Promise<SendResult> {
+export async function sendTextMessage(
+  toRaw: string,
+  text: string,
+  country?: PhoneCountry
+): Promise<SendResult> {
   const { phoneNumberId, accessToken } = getEnv();
-  const to = normalizePhoneMx(toRaw);
+  const to = normalizePhone(toRaw, country || "MX");
   if (!to) return { success: false, error: `Número inválido: ${toRaw}` };
 
   try {

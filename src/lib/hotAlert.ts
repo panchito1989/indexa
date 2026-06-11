@@ -90,6 +90,86 @@ function buildAlertHtml(p: HotProspectAlertPayload): string {
   `;
 }
 
+// ── Alerta: prospecto de outreach respondió por WhatsApp ────────────────
+
+export interface WaReplyAlertPayload {
+  prospectoId: string;
+  nombre: string;
+  telefono?: string;
+  /** Texto del mensaje entrante del prospecto. */
+  inboundText: string;
+  /** Preset/etapa de outreach que originó la conversación (si se conoce). */
+  lastPreset?: string;
+  lastStage?: string;
+}
+
+function buildWaReplyHtml(p: WaReplyAlertPayload): string {
+  const safe = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const phoneDigits = (p.telefono || "").replace(/\D+/g, "");
+  const waUrl = phoneDigits ? `https://wa.me/${phoneDigits}` : "";
+  const adminUrl = `${SITE_URL}/admin/outreach-usa`;
+
+  return `
+    <div style="font-family: -apple-system, 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; background:#fff; color:#0f172a;">
+      <div style="background:linear-gradient(135deg,#059669 0%,#10b981 100%); padding:28px 24px; text-align:center;">
+        <div style="font-size:42px; line-height:1;">💬</div>
+        <h1 style="margin:8px 0 4px; color:#fff; font-size:22px; font-weight:800;">${safe(p.nombre)} respondió por WhatsApp</h1>
+        <p style="margin:0; color:rgba(255,255,255,0.9); font-size:13px;">Ventana de 24h abierta — puedes responder con texto libre</p>
+      </div>
+
+      <div style="padding:24px;">
+        <div style="padding:14px 16px; background:#f0fdf4; border-left:4px solid #10b981; border-radius:6px; font-size:15px;">
+          "${safe(p.inboundText || "(mensaje sin texto)")}"
+        </div>
+
+        <table style="width:100%; border-collapse:collapse; font-size:14px; margin-top:16px;">
+          ${p.telefono ? `<tr><td style="padding:6px 0; color:#64748b; width:110px;">Teléfono:</td><td style="padding:6px 0; font-family:monospace;">${safe(p.telefono)}</td></tr>` : ""}
+          ${p.lastPreset ? `<tr><td style="padding:6px 0; color:#64748b;">Mensaje origen:</td><td style="padding:6px 0;">${safe(p.lastPreset)}</td></tr>` : ""}
+          ${p.lastStage ? `<tr><td style="padding:6px 0; color:#64748b;">Etapa:</td><td style="padding:6px 0;">${safe(p.lastStage)}</td></tr>` : ""}
+        </table>
+
+        <div style="margin-top:20px;">
+          ${waUrl ? `<a href="${waUrl}" style="display:inline-block; background:#10b981; color:#fff; padding:12px 20px; border-radius:10px; text-decoration:none; font-weight:700; margin-right:8px; margin-bottom:8px;">💬 Abrir WhatsApp</a>` : ""}
+          <a href="${adminUrl}" style="display:inline-block; background:#0f172a; color:#fff; padding:12px 20px; border-radius:10px; text-decoration:none; font-weight:700; margin-bottom:8px;">Ver en panel</a>
+        </div>
+
+        <p style="margin:24px 0 8px; padding:14px; background:#fef3c7; border-left:4px solid #f59e0b; font-size:13px; color:#78350f; border-radius:6px;">
+          <strong>Importante:</strong> Tienes 24 horas desde este mensaje para responder con texto libre desde el número de INDEXA. Después de la ventana, solo se puede contactar con plantilla aprobada. La secuencia automática de seguimiento ya se detuvo para este prospecto.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Alerta al admin de que un prospecto de outreach respondió.
+ * Fire-and-forget seguro: nunca lanza (el webhook no debe romperse por Resend).
+ */
+export async function sendWaReplyAlert(p: WaReplyAlertPayload): Promise<boolean> {
+  const resend = getResend();
+  if (!resend || !ADMIN_EMAIL) {
+    console.warn("[hotAlert] sendWaReplyAlert skip — RESEND_API_KEY o ADMIN_EMAIL no configurados");
+    return false;
+  }
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: ADMIN_EMAIL,
+      subject: `💬 ${p.nombre} respondió por WhatsApp — ventana de 24h abierta`,
+      html: buildWaReplyHtml(p),
+    });
+    if (error) {
+      console.error("[hotAlert] sendWaReplyAlert Resend error:", error);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[hotAlert] sendWaReplyAlert error inesperado:", err);
+    return false;
+  }
+}
+
 /**
  * Manda el correo de alerta. Fire-and-forget seguro: nunca lanza,
  * para no romper el flujo principal de track-demo si Resend falla.
