@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { FieldValue } from "firebase-admin/firestore";
+import {
+  buildDunningEmail,
+  buildCancelSurveyEmail,
+  sendRetentionEmail,
+  resolveOwnerContact,
+} from "@/lib/retentionEmails";
 
 let _stripe: Stripe | null = null;
 function getStripe() {
@@ -76,6 +83,12 @@ async function renewSitio(sitioId: string): Promise<boolean> {
       statusPago: "activo",
       fechaVencimiento: vencimiento.toISOString(),
       ultimoPagoAt: new Date().toISOString(),
+      // El pago pasó → cierra cualquier ciclo de dunning/win-back abierto
+      vencidoAt: FieldValue.delete(),
+      dunningFirstFailedAt: FieldValue.delete(),
+      dunningEmailsSent: FieldValue.delete(),
+      dunningLastEmailAt: FieldValue.delete(),
+      winbackSentAt: FieldValue.delete(),
     });
     return true;
   } catch { return false; }
@@ -84,9 +97,60 @@ async function renewSitio(sitioId: string): Promise<boolean> {
 async function markPaymentFailed(sitioId: string): Promise<boolean> {
   try {
     const db = getAdminDb();
-    await db.collection("sitios").doc(sitioId).update({ statusPago: "vencido" });
+    await db.collection("sitios").doc(sitioId).update({
+      statusPago: "vencido",
+      vencidoAt: new Date().toISOString(),
+    });
     return true;
   } catch { return false; }
+}
+
+/**
+ * Dunning toque #1: email inmediato al dueño cuando falla el cobro.
+ * Stripe reintenta el cargo varias veces (cada intento dispara
+ * invoice.payment_failed) — solo el PRIMER fallo del ciclo manda email;
+ * los toques #2 (día 3) y #3 (día 7) los maneja /api/cron/dunning.
+ * Nunca lanza.
+ */
+async function sendDunningFirstTouch(sitioId: string, payUrl: string): Promise<void> {
+  try {
+    const db = getAdminDb();
+    const ref = db.collection("sitios").doc(sitioId);
+    const snap = await ref.get();
+    const data = snap.data();
+    if (!data) return;
+    if (data.dunningFirstFailedAt) return; // ciclo ya abierto — el cron sigue
+
+    const contact = await resolveOwnerContact({
+      ownerId: typeof data.ownerId === "string" ? data.ownerId : undefined,
+      email: typeof data.email === "string" ? data.email : undefined,
+      nombre: typeof data.nombre === "string" ? data.nombre : undefined,
+    });
+
+    const now = new Date().toISOString();
+    const updates: Record<string, unknown> = {
+      dunningFirstFailedAt: now,
+    };
+
+    if (contact) {
+      const ok = await sendRetentionEmail(
+        contact.email,
+        buildDunningEmail(1, {
+          nombre: contact.nombre,
+          negocio: typeof data.nombre === "string" ? data.nombre : "",
+          payUrl,
+        })
+      );
+      if (ok) {
+        updates.dunningEmailsSent = 1;
+        updates.dunningLastEmailAt = now;
+      }
+    }
+
+    await ref.set(updates, { merge: true });
+  } catch (err) {
+    console.error("sendDunningFirstTouch error:", err instanceof Error ? err.message : err);
+  }
 }
 
 async function cancelSitio(sitioId: string): Promise<boolean> {
@@ -95,9 +159,41 @@ async function cancelSitio(sitioId: string): Promise<boolean> {
     await db.collection("sitios").doc(sitioId).update({
       statusPago: "cancelado",
       stripeSubscriptionId: "",
+      canceladoAt: new Date().toISOString(),
     });
     return true;
   } catch { return false; }
+}
+
+/**
+ * Encuesta de cancelación (1 pregunta, 4 botones → /api/cancel-survey).
+ * Nunca lanza.
+ */
+async function sendCancelSurvey(sitioId: string): Promise<void> {
+  try {
+    const db = getAdminDb();
+    const ref = db.collection("sitios").doc(sitioId);
+    const snap = await ref.get();
+    const data = snap.data();
+    if (!data || data.cancelSurveySentAt) return;
+
+    const contact = await resolveOwnerContact({
+      ownerId: typeof data.ownerId === "string" ? data.ownerId : undefined,
+      email: typeof data.email === "string" ? data.email : undefined,
+      nombre: typeof data.nombre === "string" ? data.nombre : undefined,
+    });
+    if (!contact) return;
+
+    const ok = await sendRetentionEmail(
+      contact.email,
+      buildCancelSurveyEmail({ nombre: contact.nombre, sitioId })
+    );
+    if (ok) {
+      await ref.set({ cancelSurveySentAt: new Date().toISOString() }, { merge: true });
+    }
+  } catch (err) {
+    console.error("sendCancelSurvey error:", err instanceof Error ? err.message : err);
+  }
 }
 
 async function markTrialConverted(ownerId: string): Promise<boolean> {
@@ -222,6 +318,12 @@ export async function POST(request: NextRequest) {
 
     if (sitioId) {
       const failOk = await markPaymentFailed(sitioId);
+      // Dunning #1: avisar al cliente de inmediato con link directo a la
+      // factura de Stripe (1 clic para actualizar tarjeta y pagar).
+      const payUrl =
+        invoice.hosted_invoice_url ||
+        `${process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com"}/dashboard`;
+      await sendDunningFirstTouch(sitioId, payUrl);
       await logWebhookEvent(event.id, event.type, failOk ? "success" : "error", { sitioId, subscriptionId });
     } else {
       await logWebhookEvent(event.id, event.type, "error", { error: "Could not resolve sitioId", subscriptionId });
@@ -239,6 +341,8 @@ export async function POST(request: NextRequest) {
         await logWebhookEvent(event.id, event.type, "error", { sitioId, error: "Failed to cancel sitio" });
         return NextResponse.json({ error: "Failed to cancel sitio." }, { status: 500 });
       }
+      // Encuesta de cancelación (1 pregunta) — entender por qué se van.
+      await sendCancelSurvey(sitioId);
       await logWebhookEvent(event.id, event.type, "success", { sitioId });
     }
   }
