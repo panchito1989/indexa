@@ -53,6 +53,27 @@ service cloud.firestore {
       allow read, write: if isAdmin() || isSubadmin();
     }
 
+    // ── outreach_queue (cola manual de seguimientos USA) ────────────────────
+    // La escribe el cron outreach-followups vía Admin SDK; el panel
+    // /admin/outreach-usa la lee y marca items como enviados.
+    match /outreach_queue/{docId} {
+      allow read, write: if isAdmin() || isSubadmin();
+    }
+
+    // ── outreach_metrics (contadores por preset/mes) ────────────────────────
+    // Escriben cron y webhook vía Admin SDK (bypassa rules). Solo lectura.
+    match /outreach_metrics/{docId} {
+      allow read: if isAdmin() || isSubadmin();
+      allow write: if false;
+    }
+
+    // ── cancel_surveys (respuestas de encuesta de cancelación) ──────────────
+    // Escribe /api/cancel-survey vía Admin SDK. Solo lectura admin.
+    match /cancel_surveys/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ── usuarios (perfiles) ─────────────────────────────────────────────────
     // Leer: el propio usuario o admin
     // Escribir: admin tiene acceso total; owner solo puede actualizar campos de integración

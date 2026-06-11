@@ -32,6 +32,7 @@ import { verifyAdmin } from "@/lib/verifyAuth";
 import { createRateLimiter } from "@/lib/rateLimit";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
+import { enrollProspect, bumpMetric } from "@/lib/outreachSequence";
 
 const limiter = createRateLimiter({ windowMs: 60_000, max: 10 });
 
@@ -107,6 +108,12 @@ export async function POST(request: NextRequest) {
     const db = getAdminDb();
     const ref = db.collection("prospectos_frios").doc(prospectoId);
 
+    // El cold opener arranca la secuencia automática de seguimiento
+    // (d2 → d5 → d10 vía /api/cron/outreach-followups).
+    const isOpener =
+      preset.stage === "cold_opener_text" ||
+      preset.stage === "cold_opener_audio_script";
+
     if (mode === "link") {
       const waLink = `https://wa.me/${phone}?text=${encodeURIComponent(renderedText)}`;
 
@@ -121,6 +128,17 @@ export async function POST(request: NextRequest) {
         },
         { merge: true }
       );
+
+      // En modo link el envío real lo hace el operador en WhatsApp; contamos
+      // "sent" al generar el link (mejor aproximación disponible).
+      if (isOpener) {
+        await enrollProspect(ref, {
+          presetId,
+          mode: "manual",
+          version: preset.version || "v1",
+        });
+      }
+      await bumpMetric(presetId, "sent");
 
       return NextResponse.json({
         success: true,
@@ -147,6 +165,7 @@ export async function POST(request: NextRequest) {
       templateName: tplName,
       languageCode: tplLang,
       bodyParams: buildBodyParams(bodyVars),
+      country,
     });
 
     if (r.success) {
@@ -164,6 +183,16 @@ export async function POST(request: NextRequest) {
         },
         { merge: true }
       );
+
+      if (isOpener) {
+        await enrollProspect(ref, {
+          presetId,
+          mode: "auto",
+          version: preset.version || "v1",
+        });
+      }
+      await bumpMetric(presetId, "sent");
+
       return NextResponse.json({
         success: true,
         mode: "template",

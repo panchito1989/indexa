@@ -9,6 +9,7 @@ import { verifyAdmin } from "@/lib/verifyAuth";
 import { createRateLimiter } from "@/lib/rateLimit";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
+import { enrollProspect, bumpMetric } from "@/lib/outreachSequence";
 
 // 3 lotes/min por IP. Cada lote envía hasta MAX_BATCH mensajes con throttle interno.
 const limiter = createRateLimiter({ windowMs: 60_000, max: 3 });
@@ -135,6 +136,7 @@ export async function POST(request: NextRequest) {
         templateName: tplName,
         languageCode: tplLang,
         bodyParams: buildBodyParams(vars),
+        country,
       });
 
       if (r.success) {
@@ -153,6 +155,12 @@ export async function POST(request: NextRequest) {
           },
           { merge: true }
         );
+        // El template masivo USA funciona como cold opener → arranca la
+        // secuencia automática de seguimiento (d2/d5/d10).
+        if (useUsa) {
+          await enrollProspect(ref, { presetId: tplName, mode: "auto" });
+        }
+        await bumpMetric(tplName, "sent");
       } else {
         item.error = r.error;
         await ref.set(

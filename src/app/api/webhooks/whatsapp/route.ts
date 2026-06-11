@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import crypto from "crypto";
+import { stopSequence, bumpMetric, isActiveSeqStage } from "@/lib/outreachSequence";
+import { sendWaReplyAlert } from "@/lib/hotAlert";
 
 /**
  * Webhook de WhatsApp Cloud API.
@@ -92,13 +94,16 @@ function verifySignature(rawBody: string, signatureHeader: string | null): boole
 
 async function findProspectoIdByPhone(phone: string): Promise<string | null> {
   const db = getAdminDb();
-  // Intentamos varias variantes del teléfono (con/sin 52, con/sin 1)
+  // Intentamos varias variantes del teléfono (con/sin 52 MX, con/sin 1 USA)
   const normalized = phone.replace(/\D+/g, "");
   const variants = new Set<string>([
     normalized,
     normalized.replace(/^52/, ""),
     normalized.startsWith("521") ? normalized.slice(3) : "",
     normalized.startsWith("52") ? normalized.slice(2) : "",
+    // USA: wa_id "1XXXXXXXXXX" ↔ teléfono guardado de 10 dígitos
+    normalized.startsWith("1") && normalized.length === 11 ? normalized.slice(1) : "",
+    normalized.length === 10 ? `1${normalized}` : "",
   ]);
   variants.delete("");
 
@@ -154,6 +159,12 @@ export async function POST(request: NextRequest) {
               update.wa_last_error = st.errors[0].message || st.errors[0].title;
             }
             await q.docs[0].ref.update(update);
+
+            // Métricas por preset (qué copy se entrega/lee/falla)
+            if (st.status === "delivered" || st.status === "read" || st.status === "failed") {
+              const d = q.docs[0].data();
+              await bumpMetric(d.wa_last_outreach_preset || d.wa_template, st.status);
+            }
           }
         }
 
@@ -171,6 +182,12 @@ export async function POST(request: NextRequest) {
           const optOut = isOptOutText(text);
 
           if (prospectoId) {
+            const ref = db.collection("prospectos_frios").doc(prospectoId);
+            const snap = await ref.get();
+            const data = snap.data() || {};
+            const presetKey = data.wa_last_outreach_preset || data.wa_template;
+            const seqActive = isActiveSeqStage(data.wa_seq_stage);
+
             const update: Record<string, unknown> = {
               wa_last_inbound_at: FieldValue.serverTimestamp(),
               wa_last_inbound_text: text,
@@ -179,8 +196,36 @@ export async function POST(request: NextRequest) {
             if (optOut) {
               update.wa_opted_out = true;
               update.wa_opted_out_at = FieldValue.serverTimestamp();
+            } else {
+              // Respondió → bandeja prioritaria para que el admin conteste
+              // dentro de la ventana de 24h de Meta.
+              update.wa_priority = true;
             }
-            await db.collection("prospectos_frios").doc(prospectoId).update(update);
+            await ref.update(update);
+
+            if (optOut) {
+              if (seqActive) await stopSequence(ref, "opted_out");
+              await bumpMetric(presetKey, "opted_out");
+            } else {
+              if (seqActive) await stopSequence(ref, "replied");
+              await bumpMetric(presetKey, "replied");
+              // Alertar solo al abrir conversación (no por cada mensaje del
+              // mismo hilo): cuando la secuencia estaba viva o aún no estaba
+              // marcado como prioritario.
+              if (seqActive || data.wa_priority !== true) {
+                await sendWaReplyAlert({
+                  prospectoId,
+                  nombre: typeof data.nombre === "string" ? data.nombre : from,
+                  telefono: typeof data.telefono === "string" ? data.telefono : from,
+                  inboundText: text,
+                  lastPreset: typeof presetKey === "string" ? presetKey : undefined,
+                  lastStage:
+                    typeof data.wa_last_outreach_stage === "string"
+                      ? data.wa_last_outreach_stage
+                      : undefined,
+                });
+              }
+            }
           }
 
           // Registrar todos los mensajes entrantes para auditoría/CRM
