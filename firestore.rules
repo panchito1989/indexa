@@ -74,6 +74,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Estudio Creativo ─────────────────────────────────────────────────────
+    // creative_projects: proyectos multi-nicho (refris, lavadoras, lo que sea)
+    // que el admin edita desde /admin/estudio-creativo.
+    match /creative_projects/{projectId} {
+      allow read, write: if isAdmin();
+    }
+    // creative_jobs: estado del pipeline de generación. Lo escribe SOLO el
+    // servidor (Admin SDK); el panel lo lee con onSnapshot para el progreso.
+    match /creative_jobs/{jobId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     // ── usuarios (perfiles) ─────────────────────────────────────────────────
     // Leer: el propio usuario o admin
     // Escribir: admin tiene acceso total; owner solo puede actualizar campos de integración
