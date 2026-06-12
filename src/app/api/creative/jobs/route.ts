@@ -33,7 +33,9 @@ const COST_PER_SCENE_USD = 1.2;
 const COST_HERO_USD = 0.04;
 // Modo largo
 const COST_VEO_NOAUDIO_USD = 0.85;
-const COST_IMAGE_USD = 0.04;
+const COST_WAN_USD = 0.25; // clip económico Wan 2.2 5B
+const COST_IMAGE_USD = 0.04; // nano-banana
+const COST_FLUX_USD = 0.003; // FLUX schnell (sin referencias)
 const COST_TTS_PER_MIN_USD = 0.3;
 
 function bearer(request: NextRequest): string | null {
@@ -62,6 +64,7 @@ export async function POST(request: NextRequest) {
       tema?: string;
       targetMinutes?: number;
       aspect?: string;
+      quality?: string;
     };
     const { projectId } = body;
     const kind = body.kind === "long" ? "long" : "ad";
@@ -101,19 +104,31 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Modo de calidad/costo (jun-2026): premium=Veo (~$10), economy=Wan
+      // (~$1), images=solo imágenes animadas (~$0.06). Default economy para
+      // no quemar créditos por accidente.
+      const quality: "premium" | "economy" | "images" =
+        body.quality === "premium" ? "premium" : body.quality === "images" ? "images" : "economy";
+
       const script = await generateLongScript(ctx, tema, minutes, referenceUrls);
-      const segments: LongSegment[] = script.segments;
+      let segments: LongSegment[] = script.segments;
+      // En modo "images" no hay clips de video: todo sale como imagen animada.
+      if (quality === "images") segments = segments.map((s) => ({ ...s, kind: "image" as const }));
+      const hasRefs = referenceUrls.length > 0;
       const nVeo = segments.filter((s) => s.kind === "veo").length;
       const nImg = segments.length - nVeo;
+      // Costos por modo: clip Veo ~$0.85, clip Wan ~$0.25; imagen nano $0.04 vs
+      // FLUX $0.003; TTS Edge gratis (minimax solo de respaldo).
+      const clipCost = quality === "premium" ? COST_VEO_NOAUDIO_USD : COST_WAN_USD;
+      const imgCost = !hasRefs && quality !== "premium" ? COST_FLUX_USD : COST_IMAGE_USD;
       const costo =
-        Math.round(
-          (nVeo * COST_VEO_NOAUDIO_USD + nImg * COST_IMAGE_USD + minutes * COST_TTS_PER_MIN_USD + 0.1) * 100
-        ) / 100;
+        Math.round((nVeo * clipCost + nImg * imgCost + 0.05) * 100) / 100;
 
       const jobRef = await db.collection("creative_jobs").add({
         projectId,
         ownerId: user.uid,
         kind: "long",
+        quality,
         tema,
         targetMinutes: minutes,
         aspect,

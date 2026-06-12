@@ -12,7 +12,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/verifyAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
-import { generateTts } from "@/lib/falClient";
+import { generateTts, generateTtsEdge } from "@/lib/falClient";
 import { saveBuffer, fetchToBuffer } from "@/lib/creativeStorage";
 
 export const runtime = "nodejs";
@@ -63,12 +63,23 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ state: "pending", audioDone: done });
       }
 
-      const tts = await generateTts(segments[i].narration, voice);
-      // Persistimos en nuestro CDN (las URLs de salida de fal podrían rotar)
-      const buf = await fetchToBuffer(tts.audioUrl);
+      // Voz GRATIS con Edge TTS (Microsoft, neural es-MX). Si Microsoft la
+      // rompe, caemos a minimax (de pago) para no atorar el video.
+      let buf: Buffer;
+      let durationMs: number;
+      try {
+        const edge = await generateTtsEdge(segments[i].narration, voice);
+        buf = edge.buffer;
+        durationMs = edge.durationMs;
+      } catch (edgeErr) {
+        console.warn("[long/audio] Edge TTS falló, uso minimax:", edgeErr instanceof Error ? edgeErr.message : edgeErr);
+        const tts = await generateTts(segments[i].narration, voice);
+        buf = await fetchToBuffer(tts.audioUrl);
+        durationMs = tts.durationMs;
+      }
       const audioUrl = await saveBuffer(`long_${jobId}_audio_${i}.mp3`, buf, "audio/mpeg");
 
-      segments[i] = { ...segments[i], audioUrl, audioMs: tts.durationMs };
+      segments[i] = { ...segments[i], audioUrl, audioMs: durationMs };
       done++;
       await jobRef.update({
         segments,

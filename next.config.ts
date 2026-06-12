@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // ffmpeg-static resuelve la ruta de su binario en runtime — si el bundler lo
   // empaqueta, la ruta queda rota ("\ROOT\...\ffmpeg.exe ENOENT"). Externo +
   // incluir el binario en el trace de las DOS rutas que lo usan (Vercel).
-  serverExternalPackages: ["ffmpeg-static"],
+  serverExternalPackages: ["ffmpeg-static", "msedge-tts"],
   outputFileTracingIncludes: {
     "/api/creative/scene": ["./node_modules/ffmpeg-static/ffmpeg*"],
     "/api/creative/stitch": ["./node_modules/ffmpeg-static/ffmpeg*"],
