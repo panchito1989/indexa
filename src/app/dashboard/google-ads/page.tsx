@@ -5,12 +5,13 @@ import { useAuth } from "@/lib/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import type { SitioData, UserProfile } from "@/types/lead";
-import { PaywallOverlay, PaywallModal } from "@/components/PaywallGate";
+import { PaywallModal } from "@/components/PaywallGate";
 import { motion } from "framer-motion";
 import {
   Loader2, AlertCircle, RefreshCw, ExternalLink, ChevronLeft,
   Play, Pause, Trash2, DollarSign, MousePointerClick, Eye,
   TrendingUp, Search, Key, BarChart3, Check, Download, FileText, LogOut,
+  Lock, Zap,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -282,14 +283,24 @@ export default function GoogleAdsDashboard() {
               Autoriza a Indexa para ver y gestionar tus campañas de Google Ads directamente desde el dashboard.
             </p>
             {!isActive && (
-              <div className="mb-4">
-                <PaywallOverlay
-                  locked={true}
-                  featureName="Google Ads"
-                  sitioId={sitioId}
+              // Bloqueado por plan: candado honesto con CTA que SÍ abre el
+              // upgrade (antes era un botón azul difuminado que no hacía nada
+              // → "no pasa nada"). Google Ads es función de pago.
+              <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5 text-center">
+                <div className="mb-3 flex justify-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/25">
+                    <Lock size={20} className="text-white" />
+                  </div>
+                </div>
+                <p className="mb-4 text-sm text-white/60">
+                  Conectar Google Ads requiere un plan activo. Actívalo y conecta tu cuenta en segundos.
+                </p>
+                <button
+                  onClick={() => { setPaywallFeature("Google Ads"); setShowPaywall(true); }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-105"
                 >
-                  <GoogleAdsConnect onConnected={() => { /* blocked by paywall */ }} />
-                </PaywallOverlay>
+                  <Zap size={16} /> Activar plan
+                </button>
               </div>
             )}
             {isActive && (
