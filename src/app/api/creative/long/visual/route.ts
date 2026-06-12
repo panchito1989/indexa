@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
           delete seg.falRequestId;
           // Si Veo lo rechazó por políticas, reintentar es inútil → degradar
           // a imagen animada (la base ya pasó el filtro) y seguir.
-          if (/policy|flagged|content checker/i.test(String(r.error || ""))) {
+          if (/policy|polít|flagged|content checker/i.test(String(r.error || ""))) {
             seg.kind = "image";
             seg.degraded = "policy";
             segments[i] = seg;
