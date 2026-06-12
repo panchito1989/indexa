@@ -1130,6 +1130,29 @@ export async function updateCampaignStatus(
   ]);
 }
 
+/**
+ * Cambia el estado de keywords INDIVIDUALES (ad_group_criterion) en lote.
+ * Los resource names vienen de listKeywords (formato
+ * customers/{cid}/adGroupCriteria/{adGroupId}~{criterionId}).
+ * Devuelve cuántas keywords se actualizaron.
+ */
+export async function updateKeywordStatus(
+  customerId: string,
+  auth: GoogleAdsAuth,
+  keywordResourceNames: string[],
+  status: "ENABLED" | "PAUSED"
+): Promise<number> {
+  const ops = (keywordResourceNames || [])
+    .filter((rn) => typeof rn === "string" && rn.includes("/adGroupCriteria/"))
+    .map((rn) => ({
+      updateMask: "status",
+      update: { resourceName: rn, status },
+    }));
+  if (!ops.length) return 0;
+  await gaqlMutate(customerId, auth, "adGroupCriteria", ops);
+  return ops.length;
+}
+
 export async function updateCampaignBudget(
   customerId: string,
   auth: GoogleAdsAuth,
