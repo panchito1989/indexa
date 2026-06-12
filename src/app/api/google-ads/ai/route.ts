@@ -18,7 +18,9 @@ import { preparePmaxImages, generateAdPhotoBase64 } from "@/lib/adImages";
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de campañas (igual que meta-ads/ai y tiktok-ads/ai)
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+// claude-sonnet-4-20250514 quedó DEPRECADO (Anthropic lo retira el 2026-06-15)
+// — migrado a claude-sonnet-4-6 (mismo tier, mejor calidad, acepta temperature).
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
@@ -286,6 +288,22 @@ const tools = [
   { name: "set_location_bid_modifier", description: "Aplica un modificador de puja por ubicación. USAR SOLO tras confirmación.",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, location_name: { type: "string" }, bid_modifier: { type: "number" } }, required: ["campaign_resource_name","location_name","bid_modifier"] } },
 ];
+
+// ── Modo respaldo: SOLO LECTURA ───────────────────────────────────────
+// El fallback (Groq/Gemini) es mucho más débil que Claude: alucina inputs y
+// no respeta las reglas anti-improvisación. JAMÁS debe poder crear, pausar,
+// activar, eliminar ni modificar campañas — en respaldo solo analiza.
+const READ_ONLY_PREFIXES = ["get_", "list_", "analyze_", "compare_"];
+function isReadOnlyTool(name: string): boolean {
+  return READ_ONLY_PREFIXES.some((p) => name.startsWith(p));
+}
+const readOnlyTools = tools.filter((t) => isReadOnlyTool(t.name));
+
+const FALLBACK_MODE_NOTE =
+  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar, eliminar ni modificar nada. Si el usuario pide un cambio, dile que el asistente está temporalmente en modo respaldo (créditos de Claude agotados) y que el cambio queda pendiente hasta recargar. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, keywords ni números.";
+
+const FALLBACK_BANNER =
+  "⚠️ **Asistente en modo respaldo** — los créditos de Claude se agotaron (recárgalos en console.anthropic.com). En este modo solo puedo LEER y analizar; los cambios a campañas están bloqueados por seguridad.\n\n";
 
 // ── Tool executor ─────────────────────────────────────────────────────
 
@@ -751,10 +769,11 @@ export async function POST(request: NextRequest) {
             model: fallbackModel,
             max_tokens: 1536,
             temperature: 0,
-            tools: toGroqTools(tools),
+            // Solo herramientas de lectura — el respaldo nunca muta campañas.
+            tools: toGroqTools(readOnlyTools),
             tool_choice: "auto",
             messages: [
-              { role: "system", content: systemPrompt },
+              { role: "system", content: systemPrompt + FALLBACK_MODE_NOTE },
               ...toGroqMessages(sanitizeForApi(messages as LoopMsg[]) as AnthropicMessage[]),
             ],
           }),
@@ -787,13 +806,17 @@ export async function POST(request: NextRequest) {
       if (textBlock?.text) lastText = textBlock.text;
 
       if (response.stop_reason === "end_turn") {
+        // En respaldo, el admin DEBE saber que no está hablando con Claude
+        // (antes el degradado era invisible y las respuestas malas parecían
+        // del asistente normal).
+        const replyText = useFallback ? FALLBACK_BANNER + lastText : lastText;
         const finalHistory: { role: "user" | "assistant"; content: unknown }[] = [
           ...(Array.isArray(history) ? (history as { role: "user" | "assistant"; content: unknown }[]) : []),
           { role: "user", content: message },
-          { role: "assistant", content: lastText },
+          { role: "assistant", content: replyText },
         ];
         await saveAiHistory(user.uid, finalHistory);
-        return NextResponse.json({ reply: lastText, history: finalHistory });
+        return NextResponse.json({ reply: replyText, history: finalHistory });
       }
 
       if (response.stop_reason === "tool_use") {
@@ -806,6 +829,17 @@ export async function POST(request: NextRequest) {
 
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
+          // Candado duro: en modo respaldo JAMÁS se ejecuta una herramienta
+          // mutadora, aunque el modelo la pida (el filtrado de tools no basta
+          // — los modelos de respaldo a veces alucinan nombres de herramienta).
+          if (useFallback && !isReadOnlyTool(block.name)) {
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: "ERROR: herramienta deshabilitada en modo respaldo (solo lectura). NO se realizó ningún cambio. Informa al usuario que recargue créditos de Claude para hacer cambios.",
+            });
+            continue;
+          }
           const result = await executeTool(block.name, block.input, creds.customerId, auth, user.uid, dashboardRange, custom);
           toolResults.push({ type: "tool_result", tool_use_id: block.id, content: result || "(sin resultado)" });
         }
@@ -841,14 +875,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Exhausted loop — return last captured text or fallback message
-    const fallback = lastText || "No se pudo completar la solicitud. Intenta de nuevo.";
+    const exhaustedText = lastText || "No se pudo completar la solicitud. Intenta de nuevo.";
+    const replyText = useFallback ? FALLBACK_BANNER + exhaustedText : exhaustedText;
     const finalHistory: { role: "user" | "assistant"; content: unknown }[] = [
       ...(Array.isArray(history) ? (history as { role: "user" | "assistant"; content: unknown }[]) : []),
       { role: "user", content: message },
-      { role: "assistant", content: fallback },
+      { role: "assistant", content: replyText },
     ];
     await saveAiHistory(user.uid, finalHistory);
-    return NextResponse.json({ reply: fallback, history: finalHistory });
+    return NextResponse.json({ reply: replyText, history: finalHistory });
 
   } catch (err) {
     console.error("[google-ads/ai] unhandled error:", err instanceof Error ? err.message : err);
