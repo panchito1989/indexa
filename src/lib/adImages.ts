@@ -15,11 +15,43 @@ import sharp from "sharp";
 const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 15_000;
 
+// Anti-SSRF: `image_url`/`logo_url` pueden venir del input del asistente IA.
+// Solo permitimos HTTPS hacia hosts de assets de confianza, y rechazamos
+// literales de IP (privadas/link-local/metadata cloud) y redirecciones.
+const ALLOWED_IMAGE_HOSTS = [
+  /(^|\.)fal\.media$/i,
+  /(^|\.)indexaia\.com$/i,
+  /(^|\.)indexa\.mx$/i,
+  /(^|\.)googleusercontent\.com$/i,
+  /(^|\.)firebasestorage\.googleapis\.com$/i,
+  /(^|\.)storage\.googleapis\.com$/i,
+];
+
+function assertSafeImageUrl(raw: string): void {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    throw new Error("URL de imagen inválida.");
+  }
+  if (u.protocol !== "https:") throw new Error("La imagen debe servirse por HTTPS.");
+  const host = u.hostname.toLowerCase();
+  // Rechaza IPs literales (cierra metadata 169.254.x, loopback, rangos privados)
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host === "localhost" || host.includes(":")) {
+    throw new Error("Host de imagen no permitido.");
+  }
+  if (!ALLOWED_IMAGE_HOSTS.some((re) => re.test(host))) {
+    throw new Error(`Host de imagen no permitido: ${host}. Usa una URL del sitio o sube la imagen.`);
+  }
+}
+
 async function fetchImageBuffer(url: string): Promise<Buffer> {
+  assertSafeImageUrl(url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    // redirect:"error" impide saltar el allowlist vía 30x a un host interno
+    const res = await fetch(url, { signal: controller.signal, redirect: "error" });
     if (!res.ok) {
       throw new Error(`No pude descargar la imagen (HTTP ${res.status}): ${url.slice(0, 120)}`);
     }

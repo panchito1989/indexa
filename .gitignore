@@ -65,3 +65,8 @@ next-env.d.ts
 
 # Assets generados por IA (Estudio Creativo) — nunca commitear
 /creatives/
+
+# Scripts con credenciales locales (nunca commitear)
+scripts/create-subadmin.mjs
+scripts/test-creative-e2e.mjs
+.env.creative

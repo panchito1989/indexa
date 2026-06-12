@@ -94,13 +94,20 @@ service cloud.firestore {
       allow read: if isOwner(userId) || isAdmin();
       allow create: if isAdmin() || (isOwner(userId) && request.resource.data.role == "cliente");
       allow delete: if isAdmin();
+      // SECURITY (allowlist, no denylist): el dueño SOLO puede tocar campos de
+      // preferencia inofensivos. TODOS los campos que definen autorización o
+      // integración (role, email, agencyId, googleAdsManagedByAgency,
+      // googleAds*, metaAccessToken, tiktok*, nanoBananaApiKey, sitioId tras el
+      // primer set, etc.) son SOLO-SERVIDOR (Admin SDK / /api/tokens /
+      // assign-google-ads). Una denylist deja entrar cualquier campo nuevo;
+      // la allowlist es a prueba de futuro.
       allow update: if isAdmin()
         || (
           isOwner(userId)
-          && !request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(["role", "email", "displayName"])
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(["displayName_pref", "photoURL", "notifPrefs", "lastSeenAt", "onboardingStep"])
         )
-        // Allow owner to set sitioId ONLY if they don't have one yet (first purchase)
+        // Excepción acotada: fijar sitioId UNA sola vez (primera compra)
         || (
           isOwner(userId)
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["sitioId"])
@@ -128,7 +135,7 @@ service cloud.firestore {
           request.auth != null
           && resource.data.ownerId == request.auth.uid
           && (!request.resource.data.diff(resource.data).affectedKeys()
-              .hasAny(["ownerId", "statusPago", "plan", "stripeCustomerId", "stripeSubscriptionId", "fechaVencimiento", "ultimoPagoAt"]))
+              .hasAny(["ownerId", "statusPago", "plan", "stripeCustomerId", "stripeSubscriptionId", "fechaVencimiento", "ultimoPagoAt", "agencyId", "slug"]))
         )
         // Webhook + bio tracking: use Admin SDK server-side (bypasses rules).
         // No unauthenticated writes allowed.

@@ -36,6 +36,18 @@ export interface HotProspectAlertPayload {
   trigger: "demo_views" | "wa_click" | "return_visit";
 }
 
+// Escapa HTML — los datos de prospecto (nombre/ciudad/categoría) vienen
+// scrapeados de Google Maps (terceros no confiables); sin escapar, un negocio
+// con nombre tipo `<a href=phish>` inyecta links en el correo del admin.
+function esc(s: string | undefined): string {
+  return (s || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;");
+}
+
 function buildAlertHtml(p: HotProspectAlertPayload): string {
   const demoUrl = p.demoSlug
     ? `${SITE_URL}/sitio/${encodeURIComponent(p.demoSlug)}`
@@ -65,10 +77,10 @@ function buildAlertHtml(p: HotProspectAlertPayload): string {
 
       <div style="padding:24px;">
         <table style="width:100%; border-collapse:collapse; font-size:14px;">
-          <tr><td style="padding:6px 0; color:#64748b; width:90px;">Negocio:</td><td style="padding:6px 0; font-weight:700;">${p.nombre}</td></tr>
-          ${p.ciudad ? `<tr><td style="padding:6px 0; color:#64748b;">Ciudad:</td><td style="padding:6px 0;">${p.ciudad}</td></tr>` : ""}
-          ${p.categoria ? `<tr><td style="padding:6px 0; color:#64748b;">Categoría:</td><td style="padding:6px 0;">${p.categoria}</td></tr>` : ""}
-          ${p.telefono ? `<tr><td style="padding:6px 0; color:#64748b;">Teléfono:</td><td style="padding:6px 0; font-family:monospace;">${p.telefono}</td></tr>` : ""}
+          <tr><td style="padding:6px 0; color:#64748b; width:90px;">Negocio:</td><td style="padding:6px 0; font-weight:700;">${esc(p.nombre)}</td></tr>
+          ${p.ciudad ? `<tr><td style="padding:6px 0; color:#64748b;">Ciudad:</td><td style="padding:6px 0;">${esc(p.ciudad)}</td></tr>` : ""}
+          ${p.categoria ? `<tr><td style="padding:6px 0; color:#64748b;">Categoría:</td><td style="padding:6px 0;">${esc(p.categoria)}</td></tr>` : ""}
+          ${p.telefono ? `<tr><td style="padding:6px 0; color:#64748b;">Teléfono:</td><td style="padding:6px 0; font-family:monospace;">${esc(p.telefono)}</td></tr>` : ""}
           <tr><td style="padding:6px 0; color:#64748b;">Vistas demo:</td><td style="padding:6px 0; font-weight:700; color:#dc2626;">${p.vistasDemo}</td></tr>
         </table>
 

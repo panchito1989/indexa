@@ -113,7 +113,8 @@ export async function POST(request: NextRequest) {
         if (data[field]) result[field] = data[field] as string;
       }
 
-      return NextResponse.json({ tokens: result });
+      // La respuesta lleva tokens OAuth descifrados → nunca cachear.
+      return NextResponse.json({ tokens: result }, { headers: { "Cache-Control": "no-store" } });
     }
 
     // ── Clear: wipe token fields ────────────────────────────────

@@ -24,8 +24,11 @@ const authRes = await fetch(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      email: "djonny319@gmail.com",
-      password: "Chicharito26@",
+      // SECURITY: credenciales por variable de entorno — NUNCA literales en el
+      // código (esto estuvo hardcodeado y commiteado; rotar la contraseña).
+      // Uso: ADMIN_EMAIL=... ADMIN_PASSWORD=... node scripts/create-issac-site.mjs
+      email: env.ADMIN_EMAIL || process.env.ADMIN_EMAIL,
+      password: env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD,
       returnSecureToken: true,
     }),
   }
