@@ -81,6 +81,7 @@ const SUB_STYLE =
   "FontName=Anton,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,Outline=2,Shadow=0,Bold=0,Alignment=2,MarginV=50";
 
 export async function POST(request: NextRequest) {
+  let jobRefOuter: FirebaseFirestore.DocumentReference | null = null;
   try {
     const h = request.headers.get("authorization") || "";
     const idToken = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -93,10 +94,14 @@ export async function POST(request: NextRequest) {
 
     const db = getAdminDb();
     const jobRef = db.collection("creative_jobs").doc(jobId);
+    jobRefOuter = jobRef;
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) return NextResponse.json({ error: "Job no encontrado." }, { status: 404 });
     const job = jobSnap.data()!;
     if (job.kind !== "long") return NextResponse.json({ error: "El job no es de modo largo." }, { status: 400 });
+
+    // Reanudación: limpia el error del intento anterior
+    if (job.error) await jobRef.update({ error: FieldValue.delete() });
 
     const [W, H] = job.aspect === "16:9" ? [1280, 720] : [720, 1280];
     const segments = [...(job.segments as Seg[])];
@@ -185,10 +190,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ state: "done", renderDone: countDone() });
   } catch (err) {
-    console.error("[creative/long/render]", err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error renderizando segmentos." },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Error renderizando segmentos.";
+    console.error("[creative/long/render]", msg);
+    // Persistir el error en el job para que la tarjeta muestre QUÉ falló
+    if (jobRefOuter) await jobRefOuter.update({ error: `Render: ${msg}`.slice(0, 300) }).catch(() => {});
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

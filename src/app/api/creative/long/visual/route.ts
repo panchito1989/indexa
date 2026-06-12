@@ -42,6 +42,7 @@ function visualReady(s: Seg): boolean {
 }
 
 export async function POST(request: NextRequest) {
+  let jobRefOuter: FirebaseFirestore.DocumentReference | null = null;
   try {
     const h = request.headers.get("authorization") || "";
     const idToken = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -53,10 +54,14 @@ export async function POST(request: NextRequest) {
 
     const db = getAdminDb();
     const jobRef = db.collection("creative_jobs").doc(jobId);
+    jobRefOuter = jobRef;
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) return NextResponse.json({ error: "Job no encontrado." }, { status: 404 });
     const job = jobSnap.data()!;
     if (job.kind !== "long") return NextResponse.json({ error: "El job no es de modo largo." }, { status: 400 });
+
+    // Reanudación: limpia el error del intento anterior
+    if (job.error) await jobRef.update({ error: FieldValue.delete() });
 
     const aspect = job.aspect === "16:9" ? ("16:9" as const) : ("9:16" as const);
     const segments = [...(job.segments as Seg[])];
@@ -116,10 +121,10 @@ export async function POST(request: NextRequest) {
           delete seg.falRequestId;
           segments[i] = seg;
           await persist();
-          return NextResponse.json(
-            { error: `Visual del segmento ${i + 1} falló: ${r.error}` },
-            { status: 502 }
-          );
+          // Persistir también en el job — la tarjeta debe decir QUÉ falló
+          const failMsg = `Visual del segmento ${i + 1} falló: ${r.error}`;
+          await jobRef.update({ error: failMsg.slice(0, 300) }).catch(() => {});
+          return NextResponse.json({ error: failMsg }, { status: 502 });
         }
         if (r.state === "done") {
           const buf = await fetchToBuffer(r.videoUrl);
@@ -135,10 +140,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ state: "done", visualDone: countDone() });
   } catch (err) {
-    console.error("[creative/long/visual]", err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error generando visuales." },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Error generando visuales.";
+    console.error("[creative/long/visual]", msg);
+    // Persistir el error en el job para que la tarjeta muestre QUÉ falló
+    if (jobRefOuter) await jobRefOuter.update({ error: `Visuales: ${msg}`.slice(0, 300) }).catch(() => {});
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

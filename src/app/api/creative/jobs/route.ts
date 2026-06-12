@@ -188,9 +188,16 @@ export async function PUT(request: NextRequest) {
     const snap = await ref.get();
     if (!snap.exists) return NextResponse.json({ error: "Job no encontrado." }, { status: 404 });
     const job = snap.data()!;
-    if (job.status !== "script_ready") {
+    // Modo largo: editable mientras NO esté terminado (los segmentos que
+    // cambien pierden sus assets derivados y se regeneran al reanudar — los
+    // demás conservan lo ya pagado). Modo anuncio: solo antes de generar.
+    if (job.kind === "long" ? !!job.finalUrl : job.status !== "script_ready") {
       return NextResponse.json(
-        { error: "El guion solo se puede editar antes de generar." },
+        {
+          error: job.kind === "long"
+            ? "El video ya está terminado; crea uno nuevo para cambiar el guion."
+            : "El guion solo se puede editar antes de generar.",
+        },
         { status: 409 }
       );
     }
@@ -207,8 +214,39 @@ export async function PUT(request: NextRequest) {
           { status: 400 }
         );
       }
+      // Merge por índice: conserva los assets de segmentos sin cambios; si
+      // cambió la narración se invalida su audio (y su render); si cambió el
+      // visual o el tipo se invalida su imagen/video (y su render).
+      const prev = job.segments as Record<string, unknown>[];
+      const merged = segments.map((s, i) => {
+        const old = prev[i] || {};
+        const next: Record<string, unknown> = {
+          ...old,
+          kind: s.kind,
+          narration: s.narration.trim(),
+          visualPrompt: s.visualPrompt.trim(),
+        };
+        const narrationChanged = next.narration !== old.narration;
+        const visualChanged = next.visualPrompt !== old.visualPrompt || next.kind !== old.kind;
+        if (narrationChanged) {
+          delete next.audioUrl;
+          delete next.audioMs;
+        }
+        if (visualChanged) {
+          delete next.imageUrl;
+          delete next.videoUrl;
+          delete next.falRequestId;
+        }
+        if (narrationChanged || visualChanged) delete next.segUrl;
+        return next;
+      });
       await ref.update({
-        segments: segments.map((s) => ({ kind: s.kind, narration: s.narration.trim(), visualPrompt: s.visualPrompt.trim() })),
+        segments: merged,
+        audioDone: merged.filter((s) => s.audioUrl).length,
+        visualDone: merged.filter((s) => s.imageUrl || s.videoUrl).length,
+        renderDone: merged.filter((s) => s.segUrl).length,
+        // El video final (si lo hubiera parcial) queda invalidado al editar
+        error: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       });
       return NextResponse.json({ success: true });
