@@ -26,7 +26,12 @@ export function PaywallOverlay({
 
   const handleCheckout = useCallback(async () => {
     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
-    if (!user || !sitioId || !priceId) return;
+    // Sin sitio vinculado no se puede cobrar un plan de sitio → mandamos al hub
+    // a crear/configurar el sitio (antes el botón quedaba MUDO: retorno
+    // silencioso, "no pasa nada").
+    if (!user) return;
+    if (!sitioId) { window.location.href = "/dashboard"; return; }
+    if (!priceId) { alert("Configuración de pago no disponible. Contacta a soporte."); return; }
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
@@ -71,7 +76,7 @@ export function PaywallOverlay({
           )}
           <button
             onClick={handleCheckout}
-            disabled={checkingOut || !sitioId}
+            disabled={checkingOut}
             className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
           >
             {checkingOut ? (
@@ -115,7 +120,12 @@ export function PaywallModal({
 
   const handleCheckout = useCallback(async () => {
     const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
-    if (!user || !sitioId || !priceId) return;
+    // Sin sitio vinculado no se puede cobrar un plan de sitio → mandamos al hub
+    // a crear/configurar el sitio (antes el botón quedaba MUDO: retorno
+    // silencioso, "no pasa nada").
+    if (!user) return;
+    if (!sitioId) { window.location.href = "/dashboard"; return; }
+    if (!priceId) { alert("Configuración de pago no disponible. Contacta a soporte."); return; }
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
@@ -200,7 +210,7 @@ export function PaywallModal({
           {/* CTA */}
           <button
             onClick={handleCheckout}
-            disabled={checkingOut || !sitioId}
+            disabled={checkingOut}
             className="group mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-6 py-3.5 text-base font-bold text-white shadow-xl shadow-indigo-500/20 transition-all hover:scale-[1.02] hover:shadow-indigo-500/40 disabled:opacity-50 disabled:hover:scale-100"
           >
             {checkingOut ? (
