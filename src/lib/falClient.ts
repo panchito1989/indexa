@@ -173,26 +173,37 @@ export type VeoPollResult =
  * "pending" y el cliente re-llama: NUNCA se re-encola (no se paga doble).
  */
 export async function pollVeo(requestId: string): Promise<VeoPollResult> {
-  const status = await falFetch(
-    `${FAL_QUEUE}/fal-ai/veo3/requests/${requestId}/status`,
-    { method: "GET" }
-  );
-  const s = status.status as string;
-  if (s === "IN_QUEUE" || s === "IN_PROGRESS") return { state: "pending" };
+  try {
+    const status = await falFetch(
+      `${FAL_QUEUE}/fal-ai/veo3/requests/${requestId}/status`,
+      { method: "GET" }
+    );
+    const s = status.status as string;
+    if (s === "IN_QUEUE" || s === "IN_PROGRESS") return { state: "pending" };
 
-  if (s === "COMPLETED") {
-    // inference_time ínfimo = falló el parseo del payload (no hay video)
-    const metrics = status.metrics as { inference_time?: number } | undefined;
-    if (typeof metrics?.inference_time === "number" && metrics.inference_time < 1) {
-      return { state: "failed", error: "fal aceptó el trabajo pero no generó (payload inválido)." };
+    if (s === "COMPLETED") {
+      // inference_time ínfimo = falló el parseo del payload (no hay video)
+      const metrics = status.metrics as { inference_time?: number } | undefined;
+      if (typeof metrics?.inference_time === "number" && metrics.inference_time < 1) {
+        return { state: "failed", error: "fal aceptó el trabajo pero no generó (payload inválido)." };
+      }
+      const resp = await falFetch(`${FAL_QUEUE}/fal-ai/veo3/requests/${requestId}`, {
+        method: "GET",
+      });
+      const video = resp.video as { url?: string } | undefined;
+      if (!video?.url) return { state: "failed", error: "fal completó sin URL de video." };
+      return { state: "done", videoUrl: video.url };
     }
-    const resp = await falFetch(`${FAL_QUEUE}/fal-ai/veo3/requests/${requestId}`, {
-      method: "GET",
-    });
-    const video = resp.video as { url?: string } | undefined;
-    if (!video?.url) return { state: "failed", error: "fal completó sin URL de video." };
-    return { state: "done", videoUrl: video.url };
-  }
 
-  return { state: "failed", error: `Estado fal inesperado: ${s}` };
+    return { state: "failed", error: `Estado fal inesperado: ${s}` };
+  } catch (err) {
+    // El rechazo por política puede llegar EN EL POLL (el request quedó
+    // encolado y fal lo marca al consultarlo): devolverlo como estado
+    // "failed" — no como excepción — para que el caller aplique su rama de
+    // degradación en vez de tumbar toda la fase.
+    if (err instanceof ContentPolicyError) {
+      return { state: "failed", error: `content_policy_violation: ${err.message}` };
+    }
+    throw err;
+  }
 }
