@@ -17,6 +17,7 @@ import { verifyAdmin } from "@/lib/verifyAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
+import { geminiKeyAvailable } from "@/lib/geminiImage";
 import {
   generateScript,
   generateLongScript,
@@ -117,12 +118,14 @@ export async function POST(request: NextRequest) {
       const hasRefs = referenceUrls.length > 0;
       const nVeo = segments.filter((s) => s.kind === "veo").length;
       const nImg = segments.length - nVeo;
-      // Costos por modo: clip Veo ~$0.85, clip Wan ~$0.25; imagen nano $0.04 vs
-      // FLUX $0.003; TTS Edge gratis (minimax solo de respaldo).
+      // Costos por modo: clip Veo ~$0.85, clip Wan ~$0.25; imagen GRATIS con
+      // Gemini (sin refs, no premium) o $0.003 FLUX / $0.04 nano; TTS siempre
+      // gratis (Edge). Modo imágenes sin refs + Gemini = $0 de fal.
       const clipCost = quality === "premium" ? COST_VEO_NOAUDIO_USD : COST_WAN_USD;
-      const imgCost = !hasRefs && quality !== "premium" ? COST_FLUX_USD : COST_IMAGE_USD;
+      const freeImg = !hasRefs && quality !== "premium" && geminiKeyAvailable();
+      const imgCost = freeImg ? 0 : !hasRefs && quality !== "premium" ? COST_FLUX_USD : COST_IMAGE_USD;
       const costo =
-        Math.round((nVeo * clipCost + nImg * imgCost + 0.05) * 100) / 100;
+        Math.round((nVeo * clipCost + nImg * imgCost) * 100) / 100;
 
       const jobRef = await db.collection("creative_jobs").add({
         projectId,

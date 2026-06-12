@@ -152,18 +152,19 @@ type LongQuality = "premium" | "economy" | "images";
 
 const QUALITY_OPTIONS: { id: LongQuality; label: string; desc: string }[] = [
   { id: "premium", label: "Premium (Veo)", desc: "Clips de video con IA de máxima calidad — el más caro." },
-  { id: "economy", label: "Económico (Wan)", desc: "Clips de video más simples a una fracción del costo. Recomendado." },
-  { id: "images", label: "Solo imágenes", desc: "Sin clips: imágenes con movimiento suave (Ken Burns). El más barato." },
+  { id: "economy", label: "Económico (Wan)", desc: "Clips de video más simples a una fracción del costo." },
+  { id: "images", label: "Gratis (imágenes)", desc: "Sin clips: imágenes con movimiento suave (Ken Burns) + voz gratis. $0 si el proyecto no tiene fotos de referencia." },
 ];
 
-// Voz gratis (Edge TTS) en TODOS los modos; el costo es solo visuales.
+// Voz gratis (Edge TTS) en TODOS los modos; las imágenes son GRATIS con Gemini
+// (sin referencias) en modos no-premium → el costo es solo de los clips de video.
 function estimateLongCost(minutes: number, quality: LongQuality): number {
   const nSeg = Math.max(4, Math.round(minutes * 4));
   const nClip = quality === "images" ? 0 : minutes <= 2 ? 2 : minutes <= 5 ? 4 : 5;
   const nImg = nSeg - nClip;
   const clip = quality === "premium" ? 0.85 : 0.25; // Veo vs Wan
-  const img = quality === "premium" ? 0.04 : 0.003; // nano vs FLUX
-  return Math.round((nClip * clip + nImg * img + 0.05) * 100) / 100;
+  const img = quality === "premium" ? 0.04 : 0; // nano vs Gemini gratis
+  return Math.round((nClip * clip + nImg * img) * 100) / 100;
 }
 
 // ── Página ───────────────────────────────────────────────────────────────
@@ -707,7 +708,11 @@ export default function EstudioCreativoPage() {
                     {QUALITY_OPTIONS.map((q) => <option key={q.id} value={q.id}>{q.label}</option>)}
                   </select>
                 </label>
-                <span className="text-xs text-gray-400">≈ ${estimateLongCost(targetMinutes, longQuality).toFixed(2)} USD · voz gratis</span>
+                <span className="text-xs text-gray-400">
+                  {estimateLongCost(targetMinutes, longQuality) === 0
+                    ? "GRATIS · voz + imágenes sin costo"
+                    : `≈ $${estimateLongCost(targetMinutes, longQuality).toFixed(2)} USD · voz gratis`}
+                </span>
                 <button
                   onClick={createLongJob}
                   disabled={creating || !tema.trim()}

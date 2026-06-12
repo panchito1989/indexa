@@ -19,6 +19,7 @@ import {
   generateHeroImage, generateFluxImage, submitVeoScene, submitEconomyScene,
   pollVeo, ContentPolicyError, ECON_VIDEO_ROOT,
 } from "@/lib/falClient";
+import { generateGeminiImage, geminiKeyAvailable } from "@/lib/geminiImage";
 import { buildLongVeoPrompt, sanitizeVisualPrompt } from "@/lib/creativeScript";
 import { saveBuffer, fetchToBuffer } from "@/lib/creativeStorage";
 
@@ -76,11 +77,22 @@ export async function POST(request: NextRequest) {
     const refs: string[] = Array.isArray(project.referenceUrls)
       ? (project.referenceUrls as unknown[]).filter((u): u is string => typeof u === "string" && !!u)
       : [];
-    // Imagen: con referencias SIEMPRE nano-banana/edit (FLUX no las acepta);
-    // sin referencias y en modo no-premium, FLUX schnell (13x más barato).
-    const useFlux = refs.length === 0 && quality !== "premium";
-    const makeImage = (prompt: string) =>
-      useFlux ? generateFluxImage(prompt, aspect) : generateHeroImage(prompt, refs, aspect);
+    // Imagen → SIEMPRE devolvemos un Buffer (lo guarda el caller). Prioridad:
+    //  - con referencias: nano-banana/edit (fal) — FLUX/Gemini-text no las usan.
+    //  - sin refs y NO premium: Gemini (GRATIS, capa 500/día) si hay key, si no
+    //    FLUX schnell (fal, $0.003).
+    //  - premium: nano-banana (fal).
+    const freeImages = refs.length === 0 && quality !== "premium" && geminiKeyAvailable();
+    const makeImageBuffer = async (prompt: string): Promise<{ buffer: Buffer; contentType: string }> => {
+      if (freeImages) {
+        const g = await generateGeminiImage(prompt, aspect);
+        return { buffer: g.buffer, contentType: g.contentType };
+      }
+      const img = refs.length === 0 && quality !== "premium"
+        ? await generateFluxImage(prompt, aspect)
+        : await generateHeroImage(prompt, refs, aspect);
+      return { buffer: await fetchToBuffer(img.url), contentType: "image/jpeg" };
+    };
     // Clip: Veo (premium) o Wan económico. Root del queue para el poll.
     const submitClip = (prompt: string, imageUrl: string) =>
       quality === "premium"
@@ -107,15 +119,15 @@ export async function POST(request: NextRequest) {
 
       // 1) Imagen del segmento (base para "veo", final para "image")
       if (!seg.imageUrl) {
-        let img;
+        let out;
         try {
-          img = await makeImage(seg.visualPrompt);
+          out = await makeImageBuffer(seg.visualPrompt);
         } catch (e) {
           if (!(e instanceof ContentPolicyError)) throw e;
           // 2º intento automático: prompt saneado (sin menores humanos /
           // marcas / personas reales — estilo caricatura familiar).
           try {
-            img = await makeImage(sanitizeVisualPrompt(seg.visualPrompt));
+            out = await makeImageBuffer(sanitizeVisualPrompt(seg.visualPrompt));
           } catch (e2) {
             if (!(e2 instanceof ContentPolicyError)) throw e2;
             const m = `Segmento ${i + 1}: el generador rechazó el visual por políticas de contenido (ni saneado pasó). Edítalo con el lápiz — evita niños humanos, marcas o personas reales — y dale Continuar.`;
@@ -123,8 +135,8 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: m }, { status: 422 });
           }
         }
-        const buf = await fetchToBuffer(img.url);
-        seg.imageUrl = await saveBuffer(`long_${jobId}_img_${i}.jpg`, buf, "image/jpeg");
+        const ext = out.contentType.includes("png") ? "png" : "jpg";
+        seg.imageUrl = await saveBuffer(`long_${jobId}_img_${i}.${ext}`, out.buffer, out.contentType);
         segments[i] = seg;
         await persist();
       }
