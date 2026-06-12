@@ -113,12 +113,18 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ success: false, message: "Sitio no encontrado." }, { status: 404 });
     }
 
+    // Default-deny: un sitio SIN agencyId (cliente directo / demo de admin) NO
+    // pertenece a ninguna agencia → la agencia no puede tocarlo. (Antes el
+    // chequeo solo corría `if (siteAgencyId)` y los sitios sin agencyId caían
+    // al soft-delete → una agencia podía tumbar el sitio de cualquier cliente
+    // directo. El PATCH ya lo hacía bien; el DELETE divergía.)
     const siteAgencyId = site.data.agencyId as string;
-    if (siteAgencyId) {
-      const agencia = await readDoc("agencias", siteAgencyId);
-      if (!agencia || agencia.data.uid !== agencyUser.uid) {
-        return NextResponse.json({ success: false, message: "Este sitio no pertenece a tu agencia." }, { status: 403 });
-      }
+    if (!siteAgencyId) {
+      return NextResponse.json({ success: false, message: "Este sitio no está asociado a ninguna agencia." }, { status: 403 });
+    }
+    const agencia = await readDoc("agencias", siteAgencyId);
+    if (!agencia || agencia.data.uid !== agencyUser.uid) {
+      return NextResponse.json({ success: false, message: "Este sitio no pertenece a tu agencia." }, { status: 403 });
     }
 
     // Soft-delete: mark as "eliminado" instead of actually deleting

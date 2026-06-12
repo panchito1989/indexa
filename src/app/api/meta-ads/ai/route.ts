@@ -962,12 +962,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Cuerpo de solicitud inválido (no es JSON)." }, { status: 400 });
     }
 
-    const { message, history, metaToken, adAccountId, context, sitioId: reqSitioId } = body;
+    const { message, history, metaToken, adAccountId, context } = body;
     if (!message || !metaToken || !adAccountId) {
       return NextResponse.json({ error: "Faltan parámetros: message, metaToken, adAccountId." }, { status: 400 });
     }
     const safeMetaToken = metaToken;
     const safeAdAccountId = adAccountId;
+
+    // SECURITY (anti-IDOR): NO confiamos en el sitioId del body — un usuario
+    // podía pasar el sitioId de OTRO cliente y escribirle registros falsos en
+    // su Bóveda de Ahorros. Resolvemos el sitioId del PROPIO usuario desde su
+    // doc (server-side), igual que google-ads/ai.
+    let reqSitioId: string | undefined;
+    try {
+      const ownSnap = await getAdminDb().collection("usuarios").doc(user.uid).get();
+      const ownSitio = ownSnap.data()?.sitioId;
+      if (typeof ownSitio === "string" && ownSitio) reqSitioId = ownSitio;
+    } catch { /* sin bóveda si no se puede resolver */ }
 
     // Optional context injection for specialized flows (e.g. post-payment diagnostics)
     const safeContext = typeof context === "string" ? context.slice(0, 2000) : "";

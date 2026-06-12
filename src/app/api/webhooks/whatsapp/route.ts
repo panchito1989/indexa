@@ -178,8 +178,31 @@ export async function POST(request: NextRequest) {
             msg.interactive?.list_reply?.title ||
             "";
 
+          // Idempotencia: Meta entrega "at-least-once". Reclamamos msg.id como
+          // ID de doc en whatsapp_inbox; si create() falla por ya-existe, este
+          // mensaje ya se procesó OK → short-circuit (no duplicar métricas/
+          // alertas). Si algo CRÍTICO falla más abajo, borramos el reclamo para
+          // que el reintento de Meta sí reprocese (no perder un opt-out).
+          const inboxRef = db.collection("whatsapp_inbox").doc(msg.id);
+          try {
+            await inboxRef.create({
+              from,
+              text,
+              type: msg.type,
+              messageId: msg.id,
+              optOut: isOptOutText(text),
+              receivedAt: FieldValue.serverTimestamp(),
+            });
+          } catch {
+            continue; // ya procesado
+          }
+
+          try {
           const prospectoId = await findProspectoIdByPhone(from);
           const optOut = isOptOutText(text);
+          if (prospectoId) {
+            await inboxRef.set({ prospectoId }, { merge: true });
+          }
 
           if (prospectoId) {
             const ref = db.collection("prospectos_frios").doc(prospectoId);
@@ -201,6 +224,9 @@ export async function POST(request: NextRequest) {
               // dentro de la ventana de 24h de Meta.
               update.wa_priority = true;
             }
+            // El opt-out es CRÍTICO (cumplimiento WhatsApp): si falla persistir,
+            // propagamos para devolver 5xx y que Meta reintente (idempotente).
+            // El resto del procesamiento (métricas/alerta) es best-effort.
             await ref.update(update);
 
             if (optOut) {
@@ -227,26 +253,25 @@ export async function POST(request: NextRequest) {
               }
             }
           }
-
-          // Registrar todos los mensajes entrantes para auditoría/CRM
-          await db.collection("whatsapp_inbox").add({
-            from,
-            text,
-            type: msg.type,
-            messageId: msg.id,
-            prospectoId: prospectoId || null,
-            optOut,
-            receivedAt: FieldValue.serverTimestamp(),
-          });
+          } catch (procErr) {
+            // Algo crítico falló tras reclamar el msg.id → borra el reclamo
+            // para que el reintento de Meta reprocese (idempotencia + no perder
+            // opt-out), y propaga para devolver 5xx.
+            await inboxRef.delete().catch(() => {});
+            throw procErr;
+          }
         }
       }
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
+    // Si falló persistir un opt-out, devolvemos 5xx para que Meta REINTENTE
+    // (marcar wa_opted_out=true es idempotente). Devolver 200 aquí perdería
+    // bajas y nos haría seguir escribiendo a quien pidió no recibir →
+    // violación de política WhatsApp. El registro idempotente por msg.id evita
+    // duplicar el procesamiento ya completado en el reintento.
     console.error("Webhook WA error:", err);
-    // Devolvemos 200 para que Meta no siga reintentando si fue un error nuestro de procesamiento;
-    // los errores graves se ven en logs.
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: false, error: "processing_failed" }, { status: 500 });
   }
 }

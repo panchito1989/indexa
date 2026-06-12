@@ -32,16 +32,34 @@ export async function POST(request: NextRequest) {
     };
     if (!imageBase64) return NextResponse.json({ error: "imageBase64 requerido." }, { status: 400 });
 
-    // Acepta data URI o base64 pelón
+    // Acepta data URI o base64 pelón. SOLO raster (SVG es ejecutable → XSS si
+    // se sirve; lo rechazamos explícitamente).
     const m = imageBase64.match(/^data:(image\/[a-z+]+);base64,(.+)$/i);
-    const contentType = m ? m[1] : "image/jpeg";
     const b64 = m ? m[2] : imageBase64;
     const buf = Buffer.from(b64, "base64");
     if (!buf.length || buf.length > MAX_BYTES) {
       return NextResponse.json({ error: "Imagen vacía o mayor a 8MB." }, { status: 400 });
     }
 
-    const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
+    // No confiar en el content-type declarado: validar magic bytes reales.
+    let contentType: string;
+    let ext: string;
+    if (buf.length >= 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff) {
+      contentType = "image/jpeg"; ext = "jpg";
+    } else if (buf.length >= 8 && buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) {
+      contentType = "image/png"; ext = "png";
+    } else if (
+      buf.length >= 12 &&
+      buf.toString("ascii", 0, 4) === "RIFF" &&
+      buf.toString("ascii", 8, 12) === "WEBP"
+    ) {
+      contentType = "image/webp"; ext = "webp";
+    } else {
+      return NextResponse.json(
+        { error: "Formato no soportado. Sube una imagen JPG, PNG o WebP." },
+        { status: 400 }
+      );
+    }
     const url = await saveBuffer(`ref_${Date.now()}_${(fileName || "imagen").slice(0, 40)}.${ext}`, buf, contentType);
     return NextResponse.json({ success: true, url });
   } catch (err) {
