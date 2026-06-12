@@ -192,6 +192,7 @@ REGLAS DE ORO DEL GUION:
 - El último segmento cierra con CTA de canal: invita a suscribirse/comentar de forma natural al tema.
 - titulo: título de YouTube optimizado para click (curiosidad/beneficio, sin clickbait vacío, ≤70 chars).
 - descripcion: descripción de YouTube (2-3 párrafos + 3-5 hashtags).
+- EL TEMA MANDA AL 100%: el video trata SOLO del TEMA/IDEA que da el usuario. El nombre del proyecto y su contexto de negocio son la CARPETA donde se organiza (el canal produce videos de varios nichos) — NUNCA los metas en el titulo, la descripcion ni la narración, salvo que el TEMA hable explícitamente de ese negocio.
 - El número de segmentos lo da el usuario — respétalo EXACTAMENTE.${REFS_NOTE}
 
 Respondes SOLO con JSON válido, sin markdown, con esta forma exacta:
@@ -207,11 +208,10 @@ export async function generateLongScript(
   const numSegments = Math.max(4, Math.min(40, Math.round(targetMinutes * 4)));
   const maxVeo = targetMinutes <= 2 ? 2 : targetMinutes <= 5 ? 4 : 5;
 
-  const userMsg = `CANAL/PROYECTO: ${project.nombre}
-ESTILO DEL CANAL: ${project.estiloCanal || project.tono || "narración envolvente"}
-CONTEXTO DEL PROYECTO: ${project.descripcionNegocio}
+  const userMsg = `TEMA/IDEA DEL VIDEO (esto es lo ÚNICO de lo que trata el video): ${tema}
 
-TEMA/IDEA DEL VIDEO: ${tema}
+ESTILO DEL CANAL: ${project.estiloCanal || project.tono || "narración envolvente"}
+(Carpeta/proyecto donde se organiza: "${project.nombre}" — solo referencia interna, NO la menciones salvo que el TEMA sea sobre ese negocio.)
 
 DURACIÓN OBJETIVO: ${targetMinutes} minuto(s).
 Escribe EXACTAMENTE ${numSegments} segmentos. Usa kind="veo" en MÁXIMO ${maxVeo} segmentos (el gancho del segmento 1 SIEMPRE es "veo").`;

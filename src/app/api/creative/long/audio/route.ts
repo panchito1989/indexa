@@ -31,6 +31,7 @@ interface Seg {
 }
 
 export async function POST(request: NextRequest) {
+  let jobRef: FirebaseFirestore.DocumentReference | null = null;
   try {
     const h = request.headers.get("authorization") || "";
     const idToken = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -41,11 +42,14 @@ export async function POST(request: NextRequest) {
     if (!jobId) return NextResponse.json({ error: "jobId requerido." }, { status: 400 });
 
     const db = getAdminDb();
-    const jobRef = db.collection("creative_jobs").doc(jobId);
+    jobRef = db.collection("creative_jobs").doc(jobId);
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) return NextResponse.json({ error: "Job no encontrado." }, { status: 404 });
     const job = jobSnap.data()!;
     if (job.kind !== "long") return NextResponse.json({ error: "El job no es de modo largo." }, { status: 400 });
+
+    // Reanudación: limpia el error del intento anterior
+    if (job.error) await jobRef.update({ error: FieldValue.delete() });
 
     const segments = [...(job.segments as Seg[])];
     const voice = String(job.narrationVoice || "Deep_Voice_Man");
@@ -76,10 +80,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ state: "done", audioDone: done });
   } catch (err) {
-    console.error("[creative/long/audio]", err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error generando narración." },
-      { status: 500 }
-    );
+    const msg = err instanceof Error ? err.message : "Error generando narración.";
+    console.error("[creative/long/audio]", msg);
+    // Persistir el error en el job: sin esto la tarjeta se queda muda en
+    // "0/N seg" y el admin no sabe por qué no avanza.
+    if (jobRef) await jobRef.update({ error: `Narración: ${msg}`.slice(0, 300) }).catch(() => {});
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

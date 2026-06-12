@@ -22,6 +22,7 @@ const execFileAsync = promisify(execFile);
 
 export async function POST(request: NextRequest) {
   const workDir = `/tmp/long-stitch-${Date.now()}`;
+  let jobRefOuter: FirebaseFirestore.DocumentReference | null = null;
   try {
     const h = request.headers.get("authorization") || "";
     const idToken = h.startsWith("Bearer ") ? h.slice(7) : null;
@@ -34,10 +35,14 @@ export async function POST(request: NextRequest) {
 
     const db = getAdminDb();
     const jobRef = db.collection("creative_jobs").doc(jobId);
+    jobRefOuter = jobRef;
     const jobSnap = await jobRef.get();
     if (!jobSnap.exists) return NextResponse.json({ error: "Job no encontrado." }, { status: 404 });
     const job = jobSnap.data()!;
     if (job.kind !== "long") return NextResponse.json({ error: "El job no es de modo largo." }, { status: 400 });
+
+    // Reanudación: limpia el error del intento anterior
+    if (job.error) await jobRef.update({ error: FieldValue.delete() });
 
     if (job.finalPath) {
       return NextResponse.json({ success: true, finalUrl: job.finalUrl });
@@ -74,12 +79,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, finalUrl });
   } catch (err) {
-    console.error("[creative/long/stitch]", err instanceof Error ? err.message : err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Error empalmando el video." },
-      { status: 500 }
-    );
-  } finally {
-    await rm(workDir, { recursive: true, force: true }).catch(() => {});
+    const msg = err instanceof Error ? err.message : "Error empalmando el video.";
+    console.error("[creative/long/stitch]", msg);
+    // Persistir el error en el job para que la tarjeta muestre QUÉ falló
+    if (jobRefOuter) await jobRefOuter.update({ error: `Empalme: ${msg}`.slice(0, 300) }).catch(() => {});
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

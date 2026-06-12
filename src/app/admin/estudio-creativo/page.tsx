@@ -401,26 +401,42 @@ export default function EstudioCreativoPage() {
       setMsg(null);
       const total = job.segments?.length || 0;
       try {
+        // La generación corre DESDE ESTA PESTAÑA (el panel orquesta las
+        // llamadas): si se cierra, se pausa — "Continuar" reanuda donde quedó.
+        const AVISO = "deja esta pestaña abierta";
+        // Si la fase devuelve algo que no es pending/done, corta con error
+        // claro en vez de saltar a la siguiente fase con trabajo incompleto.
+        const assertState = (r: { state?: string }, fase: string) => {
+          if (r.state !== "pending" && r.state !== "done") {
+            throw new Error(`El paso de ${fase} devolvió una respuesta inesperada.`);
+          }
+        };
         // 1) Narración TTS
         let state = "pending";
+        setStepMsg(`🎙 Narración con voz IA… (${total} segmentos) — ${AVISO}`);
         while (state === "pending") {
-          setStepMsg(`Narración con voz IA… (${total} segmentos)`);
           const r = await api("/api/creative/long/audio", { jobId: job.id });
+          assertState(r, "narración");
           state = r.state;
+          setStepMsg(`🎙 Narración ${r.audioDone ?? "?"}/${total} — ${AVISO}`);
         }
         // 2) Visuales (imágenes + escenas Veo)
         state = "pending";
+        setStepMsg(`🖼 Generando visuales (imágenes + escenas de video)… — ${AVISO}`);
         while (state === "pending") {
-          setStepMsg("Generando visuales (imágenes + escenas de video)…");
           const r = await api("/api/creative/long/visual", { jobId: job.id });
+          assertState(r, "visuales");
           state = r.state;
+          setStepMsg(`🖼 Visuales ${r.visualDone ?? "?"}/${total} — ${AVISO}`);
         }
         // 3) Render por segmento (subtítulos quemados)
         state = "pending";
+        setStepMsg(`🎬 Renderizando segmentos con subtítulos… — ${AVISO}`);
         while (state === "pending") {
-          setStepMsg("Renderizando segmentos con subtítulos…");
           const r = await api("/api/creative/long/render", { jobId: job.id });
+          assertState(r, "render");
           state = r.state;
+          setStepMsg(`🎬 Render ${r.renderDone ?? "?"}/${total} — ${AVISO}`);
         }
         // 4) Empalme
         if (!job.finalPath) {
@@ -433,7 +449,7 @@ export default function EstudioCreativoPage() {
         setStepMsg("");
         setMsg({
           type: "error",
-          text: `${e instanceof Error ? e.message : "Error."} — "Continuar" reanuda sin pagar doble.`,
+          text: `${e instanceof Error ? e.message : "Error."} — "Continuar generación" reanuda donde quedó, sin pagar doble.`,
         });
       } finally {
         setRunningJobId("");
@@ -803,7 +819,11 @@ export default function EstudioCreativoPage() {
                   {done ? "LISTO"
                     : job.error ? "ERROR"
                     : job.status === "script_ready" ? "BORRADOR"
-                    : isLong ? `${job.renderDone ?? 0}/${n} seg` : `${job.scenesDone ?? 0}/${job.numScenes} escenas`}
+                    : isLong
+                      ? ((job.audioDone ?? 0) < n ? `🎙 ${job.audioDone ?? 0}/${n} voz`
+                        : (job.visualDone ?? 0) < n ? `🖼 ${job.visualDone ?? 0}/${n} visual`
+                        : `🎬 ${job.renderDone ?? 0}/${n} render`)
+                      : `${job.scenesDone ?? 0}/${job.numScenes} escenas`}
                 </span>
               </div>
 
@@ -842,12 +862,25 @@ export default function EstudioCreativoPage() {
                   </>
                 )}
                 {resumable && (
-                  <button
-                    onClick={() => (isLong ? runLongPipeline(job) : runAdPipeline(job))}
-                    className="flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                  >
-                    <Loader2 className="w-3.5 h-3.5" /> Continuar generación
-                  </button>
+                  <>
+                    <button
+                      onClick={() => (isLong ? runLongPipeline(job) : runAdPipeline(job))}
+                      className="flex items-center gap-1 bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                    >
+                      <Loader2 className="w-3.5 h-3.5" /> Continuar generación
+                    </button>
+                    {/* El guion largo sigue siendo editable a media generación:
+                        los segmentos que cambien se regeneran, el resto
+                        conserva lo ya pagado. */}
+                    {isLong && (
+                      <button
+                        onClick={() => { setEditLongJobId(job.id); setDraftSegments(job.segments || null); }}
+                        className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+                      >
+                        <Pencil className="w-3.5 h-3.5" /> Editar guion
+                      </button>
+                    )}
+                  </>
                 )}
                 {done && (
                   <>
