@@ -14,7 +14,8 @@ const GEMINI_NATIVE_URL = "https://generativelanguage.googleapis.com/v1beta/mode
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+// claude-sonnet-4-20250514 quedó DEPRECADO (retiro 2026-06-15) → claude-sonnet-4-6
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 
 const SYSTEM_PROMPT = `Eres el gestor de Meta Ads (Facebook/Instagram) de Indexa: ayudas a dueños de negocio SIN conocimientos de publicidad a crear y optimizar campañas hablando normal. SIEMPRE en español, simple y sin jerga (si usas un término técnico, explícalo en 1 línea).
 

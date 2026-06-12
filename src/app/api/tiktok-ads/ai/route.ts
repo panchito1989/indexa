@@ -30,7 +30,8 @@ import {
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de anuncios
 
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+// claude-sonnet-4-20250514 quedó DEPRECADO (retiro 2026-06-15) → claude-sonnet-4-6
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
