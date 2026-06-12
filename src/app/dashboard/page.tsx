@@ -34,7 +34,6 @@ import {
   Check,
   Sparkles,
   Crown,
-  Rocket,
   LayoutTemplate,
   Megaphone,
   Video,
@@ -68,67 +67,31 @@ const COLOR_PRESETS = [
   "#9333EA", "#DB2777", "#334155", "#000000",
 ];
 
-// ── Plans ─────────────────────────────────────────────────────────
+// ── Plan único ─────────────────────────────────────────────────────
+// Un solo plan con todo incluido (el servidor /api/checkout fija el precio
+// real de $699; el priceId del cliente es solo para gating de UI).
 const PLANS = [
   {
-    id: "starter",
-    name: "Starter",
-    price: "$299",
-    period: "/mes",
-    icon: Sparkles,
-    color: "text-indexa-blue",
-    bg: "bg-indexa-blue/10",
-    border: "border-gray-200",
-    btnClass: "bg-indexa-blue text-white hover:bg-indexa-blue/90",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "",
-    features: [
-      "Sitio web profesional con IA",
-      "Botón de WhatsApp directo",
-      "SEO local automático",
-      "3 diseños profesionales",
-      "Certificado SSL incluido",
-      "Soporte por email",
-    ],
-  },
-  {
-    id: "profesional",
-    name: "Profesional",
-    price: "$599",
+    id: "indexa",
+    name: "Plan INDEXA",
+    price: "$699",
     period: "/mes",
     icon: Crown,
     color: "text-indexa-orange",
     bg: "bg-indexa-orange/10",
     border: "border-indexa-orange",
     btnClass: "bg-indexa-orange text-white hover:bg-indexa-orange/90",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO || "",
+    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "single",
     popular: true,
     features: [
-      "Todo lo de Starter",
+      "Sitio web profesional con IA",
       "Panel de edición completo (CMS)",
+      "Campañas de Google, Facebook y TikTok Ads",
+      "Asistente IA para tus anuncios (150 acciones/mes)",
+      "Imágenes publicitarias con IA (20/mes)",
       "SEO local avanzado (Schema.org)",
       "Estadísticas de visitas y clics",
       "Soporte prioritario por WhatsApp",
-      "Asesoría para optimizar tu perfil",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "$1,299",
-    period: "/mes",
-    icon: Rocket,
-    color: "text-purple-600",
-    bg: "bg-purple-50",
-    border: "border-gray-200",
-    btnClass: "bg-purple-600 text-white hover:bg-purple-700",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_ENTERPRISE || "",
-    features: [
-      "Todo lo de Profesional",
-      "Asesor personal dedicado",
-      "Configuración y soporte premium",
-      "Prioridad en nuevas funciones",
-      "Soporte técnico urgente",
-      "Capacitación 1 a 1",
     ],
   },
 ];
@@ -622,9 +585,9 @@ export default function ClientDashboardPage() {
 
           {/* Plans */}
           <section className="mt-10">
-            <h2 className="text-lg font-bold text-indexa-gray-dark">Elige tu Plan</h2>
-            <p className="mt-1 text-sm text-gray-500">Activa tu sitio web profesional con el plan que mejor se adapte a tu negocio.</p>
-            <div className="mt-6 grid gap-5 sm:grid-cols-3">
+            <h2 className="text-lg font-bold text-indexa-gray-dark">Activa tu Plan</h2>
+            <p className="mt-1 text-sm text-gray-500">Un solo plan con todo incluido: sitio web + campañas con IA.</p>
+            <div className="mx-auto mt-6 grid max-w-md gap-5">
               {PLANS.map((plan) => (
                 <div
                   key={plan.id}
@@ -943,13 +906,13 @@ export default function ClientDashboardPage() {
           <section className="mb-10">
             <div className="flex items-center gap-3">
               <CreditCard size={20} className="text-indexa-orange" />
-              <h2 className="text-lg font-bold text-indexa-gray-dark">Elige tu Plan</h2>
+              <h2 className="text-lg font-bold text-indexa-gray-dark">Activa tu Plan</h2>
             </div>
             <p className="mt-1 text-sm text-gray-500">
               Activa tu presencia digital y empieza a captar clientes hoy mismo.
             </p>
 
-            <div className="mt-6 grid gap-5 sm:grid-cols-3">
+            <div className="mx-auto mt-6 grid max-w-md gap-5">
               {PLANS.map((plan) => (
                 <div
                   key={plan.id}

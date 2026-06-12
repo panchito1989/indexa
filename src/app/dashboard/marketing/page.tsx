@@ -136,8 +136,6 @@ export default function MarketingPage() {
   const [adAccountId, setAdAccountId] = useState("");
   const [savedToken, setSavedToken] = useState("");
   const [savedAccount, setSavedAccount] = useState("");
-  const [nanoBananaKey, setNanoBananaKey] = useState("");
-  const [savedNanoBananaKey, setSavedNanoBananaKey] = useState("");
   const [metaPageId, setMetaPageId] = useState("");
   const [savedPageId, setSavedPageId] = useState("");
 
@@ -210,10 +208,6 @@ export default function MarketingPage() {
           setSavedAccount(data.metaAdAccountId);
           setAdAccountId(data.metaAdAccountId);
         }
-        if (data.nanoBananaApiKey) {
-          setSavedNanoBananaKey(data.nanoBananaApiKey);
-          setNanoBananaKey(data.nanoBananaApiKey);
-        }
         if (data.metaPageId) {
           setSavedPageId(data.metaPageId);
           setMetaPageId(data.metaPageId);
@@ -271,7 +265,6 @@ export default function MarketingPage() {
           tokens: {
             metaAccessToken: metaToken.trim(),
             metaAdAccountId: adAccountId.trim(),
-            ...(nanoBananaKey.trim() ? { nanoBananaApiKey: nanoBananaKey.trim() } : {}),
             ...(metaPageId.trim() ? { metaPageId: metaPageId.trim() } : {}),
           },
         }),
@@ -280,7 +273,6 @@ export default function MarketingPage() {
         const d = await res.json();
         throw new Error(d.error || "Error al guardar.");
       }
-      if (nanoBananaKey.trim()) setSavedNanoBananaKey(nanoBananaKey.trim());
       if (metaPageId.trim()) setSavedPageId(metaPageId.trim());
       setSavedToken(metaToken.trim());
       setSavedAccount(adAccountId.trim().replace("act_", ""));
@@ -425,7 +417,7 @@ export default function MarketingPage() {
 
   // ── Generate ad image with NanoBanana ───────────────────────
   const handleGenerateAdImage = useCallback(async () => {
-    if (!user || !savedNanoBananaKey || !adImagePrompt.trim()) return;
+    if (!user || !adImagePrompt.trim()) return;
     setGeneratingAdImage(true);
     setCreateError("");
     try {
@@ -434,7 +426,6 @@ export default function MarketingPage() {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
         body: JSON.stringify({
-          apiKey: savedNanoBananaKey,
           prompt: `Professional Facebook/Instagram advertisement image. ${adImagePrompt.trim()}. High quality commercial photography, clean composition, vibrant colors, no text overlay.`,
         }),
       });
@@ -450,7 +441,7 @@ export default function MarketingPage() {
     } finally {
       setGeneratingAdImage(false);
     }
-  }, [user, savedNanoBananaKey, adImagePrompt]);
+  }, [user, adImagePrompt]);
 
   // ── Upload image file ───────────────────────────────────────
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -709,17 +700,6 @@ export default function MarketingPage() {
                       className={`mt-1 ${inputClass}`}
                     />
                     <p className="mt-1 text-[10px] text-white/40">Solo el número, sin &quot;act_&quot;</p>
-                  </div>
-                  <div className="border-t border-white/10 pt-3 mt-1">
-                    <label className="block text-xs font-semibold text-white/50">NanoBanana API Key <span className="font-normal text-white/40">(para generar imágenes con IA)</span></label>
-                    <input
-                      type="password"
-                      value={nanoBananaKey}
-                      onChange={(e) => setNanoBananaKey(e.target.value)}
-                      placeholder="Tu API key de NanoBanana..."
-                      className={`mt-1 ${inputClass}`}
-                    />
-                    <p className="mt-1 text-[10px] text-white/40">Obténla gratis en <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">aistudio.google.com</a></p>
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-white/50">Facebook Page ID <span className="font-normal text-white/40">(requerido para crear anuncios)</span></label>
@@ -980,7 +960,7 @@ export default function MarketingPage() {
           )}
 
           {/* Ad Creator CTA */}
-          {savedNanoBananaKey && (
+          {(
             <div className="mt-8">
               <Link
                 href="/dashboard/marketing/crear-anuncio"
@@ -1188,7 +1168,7 @@ export default function MarketingPage() {
                   </label>
 
                   {/* Generate with AI */}
-                  {savedNanoBananaKey && (
+                  {(
                     <div className="flex flex-col gap-2 rounded-xl border border-white/10 bg-white/5 p-4">
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-purple-400">
                         <Wand2 size={14} /> Generar con IA

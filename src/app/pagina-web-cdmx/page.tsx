@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en CDMX — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Ciudad de México en menos de 3 minutos. Con SEO local, WhatsApp integrado y IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Ciudad de México en menos de 3 minutos. Con SEO local, WhatsApp integrado y IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web CDMX", "sitio web Ciudad de México", "presencia digital CDMX", "diseño web CDMX", "página web negocio México DF"],
   alternates: { canonical: "/pagina-web-cdmx" },
   openGraph: {
@@ -47,7 +47,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web profesional para un negocio en CDMX?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, una página web profesional para tu negocio en Ciudad de México cuesta desde $299 MXN/mes, incluyendo diseño con IA, SEO local, botón de WhatsApp y certificado SSL. Sin costos iniciales ni contratos.",
+        text: "Con INDEXA, una página web profesional para tu negocio en Ciudad de México cuesta $699 MXN/mes (plan único, todo incluido), con diseño con IA, SEO local, botón de WhatsApp y certificado SSL. Sin costos iniciales ni contratos.",
       },
     },
     {

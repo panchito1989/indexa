@@ -68,7 +68,7 @@ const faqJsonLd = {
       name: "¿Cuál de las tres tiene soporte en español por WhatsApp?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "INDEXA es la única que ofrece soporte directo por WhatsApp en español en sus tres planes (desde el Starter de $299 MXN/mes). Wix tiene chat web en inglés con respuesta lenta; el español solo está disponible en planes Premium con tiempos de respuesta de 24 a 48 horas. GoDaddy ofrece chat y teléfono en español pero no por WhatsApp, lo que para una PYME mexicana implica dejar el celular a un lado y usar otro canal.",
+        text: "INDEXA es la única que ofrece soporte prioritario por WhatsApp en español, incluido en su plan único de $699 MXN/mes. Wix tiene chat web en inglés con respuesta lenta; el español solo está disponible en planes Premium con tiempos de respuesta de 24 a 48 horas. GoDaddy ofrece chat y teléfono en español pero no por WhatsApp, lo que para una PYME mexicana implica dejar el celular a un lado y usar otro canal.",
       },
     },
     {
@@ -92,7 +92,7 @@ const faqJsonLd = {
       name: "¿Cuál tiene mejor SEO local automático para México?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "INDEXA tiene la mejor implementación automática de SEO local para México: cada sitio incluye Schema.org LocalBusiness con coordenadas GPS, ciudad, categoría, horarios y servicios desde el plan Profesional ($599 MXN/mes), sin configuración manual. Wix tiene Schema básico pero requiere configurar manualmente el LocalBusiness. GoDaddy tiene SEO básico pero le falta Schema.org estructurado fuera del plan Premium.",
+        text: "INDEXA tiene la mejor implementación automática de SEO local para México: cada sitio incluye Schema.org LocalBusiness con coordenadas GPS, ciudad, categoría, horarios y servicios — incluido para todos en el plan único de $699 MXN/mes, sin configuración manual. Wix tiene Schema básico pero requiere configurar manualmente el LocalBusiness. GoDaddy tiene SEO básico pero le falta Schema.org estructurado fuera del plan Premium.",
       },
     },
   ],
@@ -107,16 +107,16 @@ interface CompareRow {
 }
 
 const COMPARE: CompareRow[] = [
-  { feature: "Precio plan básico", indexa: "$299 MXN/mes", wix: "~$200 MXN (USD)", godaddy: "~$189 MXN (USD)", ganador: "indexa" },
+  { feature: "Precio mensual", indexa: "$699 MXN/mes (plan único, todo incluido)", wix: "~$200 MXN (USD)", godaddy: "~$189 MXN (USD)", ganador: "tie" },
   { feature: "Moneda y facturación", indexa: "MXN, CFDI 4.0", wix: "USD", godaddy: "USD", ganador: "indexa" },
   { feature: "Setup con IA", indexa: "3 min, todo el sitio", wix: "Wix ADI básico", godaddy: "No", ganador: "indexa" },
   { feature: "Botón WhatsApp nativo", indexa: "Sí, con tracking", wix: "Plugin externo", godaddy: "Plugin externo", ganador: "indexa" },
   { feature: "Anuncios FB/IG/TikTok integrados", indexa: "Sí, desde $50 MXN/día", wix: "No (externo)", godaddy: "No (externo)", ganador: "indexa" },
-  { feature: "Schema.org LocalBusiness automático", indexa: "Sí, plan Profesional", wix: "Manual", godaddy: "Manual", ganador: "indexa" },
-  { feature: "Soporte en español por WhatsApp", indexa: "Sí, todos los planes", wix: "No", godaddy: "Solo teléfono/chat", ganador: "indexa" },
+  { feature: "Schema.org LocalBusiness automático", indexa: "Sí, incluido para todos", wix: "Manual", godaddy: "Manual", ganador: "indexa" },
+  { feature: "Soporte en español por WhatsApp", indexa: "Sí, incluido", wix: "No", godaddy: "Solo teléfono/chat", ganador: "indexa" },
   { feature: "Plantillas modernas", indexa: "3 plantillas optimizadas para PYMES", wix: "800+ plantillas", godaddy: "100+ plantillas", ganador: "wix" },
   { feature: "Editor drag-and-drop", indexa: "Panel visual simple", wix: "Editor avanzado", godaddy: "Editor intermedio", ganador: "wix" },
-  { feature: "Dominio propio incluido", indexa: "Plan Enterprise", wix: "1 año gratis", godaddy: "1 año gratis", ganador: "tie" },
+  { feature: "Dominio propio incluido", indexa: "No incluido (conectas el tuyo)", wix: "1 año gratis", godaddy: "1 año gratis", ganador: "tie" },
   { feature: "Tienda en línea", indexa: "Roadmap 2026", wix: "Sí (Wix Stores)", godaddy: "Sí (limitada)", ganador: "wix" },
   { feature: "Tiempo de aprendizaje", indexa: "Cero (la IA hace todo)", wix: "2-3 días", godaddy: "1-2 días", ganador: "indexa" },
 ];
@@ -165,7 +165,7 @@ export default function GuiaIndexaVsWixVsGoDaddy() {
         <article className="prose prose-lg prose-gray mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h2>Respuesta corta</h2>
           <p>
-            <strong>Para una PYME mexicana, INDEXA gana en 9 de 12 categorías.</strong> Wix gana en plantillas y editor avanzado (mejor si necesitas un sitio creativo complejo). GoDaddy gana cuando ya compraste tu dominio con ellos y quieres integración con su correo. Pero para el caso típico — un negocio local que necesita su sitio web operando rápido, con SEO local, WhatsApp y la opción de hacer publicidad sin contratar agencia — INDEXA es la opción más eficiente.
+            <strong>Para una PYME mexicana, INDEXA gana en 7 de 12 categorías.</strong> Wix gana en plantillas y editor avanzado (mejor si necesitas un sitio creativo complejo). GoDaddy gana cuando ya compraste tu dominio con ellos y quieres integración con su correo. En precio nominal Wix y GoDaddy arrancan más baratos, pero el plan único de INDEXA ($699 MXN/mes) ya incluye lo que en las otras pagas por separado: campañas con asistente IA, SEO local automático, WhatsApp con tracking y soporte en español. Para el caso típico — un negocio local que necesita su sitio web operando rápido y trayendo clientes sin contratar agencia — INDEXA es la opción con mayor valor total incluido.
           </p>
         </article>
 
@@ -223,7 +223,7 @@ export default function GuiaIndexaVsWixVsGoDaddy() {
 
           <h3>Caso 5: PYME que recién empieza, sin presupuesto técnico</h3>
           <p>
-            <strong>Ganador claro: INDEXA.</strong> $299 MXN/mes, 14 días gratis sin tarjeta, cero curva de aprendizaje, soporte en español por WhatsApp. Es la opción que minimiza fricción al máximo: si te late, te quedas; si no, no pagas.
+            <strong>Ganador claro: INDEXA.</strong> $699 MXN/mes (plan único con todo incluido), 14 días gratis sin tarjeta, cero curva de aprendizaje, soporte en español por WhatsApp. Es la opción que minimiza fricción al máximo: si te late, te quedas; si no, no pagas.
           </p>
 
           <div className="not-prose my-12 rounded-2xl border border-indexa-orange/30 bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50 p-8 text-center">

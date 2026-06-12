@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en León — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en León, Guanajuato en menos de 3 minutos. SEO local para León y el Bajío, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en León, Guanajuato en menos de 3 minutos. SEO local para León y el Bajío, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web León", "sitio web León Guanajuato", "presencia digital León", "diseño web León", "página web negocio León Bajío"],
   alternates: { canonical: "/pagina-web-leon" },
   openGraph: {
@@ -33,7 +33,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para un negocio en León, Guanajuato?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, tu página web en León cuesta desde $299 MXN/mes. Incluye diseño con IA, SEO local para León y el Bajío, WhatsApp y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
+        text: "Con INDEXA, tu página web en León cuesta $699 MXN/mes con el plan único todo incluido: diseño con IA, SEO local para León y el Bajío, WhatsApp y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
       },
     },
     {

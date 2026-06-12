@@ -10,7 +10,7 @@ const PAGE_PATH = "/agencia-de-publicidad";
 export const metadata: Metadata = {
   title: "Agencia de Publicidad en México | INDEXA — Anuncios que Sí Venden",
   description:
-    "INDEXA es la agencia de publicidad para PYMES en México: Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Sin contratos, leads directos a WhatsApp, desde $299 MXN/mes.",
+    "INDEXA es la agencia de publicidad para PYMES en México: Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Sin contratos, leads directos a WhatsApp, plan único de $699 MXN/mes todo incluido.",
   keywords: [
     "agencia de publicidad",
     "agencia publicidad",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Agencia de Publicidad en México — INDEXA",
     description:
-      "Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Leads directos a WhatsApp desde $299 MXN/mes.",
+      "Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Leads directos a WhatsApp por $699 MXN/mes, plan único todo incluido.",
     url: `${SITE_URL}${PAGE_PATH}`,
     locale: "es_MX",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
@@ -38,17 +38,17 @@ const faq = [
   {
     pregunta: "¿Qué hace una agencia de publicidad?",
     respuesta:
-      "Una agencia de publicidad diseña, ejecuta y optimiza campañas de anuncios para que un negocio gane más clientes. Las áreas típicas son: publicidad pagada en Google (Search, Maps y Display), publicidad en Meta (Facebook e Instagram), TikTok Ads, YouTube Ads, publicidad programática, diseño creativo de anuncios, copywriting persuasivo y reportes de resultados. INDEXA es una agencia de publicidad con IA especializada en PYMES de México: combina los frentes anteriores en una plataforma con planes desde $299 MXN/mes y leads directos a WhatsApp.",
+      "Una agencia de publicidad diseña, ejecuta y optimiza campañas de anuncios para que un negocio gane más clientes. Las áreas típicas son: publicidad pagada en Google (Search, Maps y Display), publicidad en Meta (Facebook e Instagram), TikTok Ads, YouTube Ads, publicidad programática, diseño creativo de anuncios, copywriting persuasivo y reportes de resultados. INDEXA es una agencia de publicidad con IA especializada en PYMES de México: combina los frentes anteriores en una plataforma con un plan único de $699 MXN/mes todo incluido y leads directos a WhatsApp.",
   },
   {
     pregunta: "¿Cuánto cobra una agencia de publicidad en México?",
     respuesta:
-      "El costo se divide en dos partes: el fee de la agencia y el presupuesto de anuncios. Fee típico de agencia: $5,000–$50,000 MXN/mes según tamaño. Presupuesto recomendado de anuncios: $3,000–$20,000 MXN/mes para PYMES. INDEXA cobra fee desde $299 MXN/mes (incluye plataforma + setup + optimización con IA) y el presupuesto de anuncios va directo a Meta o Google — tú lo controlas. Total mensual realista para una PYME: $5,000–$15,000 MXN/mes incluyendo INDEXA + presupuesto de ads.",
+      "El costo se divide en dos partes: el fee de la agencia y el presupuesto de anuncios. Fee típico de agencia: $5,000–$50,000 MXN/mes según tamaño. Presupuesto recomendado de anuncios: $3,000–$20,000 MXN/mes para PYMES. INDEXA cobra un fee fijo de $699 MXN/mes con su plan único todo incluido (plataforma + setup + optimización con IA) y el presupuesto de anuncios va directo a Meta o Google — tú lo controlas. Total mensual realista para una PYME: $5,000–$15,000 MXN/mes incluyendo INDEXA + presupuesto de ads.",
   },
   {
     pregunta: "¿En qué plataformas hace publicidad INDEXA?",
     respuesta:
-      "INDEXA opera publicidad en las principales plataformas digitales: Google Ads (búsqueda, Maps, Display y YouTube), Meta Ads (Facebook e Instagram), TikTok Ads para alcance joven, y publicidad en WhatsApp Business para retargeting. Los planes Profesional y Enterprise también incluyen automatizaciones cross-platform: el mismo prospecto que clickeó tu anuncio de Facebook recibe un email, un SMS y aparece en tus retargeting lists de Google.",
+      "INDEXA opera publicidad en las principales plataformas digitales: Google Ads (búsqueda, Maps, Display y YouTube), Meta Ads (Facebook e Instagram), TikTok Ads para alcance joven, y publicidad en WhatsApp Business para retargeting. El plan único también incluye automatizaciones cross-platform: el mismo prospecto que clickeó tu anuncio de Facebook recibe un email, un SMS y aparece en tus retargeting lists de Google.",
   },
   {
     pregunta: "¿Cuánto tarda en dar resultados la publicidad digital?",
@@ -63,7 +63,7 @@ const faq = [
   {
     pregunta: "¿INDEXA hace creatividades (imágenes y videos) para los anuncios?",
     respuesta:
-      "Sí. La IA de INDEXA genera variantes de creatividades a partir de tu información y fotos: copies en español, banners en formatos de Meta y Google, ad copy A/B y videos cortos para TikTok/Reels. En el plan Profesional incluye 4 reels y 8 posts al mes; en Enterprise incluye creatividades ilimitadas. Si ya tienes tu propio diseñador, INDEXA acepta tus archivos y los carga directo a las campañas.",
+      "Sí. La IA de INDEXA genera variantes de creatividades a partir de tu información y fotos: copies en español, banners en formatos de Meta y Google, ad copy A/B y videos cortos para TikTok/Reels. El plan único incluye creatividades generadas con IA (reels, posts y banners) cada mes. Si ya tienes tu propio diseñador, INDEXA acepta tus archivos y los carga directo a las campañas.",
   },
   {
     pregunta: "¿Es mejor publicidad en Google o en Facebook?",
@@ -143,7 +143,7 @@ export default function AgenciaPublicidadPage() {
     serviceType: "Publicidad pagada en Google Ads, Meta Ads, TikTok y plataformas digitales",
     pagePath: PAGE_PATH,
     description:
-      "INDEXA es la agencia de publicidad con IA para PYMES en México. Google Ads, Meta Ads, TikTok Ads y publicidad programática desde $299 MXN/mes con leads directos a WhatsApp.",
+      "INDEXA es la agencia de publicidad con IA para PYMES en México. Google Ads, Meta Ads, TikTok Ads y publicidad programática por $699 MXN/mes (plan único, todo incluido) con leads directos a WhatsApp.",
     audienceType: "PYMES, emprendedores y negocios locales en México que necesitan publicidad pagada",
     faq,
   });
@@ -185,7 +185,7 @@ export default function AgenciaPublicidadPage() {
 
             <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-white/70 sm:text-xl">
               Google Ads, Meta Ads, TikTok Ads y publicidad digital optimizada por IA. Leads directos a tu WhatsApp.
-              Desde <span className="font-semibold text-white">$299 MXN al mes</span>, sin contratos anuales.
+              Plan único de <span className="font-semibold text-white">$699 MXN al mes</span> con todo incluido, sin contratos anuales.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -219,7 +219,7 @@ export default function AgenciaPublicidadPage() {
             </p>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
               <strong>INDEXA</strong> es una agencia de publicidad con IA para PYMES en México que combina los frentes
-              anteriores en una sola plataforma. Pagás desde <strong>$299 MXN/mes</strong> y los leads llegan directo a
+              anteriores en una sola plataforma. Pagás <strong>$699 MXN/mes</strong> (plan único, todo incluido) y los leads llegan directo a
               tu WhatsApp con nombre y servicio que buscan — sin emails fríos, sin reuniones de 1 hora, sin contratos
               anuales.
             </p>

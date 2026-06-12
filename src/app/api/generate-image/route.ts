@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { consumeMonthlyQuota } from "@/lib/monthlyQuota";
 
 const GEMINI_ENDPOINT =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent";
@@ -26,6 +27,12 @@ export async function POST(request: NextRequest) {
 
   if (!(await checkRateLimit(`img-uid:${user.uid}`, 15, 60))) {
     return NextResponse.json({ error: "Demasiadas solicitudes." }, { status: 429 });
+  }
+
+  // Cupo mensual del plan único (20 imágenes IA/mes). Admin/subadmin exentos.
+  const quota = await consumeMonthlyQuota(user.uid, "image");
+  if (!quota.allowed) {
+    return NextResponse.json({ error: quota.message }, { status: 429 });
   }
 
   // ── Body ──────────────────────────────────────────────────────

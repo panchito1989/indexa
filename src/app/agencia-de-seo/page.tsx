@@ -9,7 +9,7 @@ const PAGE_PATH = "/agencia-de-seo";
 export const metadata: Metadata = {
   title: "Agencia de SEO en México | INDEXA — Posiciona tu Negocio en Google",
   description:
-    "INDEXA es la agencia de SEO para PYMES en México. Posicionamiento en Google, SEO local en Maps, schema, link building y reportes en tiempo real. Desde $299 MXN/mes.",
+    "INDEXA es la agencia de SEO para PYMES en México. Posicionamiento en Google, SEO local en Maps, schema, link building y reportes en tiempo real. Plan único de $699 MXN/mes, todo incluido.",
   keywords: [
     "agencia de seo",
     "agencia seo",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Agencia de SEO en México — INDEXA",
     description:
-      "Posicionamiento en Google y Maps con IA. SEO local, schema y reportes en tiempo real desde $299 MXN/mes.",
+      "Posicionamiento en Google y Maps con IA. SEO local, schema y reportes en tiempo real por $699 MXN/mes, plan único todo incluido.",
     url: `${SITE_URL}${PAGE_PATH}`,
     locale: "es_MX",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
@@ -42,7 +42,7 @@ const faq = [
   {
     pregunta: "¿Cuánto cuesta una agencia de SEO en México?",
     respuesta:
-      "El fee típico de una agencia de SEO en México va de $5,000 a $40,000 MXN/mes según el alcance. Auditorías one-shot cuestan $10,000–$50,000 MXN. SEO local (Google Maps + GBP) suele costar $5,000–$15,000 MXN/mes. SEO orgánico nacional con link building cuesta $20,000+ MXN/mes. INDEXA incluye SEO local automático en todos los planes ($299 MXN/mes Starter), SEO local avanzado en Profesional ($599 MXN/mes) y SEO en 5 ciudades en Dominio Local ($1,997 MXN/mes para mercado USA-Hispano).",
+      "El fee típico de una agencia de SEO en México va de $5,000 a $40,000 MXN/mes según el alcance. Auditorías one-shot cuestan $10,000–$50,000 MXN. SEO local (Google Maps + GBP) suele costar $5,000–$15,000 MXN/mes. SEO orgánico nacional con link building cuesta $20,000+ MXN/mes. INDEXA incluye SEO local automático y avanzado en su plan único de $699 MXN/mes, todo incluido. Para el mercado USA-Hispano existe Dominio Local ($1,997 MXN/mes) con SEO en 5 ciudades.",
   },
   {
     pregunta: "¿Cuánto tarda en dar resultados el SEO?",
@@ -52,7 +52,7 @@ const faq = [
   {
     pregunta: "¿Qué incluye el servicio de SEO de INDEXA?",
     respuesta:
-      "INDEXA incluye en todos los planes: (1) SEO técnico automático — schema.org JSON-LD, sitemap, robots.txt, meta tags optimizados; (2) SEO local — Google Business Profile, citaciones, schema LocalBusiness; (3) optimización on-page por keyword principal y secundarias; (4) sitio web con velocidad optimizada (Core Web Vitals). En Profesional se agrega SEO local avanzado y reportes mensuales. En Dominio Local se agrega SEO en múltiples ciudades, sistema automatizado de reseñas, link building y publicación de contenido en blog.",
+      "El plan único de INDEXA ($699 MXN/mes, todo incluido) cubre: (1) SEO técnico automático — schema.org JSON-LD, sitemap, robots.txt, meta tags optimizados; (2) SEO local — Google Business Profile, citaciones, schema LocalBusiness; (3) optimización on-page por keyword principal y secundarias; (4) sitio web con velocidad optimizada (Core Web Vitals), además de SEO local avanzado y reportes mensuales. En Dominio Local (mercado USA-Hispano) se agrega SEO en múltiples ciudades, sistema automatizado de reseñas, link building y publicación de contenido en blog.",
   },
   {
     pregunta: "¿INDEXA hace SEO local para Google Maps?",
@@ -109,7 +109,7 @@ export default function AgenciaSeoPage() {
     serviceType: "SEO técnico, SEO local, posicionamiento Google Maps, link building y contenido",
     pagePath: PAGE_PATH,
     description:
-      "INDEXA es la agencia de SEO con IA para PYMES en México. SEO técnico, SEO local en Google Maps, schema.org, link building y reportes en tiempo real desde $299 MXN/mes.",
+      "INDEXA es la agencia de SEO con IA para PYMES en México. SEO técnico, SEO local en Google Maps, schema.org, link building y reportes en tiempo real por $699 MXN/mes, plan único todo incluido.",
     audienceType: "PYMES y negocios locales en México que necesitan aparecer arriba en Google",
     faq,
   });
@@ -150,7 +150,7 @@ export default function AgenciaSeoPage() {
 
             <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-white/70 sm:text-xl">
               SEO técnico, SEO local en Google Maps, schema.org, link building y reportes en tiempo real — todo
-              automatizado por IA, desde <span className="font-semibold text-white">$299 MXN al mes</span>. Aparece
+              automatizado por IA, por <span className="font-semibold text-white">$699 MXN al mes</span> en un plan único todo incluido. Aparece
               arriba en Google sin esperar 12 meses.
             </p>
 
@@ -184,8 +184,8 @@ export default function AgenciaSeoPage() {
             </p>
             <p className="mt-4 text-lg leading-relaxed text-white/80">
               <strong>INDEXA</strong> automatiza el SEO técnico, on-page y local desde el día 1 usando IA. Tu sitio web
-              ya nace con schema.org perfecto, velocidad optimizada y citaciones locales. Pagás desde{" "}
-              <strong>$299 MXN/mes</strong> y empiezas a aparecer en Google Maps en 30-90 días, mientras el SEO
+              ya nace con schema.org perfecto, velocidad optimizada y citaciones locales. Pagás{" "}
+              <strong>$699 MXN/mes</strong> (plan único, todo incluido) y empiezas a aparecer en Google Maps en 30-90 días, mientras el SEO
               orgánico gana posiciones más amplias en 3-6 meses.
             </p>
           </div>

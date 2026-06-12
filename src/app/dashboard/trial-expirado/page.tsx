@@ -54,15 +54,14 @@ export default function TrialExpiradoPage() {
   }, [user, trial, loading, router]);
 
   const handleCheckout = useCallback(async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
-    if (!user || !sitioId || !priceId) return;
+    if (!user || !sitioId) return;
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId: "starter", sitioId, authToken: token }),
+        body: JSON.stringify({ sitioId, authToken: token }),
       });
       const data = await res.json();
       if (data.success && data.url) {
@@ -132,7 +131,7 @@ export default function TrialExpiradoPage() {
             ) : (
               <Zap className="h-5 w-5" />
             )}
-            {checkingOut ? "Redirigiendo a pago..." : "Activar plan desde $299 MXN/mes"}
+            {checkingOut ? "Redirigiendo a pago..." : "Activar plan — $699 MXN/mes"}
           </button>
           <a
             href="https://wa.me/525622042820?text=Hola%2C%20mi%20prueba%20de%20INDEXA%20termin%C3%B3%20y%20necesito%20ayuda"

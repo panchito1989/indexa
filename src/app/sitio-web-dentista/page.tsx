@@ -11,7 +11,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Dentista en México — INDEXA",
   description:
-    "Crea la página web de tu consultorio dental en menos de 3 minutos. Lista de servicios, galería, citas por WhatsApp y SEO local para aparecer en Google cuando busquen 'dentista en [tu ciudad]'. Desde $299 MXN/mes.",
+    "Crea la página web de tu consultorio dental en menos de 3 minutos. Lista de servicios, galería, citas por WhatsApp y SEO local para aparecer en Google cuando busquen 'dentista en [tu ciudad]'. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web dentista", "sitio web consultorio dental", "web para dentista México", "página web clínica dental", "sitio web ortodoncista"],
   alternates: { canonical: "/sitio-web-dentista" },
   openGraph: {
@@ -39,7 +39,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta la página web de un consultorio dental en México?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, la página web de tu consultorio dental cuesta desde $299 MXN/mes. Incluye diseño profesional con lista de servicios, galería de resultados, SEO local, citas por WhatsApp y SSL. Sin pagos iniciales ni contratos anuales.",
+        text: "Con INDEXA, la página web de tu consultorio dental cuesta $699 MXN/mes con el plan único todo incluido: diseño profesional con lista de servicios, galería de resultados, SEO local, citas por WhatsApp y SSL. Sin pagos iniciales ni contratos anuales.",
       },
     },
     {

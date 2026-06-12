@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en Mérida — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Mérida en menos de 3 minutos. SEO local para Mérida y Yucatán, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Mérida en menos de 3 minutos. SEO local para Mérida y Yucatán, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web Mérida", "sitio web Mérida", "presencia digital Mérida", "diseño web Yucatán", "página web negocio Mérida Yucatán"],
   alternates: { canonical: "/pagina-web-merida" },
   openGraph: {
@@ -33,7 +33,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para un negocio en Mérida, Yucatán?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, tu página web en Mérida cuesta desde $299 MXN/mes. Incluye diseño generado con IA, SEO local para Mérida y Yucatán, botón de WhatsApp y SSL. Sin costos iniciales ni contratos forzosos.",
+        text: "Con INDEXA, tu página web en Mérida cuesta $699 MXN/mes con el plan único todo incluido: diseño generado con IA, SEO local para Mérida y Yucatán, botón de WhatsApp y SSL. Sin costos iniciales ni contratos forzosos.",
       },
     },
     {

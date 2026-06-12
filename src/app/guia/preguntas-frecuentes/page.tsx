@@ -45,7 +45,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para mi negocio en México?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, los planes van desde $299 MXN/mes (Starter) hasta $1,299 MXN/mes (Enterprise). Incluyen hosting, SSL, SEO automático, WhatsApp integrado y panel de edición. Un freelance cobra entre $5,000 y $15,000 MXN de pago único sin mantenimiento. Una agencia entre $20,000 y $80,000 MXN.",
+        text: "Con INDEXA, el plan único cuesta $699 MXN/mes con todo incluido: hosting, SSL, SEO local automático, WhatsApp integrado, panel de edición, estadísticas y campañas de Google, Facebook/Instagram y TikTok con asistente IA. Un freelance cobra entre $5,000 y $15,000 MXN de pago único sin mantenimiento. Una agencia entre $20,000 y $80,000 MXN.",
       },
     },
     {
@@ -69,7 +69,7 @@ const faqJsonLd = {
       name: "¿Qué es el hosting y está incluido?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "El hosting es el servicio que mantiene tu página web accesible en internet las 24 horas. Con INDEXA, el hosting está incluido en todos los planes sin costo adicional. Tu sitio se aloja en servidores de alta velocidad con 99.9% de uptime garantizado.",
+        text: "El hosting es el servicio que mantiene tu página web accesible en internet las 24 horas. Con INDEXA, el hosting está incluido en el plan único sin costo adicional. Tu sitio se aloja en servidores de alta velocidad con 99.9% de uptime garantizado.",
       },
     },
     {
@@ -149,9 +149,7 @@ export default function GuiaPreguntasFrecuentes() {
             Los costos dependen de la solución que elijas:
           </p>
           <ul>
-            <li><strong>INDEXA Starter</strong> — $299 MXN/mes: sitio web profesional, SEO automático, WhatsApp, SSL y hosting incluidos</li>
-            <li><strong>INDEXA Profesional</strong> — $599 MXN/mes: todo lo anterior + panel CMS completo, SEO avanzado, estadísticas y soporte WhatsApp</li>
-            <li><strong>INDEXA Enterprise</strong> — $1,299 MXN/mes: todo lo anterior + asesor dedicado, configuración premium y capacitación 1 a 1</li>
+            <li><strong>INDEXA (plan único)</strong> — $699 MXN/mes: sitio web profesional con IA, panel CMS completo, SEO local avanzado, estadísticas, campañas de Google, Facebook/Instagram y TikTok con asistente IA, WhatsApp, SSL, hosting y soporte prioritario por WhatsApp — todo incluido, sin niveles ni sorpresas</li>
             <li><strong>Freelance</strong> — $5,000-$15,000 MXN pago único, sin mantenimiento ni SEO</li>
             <li><strong>Agencia</strong> — $20,000-$80,000 MXN, tiempos de entrega de 4-8 semanas</li>
           </ul>
@@ -162,7 +160,7 @@ export default function GuiaPreguntasFrecuentes() {
 
           <h3>¿Hay contrato o permanencia mínima?</h3>
           <p>
-            No. Todos los planes de INDEXA son <strong>mensuales sin contrato</strong>.
+            No. El plan único de INDEXA es <strong>mensual sin contrato</strong>.
             No hay permanencia mínima ni penalización por cancelar. Puedes cancelar
             cuando quieras y tu sitio se mantiene activo hasta el final del período
             pagado.
@@ -180,7 +178,7 @@ export default function GuiaPreguntasFrecuentes() {
           <p>
             Sí. Puedes <Link href="/registro">crear tu cuenta</Link> y explorar la
             plataforma sin costo. Tu sitio web queda publicado con una URL de INDEXA
-            gratuita mientras decides qué plan te conviene.
+            gratuita durante tus 14 días de prueba, sin tarjeta.
           </p>
 
           <h2>Sobre tu página web</h2>
@@ -245,8 +243,8 @@ export default function GuiaPreguntasFrecuentes() {
           <h3>¿Qué es el hosting y está incluido?</h3>
           <p>
             El hosting es el servicio que mantiene tu página web accesible en internet
-            las 24 horas. Con INDEXA, el hosting está <strong>incluido en todos los
-            planes</strong> sin costo adicional. Tu sitio se aloja en servidores de
+            las 24 horas. Con INDEXA, el hosting está <strong>incluido en el plan
+            único</strong> sin costo adicional. Tu sitio se aloja en servidores de
             alta velocidad con 99.9% de uptime.
           </p>
 

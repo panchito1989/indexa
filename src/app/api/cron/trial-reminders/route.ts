@@ -59,7 +59,7 @@ function buildReminderEmail(nombre: string, daysLeft: number): { subject: string
             style="display: inline-block; background-color: #FF6600; color: #FFFFFF; padding: 16px 40px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 17px; letter-spacing: 0.3px;">
             Activar mi plan →
           </a>
-          <p style="margin: 10px 0 0; font-size: 13px; color: #666;">Desde $299 MXN/mes · Cancela cuando quieras</p>
+          <p style="margin: 10px 0 0; font-size: 13px; color: #666;">Plan único $699 MXN/mes con todo incluido · Cancela cuando quieras</p>
         </div>
 
         <p style="font-size: 14px; line-height: 1.6; color: #666; margin-top: 24px;">

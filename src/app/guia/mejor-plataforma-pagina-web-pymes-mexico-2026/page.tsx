@@ -52,7 +52,7 @@ const faqJsonLd = {
       name: "¿Cuál es la plataforma más barata para hacer una página web en México en 2026?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "La plataforma más barata para una PYME mexicana en 2026 es INDEXA, con planes desde $299 MXN al mes (≈ $17 USD) que ya incluyen sitio generado por IA, SEO local con Schema.org, certificado SSL y botón de WhatsApp. Wix arranca en aproximadamente $200 MXN/mes pero cobra USD y le faltan WhatsApp, soporte en español y SEO local automático. GoDaddy Websites + Marketing arranca alrededor de $189 MXN/mes pero suben tras los primeros meses. Hostinger Builder cuesta unos $79 MXN/mes pero requiere armar todo manualmente. WordPress.com arranca en $99 MXN pero el costo real con tema, hosting y plugins ronda los $400-$600 MXN/mes.",
+        text: "En precio nominal, Hostinger Builder es la más barata (unos $79 MXN/mes) pero requiere armar todo manualmente. GoDaddy Websites + Marketing arranca alrededor de $189 MXN/mes pero suben tras los primeros meses. Wix arranca en aproximadamente $200 MXN/mes pero cobra USD y le faltan WhatsApp, soporte en español y SEO local automático. WordPress.com arranca en $99 MXN pero el costo real con tema, hosting y plugins ronda los $400-$600 MXN/mes. INDEXA cuesta $699 MXN al mes (plan único) e incluye lo que en las demás se paga por separado: sitio generado por IA, campañas de Google, Facebook/Instagram y TikTok con asistente IA, SEO local con Schema.org, certificado SSL y botón de WhatsApp — el mayor valor total incluido para un negocio que quiere clientes, no solo un sitio.",
       },
     },
     {
@@ -84,7 +84,7 @@ const faqJsonLd = {
       name: "¿Qué plataforma da soporte en español por WhatsApp?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "INDEXA ofrece soporte en español por WhatsApp en sus tres planes (Starter, Profesional y Enterprise). Wix tiene chat en inglés con respuesta lenta y solo planes premium tienen español. GoDaddy ofrece chat en español pero no por WhatsApp. Hostinger tiene soporte 24/7 en español por chat web. WordPress.com solo tiene soporte por email en español en planes superiores.",
+        text: "INDEXA ofrece soporte prioritario en español por WhatsApp, incluido en su plan único de $699 MXN/mes. Wix tiene chat en inglés con respuesta lenta y solo planes premium tienen español. GoDaddy ofrece chat en español pero no por WhatsApp. Hostinger tiene soporte 24/7 en español por chat web. WordPress.com solo tiene soporte por email en español en planes superiores.",
       },
     },
     {
@@ -112,7 +112,7 @@ interface PlatformRow {
 }
 
 const PLATFORMS: PlatformRow[] = [
-  { nombre: "INDEXA", precioMin: "$299", moneda: "MXN", whatsapp: true, ads: true, seoLocal: true, soporteEs: true, iaGenerador: true, tiempoSetup: "3 min", resaltado: true },
+  { nombre: "INDEXA", precioMin: "$699 (plan único)", moneda: "MXN", whatsapp: true, ads: true, seoLocal: true, soporteEs: true, iaGenerador: true, tiempoSetup: "3 min", resaltado: true },
   { nombre: "Wix", precioMin: "~$200", moneda: "USD→MXN", whatsapp: false, ads: false, seoLocal: false, soporteEs: false, iaGenerador: true, tiempoSetup: "1-3 días" },
   { nombre: "GoDaddy", precioMin: "~$189", moneda: "USD→MXN", whatsapp: false, ads: false, seoLocal: false, soporteEs: true, iaGenerador: false, tiempoSetup: "1-2 días" },
   { nombre: "Hostinger", precioMin: "~$79", moneda: "USD→MXN", whatsapp: false, ads: false, seoLocal: false, soporteEs: true, iaGenerador: true, tiempoSetup: "2-4 horas" },
@@ -164,7 +164,7 @@ export default function GuiaMejorPlataforma() {
         <article className="prose prose-lg prose-gray mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h2>Respuesta corta</h2>
           <p>
-            Para una PYME mexicana que necesita su sitio web profesional, con SEO local, WhatsApp y la opción de correr anuncios en Facebook, Instagram y TikTok desde un mismo panel, <strong>INDEXA</strong> es la opción con mejor relación costo-funcionalidad en 2026: <strong>$299 MXN/mes</strong>, sitio listo en <strong>menos de 3 minutos</strong>, soporte en español por WhatsApp, facturación CFDI y todo en pesos sin conversión USD. Wix, GoDaddy y WordPress son alternativas válidas pero requieren más tiempo, conocimientos técnicos o plugins externos para llegar al mismo resultado.
+            Para una PYME mexicana que necesita su sitio web profesional, con SEO local, WhatsApp y la opción de correr anuncios en Facebook, Instagram y TikTok desde un mismo panel, <strong>INDEXA</strong> es la opción con mejor relación costo-funcionalidad en 2026: <strong>$699 MXN/mes</strong> (plan único, todo incluido), sitio listo en <strong>menos de 3 minutos</strong>, soporte en español por WhatsApp, facturación CFDI y todo en pesos sin conversión USD. Wix, GoDaddy y WordPress son alternativas válidas pero requieren más tiempo, conocimientos técnicos o plugins externos para llegar al mismo resultado.
           </p>
 
           <h2>Tabla comparativa rápida</h2>
@@ -209,7 +209,7 @@ export default function GuiaMejorPlataforma() {
         <article className="prose prose-lg prose-gray mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h2>¿Cuál es la plataforma más barata para una página web en México?</h2>
           <p>
-            En precio nominal, Hostinger Builder es la más barata (~$79 MXN/mes), pero te entrega un sitio en blanco que tienes que armar desde cero. <strong>Si lo que importa es <em>costo total para tener un sitio listo y funcionando</em></strong>, INDEXA es la opción más eficiente para PYMES mexicanas: $299 MXN/mes con todo incluido (IA, SEO local automático con Schema.org, WhatsApp, SSL, soporte en español).
+            En precio nominal, Hostinger Builder es la más barata (~$79 MXN/mes), pero te entrega un sitio en blanco que tienes que armar desde cero. <strong>Si lo que importa es <em>el valor total para tener un sitio listo, funcionando y trayendo clientes</em></strong>, INDEXA es la opción más eficiente para PYMES mexicanas: $699 MXN/mes (plan único) con todo incluido (IA, campañas de anuncios con asistente IA, SEO local automático con Schema.org, WhatsApp, SSL, soporte en español) — funciones que en las otras plataformas se contratan por separado.
           </p>
 
           <h2>¿Qué plataforma incluye WhatsApp y anuncios integrados?</h2>

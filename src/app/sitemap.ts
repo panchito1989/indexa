@@ -210,18 +210,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
 
     // Only include in sitemap microsites that are indexable per the same
-    // policy applied in /sitio/[slug] generateMetadata: plan profesional or
-    // enterprise AND status activo/trial. This keeps the sitemap consistent
-    // with the actual robots directive and prevents wasting crawl budget
-    // on starter / inactive sites that emit noindex.
+    // policy applied in /sitio/[slug] generateMetadata (plan único): any
+    // active/published site is indexable — SEO is part of the $699 plan.
+    // Inactive/preview sites emit noindex, so they stay out of the sitemap.
     sitioPages = sitios
       .filter((s) => {
         if (!s.data.slug || typeof s.data.slug !== "string") return false;
-        const plan = (s.data.plan as string | undefined) ?? "";
         const status = (s.data.statusPago as string | undefined) ?? "inactivo";
-        const indexable = plan === "profesional" || plan === "enterprise";
-        const active = status === "activo" || status === "publicado";
-        return indexable && active;
+        return status === "activo" || status === "publicado";
       })
       .map((s) => ({
         url: `${SITE_URL}/sitio/${s.data.slug}`,

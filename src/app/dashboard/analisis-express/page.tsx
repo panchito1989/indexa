@@ -219,15 +219,14 @@ export default function AnalisisExpressPage() {
 
   // ── Checkout handler ───────────────────────────────────────────
   const handleCheckout = useCallback(async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
-    if (!user || !sitioId || !priceId) return;
+    if (!user || !sitioId) return;
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId: "starter", sitioId, authToken: token }),
+        body: JSON.stringify({ sitioId, authToken: token }),
       });
       const data = await res.json();
       if (data.success && data.url) window.location.href = data.url;
@@ -645,7 +644,7 @@ export default function AnalisisExpressPage() {
                       className="group mb-4 flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 px-8 py-4 text-base font-bold text-white shadow-xl shadow-indigo-500/20 transition-all hover:scale-105 disabled:opacity-50"
                     >
                       {checkingOut ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5" />}
-                      {checkingOut ? "Redirigiendo a pago..." : "Activar plan desde $299/mes"}
+                      {checkingOut ? "Redirigiendo a pago..." : "Activar plan — $699/mes"}
                       {!checkingOut && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                     </button>
                     <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] text-white/30">

@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en Guadalajara — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Guadalajara en menos de 3 minutos. Con SEO local, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Guadalajara en menos de 3 minutos. Con SEO local, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web Guadalajara", "sitio web Guadalajara", "presencia digital Guadalajara", "diseño web Guadalajara", "página web negocio Jalisco"],
   alternates: { canonical: "/pagina-web-guadalajara" },
   openGraph: {
@@ -47,7 +47,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para un negocio en Guadalajara?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, una página web profesional para tu negocio en Guadalajara cuesta desde $299 MXN/mes, incluyendo diseño generado con IA, SEO local para Jalisco, botón de WhatsApp y SSL. Sin pagos iniciales ni contratos.",
+        text: "Con INDEXA, una página web profesional para tu negocio en Guadalajara cuesta $699 MXN/mes (plan único, todo incluido), con diseño generado con IA, SEO local para Jalisco, botón de WhatsApp y SSL. Sin pagos iniciales ni contratos.",
       },
     },
     {

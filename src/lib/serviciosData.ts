@@ -96,7 +96,7 @@ export const servicios: Servicio[] = [
     slug: "sitios-web-ia",
     seoTitle: "Páginas Web con IA para PYMES en México | Sitios que Convierten",
     seoDescription:
-      "Crea tu página web profesional con inteligencia artificial en menos de 3 minutos. Diseñada para convertir visitas en clientes vía WhatsApp. Para negocios en México desde $299/mes. 14 días gratis.",
+      "Crea tu página web profesional con inteligencia artificial en menos de 3 minutos. Diseñada para convertir visitas en clientes vía WhatsApp. Para negocios en México por $699 MXN/mes, todo incluido. 14 días gratis.",
     seoKeywords: [
       "página web pyme méxico",
       "crear página web con inteligencia artificial",
@@ -231,7 +231,7 @@ export const servicios: Servicio[] = [
       {
         label: "Costo de arranque",
         before: "$8,000 a $50,000 MXN",
-        after: "Desde $299/mes",
+        after: "$699/mes todo incluido",
         delta: "Hasta 95% menos",
       },
       {

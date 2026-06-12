@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { consumeMonthlyQuota } from "@/lib/monthlyQuota";
 import OpenAI from "openai";
 import {
   getCampaigns,
@@ -1435,6 +1436,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
     }
 
+    // Cupo mensual del plan único (150 msgs IA/mes entre los 3 asistentes):
+    // acota el costo de Claude por cliente. Admin/subadmin exentos.
+    const quota = await consumeMonthlyQuota(user.uid, "ai");
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quota.message }, { status: 429 });
+    }
+
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicKey) {
       return NextResponse.json(
@@ -1495,7 +1503,9 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             model: CLAUDE_MODEL,
             max_tokens: 1536,
-            system: SYSTEM_PROMPT,
+            // cache_control: cachea el prefijo (tools + system) → ~90% menos
+            // costo de input en iteraciones del loop y turnos siguientes.
+            system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
             tools,
             messages: claudeMessages,
           }),
