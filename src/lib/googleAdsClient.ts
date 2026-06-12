@@ -1122,12 +1122,17 @@ export async function updateCampaignStatus(
   campaignResourceName: string,
   status: "ENABLED" | "PAUSED" | "REMOVED"
 ): Promise<void> {
-  await gaqlMutate(customerId, auth, "campaigns", [
-    {
-      updateMask: "status",
-      update: { resourceName: campaignResourceName, status },
-    },
-  ]);
+  // La API rechaza status=REMOVED vía update ([INVALID_ENUM_VALUE]
+  // "Enum value 'REMOVED' cannot be used"): eliminar una campaña requiere
+  // la operación `remove` dedicada, no un update de status.
+  const operation =
+    status === "REMOVED"
+      ? { remove: campaignResourceName }
+      : {
+          updateMask: "status",
+          update: { resourceName: campaignResourceName, status },
+        };
+  await gaqlMutate(customerId, auth, "campaigns", [operation]);
 }
 
 /**
