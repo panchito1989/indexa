@@ -43,16 +43,21 @@ export async function POST(request: NextRequest) {
     const projSnap = await projRef.get();
     const project = projSnap.data() || {};
 
-    // Personaje de marca: referencia con signed URL fresca (fal la descarga)
-    let referenceUrl: string | undefined;
+    // Referencias: imágenes subidas por el usuario (producto/objeto/personaje)
+    // + el personaje de marca del proyecto (si existe).
+    const refs: string[] = [];
+    if (Array.isArray(project.referenceUrls)) {
+      for (const u of project.referenceUrls) if (typeof u === "string" && u) refs.push(u);
+    }
     if (typeof project.brandCharacterPath === "string" && project.brandCharacterPath) {
-      referenceUrl = await signedUrl(project.brandCharacterPath, 1);
+      refs.push(await signedUrl(project.brandCharacterPath, 1));
     }
 
     const heroPrompt = String(job.script?.heroPrompt || "");
     if (!heroPrompt) return NextResponse.json({ error: "El job no tiene guion." }, { status: 409 });
 
-    const img = await generateHeroImage(heroPrompt, referenceUrl);
+    const aspect = job.aspect === "16:9" ? ("16:9" as const) : ("9:16" as const);
+    const img = await generateHeroImage(heroPrompt, refs, aspect);
     const buf = await fetchToBuffer(img.url);
 
     // saveBuffer devuelve la URL pública (CDN de fal) — se guarda como path y url

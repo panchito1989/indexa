@@ -57,17 +57,20 @@ export interface FalImage {
 }
 
 /**
- * Genera la imagen hero. Si hay `referenceUrl` (personaje de marca del
- * proyecto) usa nano-banana/edit para conservar la identidad del personaje.
+ * Genera una imagen. Si hay referencias (personaje de marca del proyecto,
+ * fotos de producto/objeto subidas por el usuario) usa nano-banana/edit para
+ * conservar la identidad EXACTA de esos elementos (acepta hasta ~5 imágenes).
  */
 export async function generateHeroImage(
   prompt: string,
-  referenceUrl?: string
+  referenceUrls?: string[],
+  aspectRatio: "9:16" | "16:9" = "9:16"
 ): Promise<FalImage> {
-  const body = referenceUrl
-    ? { prompt, image_urls: [referenceUrl], aspect_ratio: "9:16", num_images: 1, output_format: "jpeg" }
-    : { prompt, aspect_ratio: "9:16", num_images: 1, output_format: "jpeg" };
-  const slug = referenceUrl ? "fal-ai/nano-banana/edit" : "fal-ai/nano-banana";
+  const refs = (referenceUrls || []).filter(Boolean).slice(0, 5);
+  const body = refs.length
+    ? { prompt, image_urls: refs, aspect_ratio: aspectRatio, num_images: 1, output_format: "jpeg" }
+    : { prompt, aspect_ratio: aspectRatio, num_images: 1, output_format: "jpeg" };
+  const slug = refs.length ? "fal-ai/nano-banana/edit" : "fal-ai/nano-banana";
 
   const json = await falFetch(`${FAL_SYNC}/${slug}`, {
     method: "POST",
@@ -76,6 +79,42 @@ export async function generateHeroImage(
   const images = json.images as FalImage[] | undefined;
   if (!images?.[0]?.url) throw new Error("fal no devolvió imagen.");
   return images[0];
+}
+
+// ── TTS (minimax speech-02-hd, voz en off para modo largo) ──────────────
+
+export interface TtsResult {
+  audioUrl: string;
+  durationMs: number;
+}
+
+/**
+ * Narración en español (máx 5,000 chars — el modo largo llama POR SEGMENTO,
+ * ~40 palabras c/u). `durationMs` viene exacto del modelo → sincronización
+ * de visuales sin ffprobe.
+ */
+export async function generateTts(
+  text: string,
+  voiceId = "Deep_Voice_Man",
+  speed = 1.0
+): Promise<TtsResult> {
+  const json = await falFetch(`${FAL_SYNC}/fal-ai/minimax/speech-02-hd`, {
+    method: "POST",
+    body: JSON.stringify({
+      text,
+      voice_setting: { voice_id: voiceId, speed, vol: 1, pitch: 0 },
+      language_boost: "Spanish",
+      output_format: "url",
+      // OJO: sample_rate y channel son NÚMEROS (strings → 422 literal_error)
+      audio_setting: { format: "mp3", sample_rate: 32000, bitrate: 128000, channel: 1 },
+    }),
+  });
+  const audio = json.audio as { url?: string } | undefined;
+  const durationMs = Number(json.duration_ms);
+  if (!audio?.url || !Number.isFinite(durationMs) || durationMs <= 0) {
+    throw new Error("fal TTS no devolvió audio/duración.");
+  }
+  return { audioUrl: audio.url, durationMs };
 }
 
 // ── Video Veo 3 (cola asíncrona, 1-3 min por escena) ────────────────────
@@ -89,16 +128,19 @@ export async function submitVeoScene(opts: {
   prompt: string;
   imageUrl: string; // URL pública o data URI
   durationSec?: 4 | 6 | 8;
+  aspectRatio?: "9:16" | "16:9";
+  /** false en modo largo: la narración TTS va encima (y es más barato). */
+  generateAudio?: boolean;
 }): Promise<VeoSubmitResult> {
   const json = await falFetch(`${FAL_QUEUE}/fal-ai/veo3/fast/image-to-video`, {
     method: "POST",
     body: JSON.stringify({
       prompt: opts.prompt,
       image_url: opts.imageUrl,
-      aspect_ratio: "9:16",
+      aspect_ratio: opts.aspectRatio ?? "9:16",
       duration: `${opts.durationSec ?? 8}s`,
       resolution: "720p",
-      generate_audio: true,
+      generate_audio: opts.generateAudio ?? true,
     }),
   });
   const requestId = json.request_id as string | undefined;

@@ -9,6 +9,8 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/creative/scene": ["./node_modules/ffmpeg-static/ffmpeg*"],
     "/api/creative/stitch": ["./node_modules/ffmpeg-static/ffmpeg*"],
+    "/api/creative/long/render": ["./node_modules/ffmpeg-static/ffmpeg*", "./assets/fonts/**"],
+    "/api/creative/long/stitch": ["./node_modules/ffmpeg-static/ffmpeg*"],
   },
   images: {
     remotePatterns: [
