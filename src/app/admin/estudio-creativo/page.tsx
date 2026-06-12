@@ -148,10 +148,22 @@ const VOICES = [
 
 const COST_PER_SCENE = 1.2;
 
-function estimateLongCost(minutes: number): number {
+type LongQuality = "premium" | "economy" | "images";
+
+const QUALITY_OPTIONS: { id: LongQuality; label: string; desc: string }[] = [
+  { id: "premium", label: "Premium (Veo)", desc: "Clips de video con IA de máxima calidad — el más caro." },
+  { id: "economy", label: "Económico (Wan)", desc: "Clips de video más simples a una fracción del costo. Recomendado." },
+  { id: "images", label: "Solo imágenes", desc: "Sin clips: imágenes con movimiento suave (Ken Burns). El más barato." },
+];
+
+// Voz gratis (Edge TTS) en TODOS los modos; el costo es solo visuales.
+function estimateLongCost(minutes: number, quality: LongQuality): number {
   const nSeg = Math.max(4, Math.round(minutes * 4));
-  const nVeo = minutes <= 2 ? 2 : minutes <= 5 ? 4 : 5;
-  return Math.round((nVeo * 0.85 + (nSeg - nVeo) * 0.04 + minutes * 0.3 + 0.1) * 100) / 100;
+  const nClip = quality === "images" ? 0 : minutes <= 2 ? 2 : minutes <= 5 ? 4 : 5;
+  const nImg = nSeg - nClip;
+  const clip = quality === "premium" ? 0.85 : 0.25; // Veo vs Wan
+  const img = quality === "premium" ? 0.04 : 0.003; // nano vs FLUX
+  return Math.round((nClip * clip + nImg * img + 0.05) * 100) / 100;
 }
 
 // ── Página ───────────────────────────────────────────────────────────────
@@ -177,6 +189,7 @@ export default function EstudioCreativoPage() {
   const [tema, setTema] = useState("");
   const [targetMinutes, setTargetMinutes] = useState(3);
   const [longAspect, setLongAspect] = useState<"16:9" | "9:16">("16:9");
+  const [longQuality, setLongQuality] = useState<LongQuality>("economy");
   const [creating, setCreating] = useState(false);
 
   // Editores
@@ -343,7 +356,7 @@ export default function EstudioCreativoPage() {
     try {
       const r = await api("/api/creative/jobs", {
         projectId: selectedProject.id, kind: "long", tema: tema.trim(),
-        targetMinutes, aspect: longAspect,
+        targetMinutes, aspect: longAspect, quality: longQuality,
       });
       setTema("");
       setEditLongJobId(r.jobId);
@@ -687,7 +700,14 @@ export default function EstudioCreativoPage() {
                     <option value="9:16">9:16 Shorts/TikTok</option>
                   </select>
                 </label>
-                <span className="text-xs text-gray-400">≈ ${estimateLongCost(targetMinutes).toFixed(2)} USD</span>
+                <label className="text-sm text-gray-600">
+                  Calidad:{" "}
+                  <select className="border border-gray-300 rounded-lg px-2 py-1 text-sm" value={longQuality}
+                    onChange={(e) => setLongQuality(e.target.value as LongQuality)}>
+                    {QUALITY_OPTIONS.map((q) => <option key={q.id} value={q.id}>{q.label}</option>)}
+                  </select>
+                </label>
+                <span className="text-xs text-gray-400">≈ ${estimateLongCost(targetMinutes, longQuality).toFixed(2)} USD · voz gratis</span>
                 <button
                   onClick={createLongJob}
                   disabled={creating || !tema.trim()}
@@ -698,7 +718,7 @@ export default function EstudioCreativoPage() {
                 </button>
               </div>
               <p className="text-[11px] text-gray-400 mt-1">
-                Voz continua + escenas de video en momentos clave + imágenes cinematográficas animadas + subtítulos quemados.
+                {QUALITY_OPTIONS.find((q) => q.id === longQuality)?.desc} La voz (narración) es siempre gratis.
               </p>
             </>
           )}

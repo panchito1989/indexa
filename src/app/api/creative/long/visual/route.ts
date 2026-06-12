@@ -15,7 +15,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/verifyAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
-import { generateHeroImage, submitVeoScene, pollVeo, ContentPolicyError } from "@/lib/falClient";
+import {
+  generateHeroImage, generateFluxImage, submitVeoScene, submitEconomyScene,
+  pollVeo, ContentPolicyError, ECON_VIDEO_ROOT,
+} from "@/lib/falClient";
 import { buildLongVeoPrompt, sanitizeVisualPrompt } from "@/lib/creativeScript";
 import { saveBuffer, fetchToBuffer } from "@/lib/creativeStorage";
 
@@ -64,6 +67,7 @@ export async function POST(request: NextRequest) {
     if (job.error) await jobRef.update({ error: FieldValue.delete() });
 
     const aspect = job.aspect === "16:9" ? ("16:9" as const) : ("9:16" as const);
+    const quality = job.quality === "premium" ? "premium" : job.quality === "images" ? "images" : "economy";
     const segments = [...(job.segments as Seg[])];
 
     // Referencias del proyecto (producto/personaje) para TODAS las imágenes
@@ -72,6 +76,17 @@ export async function POST(request: NextRequest) {
     const refs: string[] = Array.isArray(project.referenceUrls)
       ? (project.referenceUrls as unknown[]).filter((u): u is string => typeof u === "string" && !!u)
       : [];
+    // Imagen: con referencias SIEMPRE nano-banana/edit (FLUX no las acepta);
+    // sin referencias y en modo no-premium, FLUX schnell (13x más barato).
+    const useFlux = refs.length === 0 && quality !== "premium";
+    const makeImage = (prompt: string) =>
+      useFlux ? generateFluxImage(prompt, aspect) : generateHeroImage(prompt, refs, aspect);
+    // Clip: Veo (premium) o Wan económico. Root del queue para el poll.
+    const submitClip = (prompt: string, imageUrl: string) =>
+      quality === "premium"
+        ? submitVeoScene({ prompt, imageUrl, aspectRatio: aspect, generateAudio: false })
+        : submitEconomyScene({ prompt, imageUrl });
+    const clipRoot = quality === "premium" ? "fal-ai/veo3" : ECON_VIDEO_ROOT;
 
     const deadline = Date.now() + BUDGET_MS;
     const countDone = () => segments.filter(visualReady).length;
@@ -94,13 +109,13 @@ export async function POST(request: NextRequest) {
       if (!seg.imageUrl) {
         let img;
         try {
-          img = await generateHeroImage(seg.visualPrompt, refs, aspect);
+          img = await makeImage(seg.visualPrompt);
         } catch (e) {
           if (!(e instanceof ContentPolicyError)) throw e;
           // 2º intento automático: prompt saneado (sin menores humanos /
           // marcas / personas reales — estilo caricatura familiar).
           try {
-            img = await generateHeroImage(sanitizeVisualPrompt(seg.visualPrompt), refs, aspect);
+            img = await makeImage(sanitizeVisualPrompt(seg.visualPrompt));
           } catch (e2) {
             if (!(e2 instanceof ContentPolicyError)) throw e2;
             const m = `Segmento ${i + 1}: el generador rechazó el visual por políticas de contenido (ni saneado pasó). Edítalo con el lápiz — evita niños humanos, marcas o personas reales — y dale Continuar.`;
@@ -115,32 +130,23 @@ export async function POST(request: NextRequest) {
       }
       if (seg.kind === "image") continue;
 
-      // 2) Veo del segmento clave (sin audio — narración TTS encima)
+      // 2) Clip del segmento clave (sin audio — narración TTS encima).
+      // Veo (premium) o Wan económico según el modo del job.
       if (!seg.falRequestId) {
         try {
-          const { requestId } = await submitVeoScene({
-            prompt: buildLongVeoPrompt(seg),
-            imageUrl: seg.imageUrl!,
-            aspectRatio: aspect,
-            generateAudio: false,
-          });
+          const { requestId } = await submitClip(buildLongVeoPrompt(seg), seg.imageUrl!);
           seg.falRequestId = requestId;
         } catch (e) {
           if (!(e instanceof ContentPolicyError)) throw e;
           try {
             // 2º intento: prompt de movimiento saneado
-            const { requestId } = await submitVeoScene({
-              prompt: sanitizeVisualPrompt(buildLongVeoPrompt(seg)),
-              imageUrl: seg.imageUrl!,
-              aspectRatio: aspect,
-              generateAudio: false,
-            });
+            const { requestId } = await submitClip(sanitizeVisualPrompt(buildLongVeoPrompt(seg)), seg.imageUrl!);
             seg.falRequestId = requestId;
           } catch (e2) {
             if (!(e2 instanceof ContentPolicyError)) throw e2;
-            // Veo no lo acepta ni saneado → DEGRADAR a imagen: la imagen base
-            // YA pasó el filtro, así que el segmento sale como imagen animada
-            // (Ken Burns) y el video completo NO se atora por un clip.
+            // El generador de video no lo acepta ni saneado → DEGRADAR a
+            // imagen: la imagen base YA pasó el filtro, así que el segmento
+            // sale como imagen animada (Ken Burns) y el video no se atora.
             seg.kind = "image";
             seg.degraded = "policy";
             segments[i] = seg;
@@ -152,9 +158,9 @@ export async function POST(request: NextRequest) {
         await persist();
       }
 
-      // 3) Poll con presupuesto restante
+      // 3) Poll con presupuesto restante (mismo modelo con que se encoló)
       while (Date.now() < deadline) {
-        const r = await pollVeo(seg.falRequestId!);
+        const r = await pollVeo(seg.falRequestId!, clipRoot);
         if (r.state === "failed") {
           delete seg.falRequestId;
           // Si Veo lo rechazó por políticas, reintentar es inútil → degradar
