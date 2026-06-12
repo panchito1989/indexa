@@ -217,6 +217,21 @@ function fromGroqResponse(groqData: Record<string, unknown>): Record<string, unk
   return { content, stop_reason: finishReason === "tool_calls" ? "tool_use" : "end_turn" };
 }
 
+// ── Modo respaldo: SOLO LECTURA ───────────────────────────────────────
+// El respaldo (Groq) es mucho más débil que Gemini/Claude: alucina inputs y
+// no respeta las reglas anti-improvisación. JAMÁS debe poder crear, pausar,
+// activar ni modificar campañas o anuncios — en respaldo solo analiza.
+const READ_ONLY_PREFIXES = ["get_", "list_", "analyze_"];
+function isReadOnlyTool(name: string): boolean {
+  return READ_ONLY_PREFIXES.some((p) => name.startsWith(p));
+}
+
+const FALLBACK_MODE_NOTE =
+  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar ni modificar nada. Si el usuario pide un cambio, dile que el asistente está temporalmente en modo respaldo (los modelos principales de IA no están disponibles) y que el cambio queda pendiente. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
+
+const FALLBACK_BANNER =
+  "⚠️ **Asistente en modo respaldo** — los modelos principales de IA (Gemini/Claude) no están disponibles en este momento. En este modo solo puedo LEER y analizar; los cambios a campañas están bloqueados por seguridad.\n\n";
+
 // ── Tool executor ───────────────────────────────────────────────────
 async function executeTool(
   name: string,
@@ -1148,6 +1163,9 @@ export async function POST(request: NextRequest) {
       },
     ];
 
+    // Modo respaldo: el fallback solo recibe herramientas de lectura.
+    const readOnlyTools = tools.filter((t) => isReadOnlyTool(t.name));
+
     type MsgContent = string | Record<string, unknown>[] ;
     // ── Gemini native format converters ───────────────────────────
     type GeminiContent = { role: "user" | "model"; parts: Record<string, unknown>[] };
@@ -1297,77 +1315,129 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Groq como respaldo cuando Gemini y Claude fallan. SOLO herramientas de
+    // lectura: el modelo de respaldo es débil y no debe poder mutar campañas.
+    async function callGroqReadOnly(): Promise<"done" | "tools" | "fail"> {
+      if (!groqKey) return "fail";
+      try {
+        debugLog.push("Trying Groq (read-only)...");
+        const groqRes = await fetch(GROQ_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
+          body: JSON.stringify({
+            model: GROQ_MODEL,
+            max_tokens: 1536,
+            // Solo herramientas de lectura — el respaldo nunca muta campañas.
+            tools: toGroqTools(readOnlyTools),
+            tool_choice: "auto",
+            messages: [
+              { role: "system", content: effectivePrompt + FALLBACK_MODE_NOTE },
+              ...toGroqMessages(aiMessages as AnthropicMsg[]),
+            ],
+          }),
+        });
+        const groqText = await groqRes.text();
+        if (!groqRes.ok) { debugLog.push(`Groq HTTP ${groqRes.status}: ${groqText.slice(0, 150)}`); return "fail"; }
+
+        const response = fromGroqResponse(JSON.parse(groqText));
+        const content = (response.content as { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }[]) || [];
+        const textPart = content.find((c) => c.type === "text");
+        if (textPart?.text) lastText = textPart.text;
+
+        if (response.stop_reason !== "tool_use") return "done";
+
+        const toolBlocks = content.filter((c) => c.type === "tool_use");
+        if (toolBlocks.length === 0) return "done";
+
+        aiMessages.push({ role: "assistant", content: content as Record<string, unknown>[] });
+        const toolResults: Record<string, unknown>[] = [];
+        for (const block of toolBlocks) {
+          // Candado duro: en modo respaldo JAMÁS se ejecuta una herramienta
+          // mutadora, aunque el modelo la pida (el filtrado de tools no basta
+          // — los modelos de respaldo a veces alucinan nombres de herramienta).
+          if (!block.name || !isReadOnlyTool(block.name)) {
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: "ERROR: herramienta deshabilitada en modo respaldo (solo lectura). NO se realizó ningún cambio. Informa al usuario que los cambios quedan pendientes hasta que el asistente principal esté disponible.",
+            });
+            continue;
+          }
+          debugLog.push(`Groq tool: ${block.name}`);
+          const toolResult = await executeTool(block.name, block.input || {}, safeMetaToken, safeAdAccountId, reqSitioId);
+          toolResults.push({ type: "tool_result", tool_use_id: block.id, content: toolResult });
+        }
+        aiMessages.push({ role: "user", content: toolResults as Record<string, unknown>[] });
+        return "tools";
+      } catch (err) {
+        debugLog.push(`Groq error: ${err instanceof Error ? err.message : "unknown"}`);
+        return "fail";
+      }
+    }
+
     // Agentic loop — up to 10 rounds (enough for batch ad creation)
-    // Priority: Gemini (free+tools) → Claude (paid+tools) → Groq (free, text-only, last resort)
+    // Priority: Gemini (free+tools) → Claude (paid+tools) → Groq (respaldo SOLO LECTURA)
+    let useFallback = false;
     for (let round = 0; round < 10; round++) {
       if (Date.now() - startTime > DEADLINE_MS) { debugLog.push("Deadline reached"); break; }
 
-      // Try Gemini first
-      const gemOk = await callGemini();
-      if (gemOk) {
-        // If lastText is a final response (no tool calls pending), return it
-        // If tool was called, aiMessages was updated — continue loop
-        if (lastText && aiMessages[aiMessages.length - 1]?.role !== "user") {
-          return NextResponse.json({
-            reply: lastText,
-            newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: lastText }],
-          });
-        }
-        continue; // Tool was executed, next round with Gemini
-      }
-
-      // Gemini failed — try Claude (with tools!)
-      const claudeOk = await callClaude();
-      if (claudeOk) {
-        if (lastText && aiMessages[aiMessages.length - 1]?.role !== "user") {
-          return NextResponse.json({
-            reply: lastText,
-            newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: lastText }],
-          });
-        }
-        continue; // Tool was executed, next round
-      }
-
-      // Both failed — Groq text-only as absolute last resort
-      if (groqKey) {
-        debugLog.push("Last resort: Groq text-only");
-        try {
-          const groqRes = await fetch(GROQ_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${groqKey}` },
-            body: JSON.stringify({
-              model: GROQ_MODEL,
-              max_tokens: 1536,
-              messages: [
-                { role: "system", content: safeContext ? `Eres un asistente de Meta Ads. Responde en español. No tienes herramientas — responde indicando qué necesitas del usuario.\n\n${safeContext}` : "Eres un asistente de Meta Ads. Responde en español. No tienes herramientas — responde indicando qué necesitas del usuario." },
-                ...toGroqMessages(aiMessages as AnthropicMsg[]),
-              ],
-            }),
-          });
-          if (groqRes.ok) {
-            const groqData = JSON.parse(await groqRes.text());
-            const groqMsg = (groqData.choices as Record<string, unknown>[])?.[0]?.message as { content?: string };
-            if (groqMsg?.content) {
-              return NextResponse.json({
-                reply: `⚠️ Modo limitado (sin herramientas). ${groqMsg.content}\n\n_Debug: ${debugLog.join(" → ")}_`,
-                newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: groqMsg.content }],
-              });
-            }
+      if (!useFallback) {
+        // Try Gemini first
+        const lenBeforeGemini = aiMessages.length;
+        const gemOk = await callGemini();
+        if (gemOk) {
+          // Sin herramientas ejecutadas (aiMessages intacto) la respuesta es final;
+          // si hubo herramienta, aiMessages creció — siguiente ronda.
+          if (lastText && aiMessages.length === lenBeforeGemini) {
+            return NextResponse.json({
+              reply: lastText,
+              newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: lastText }],
+            });
           }
-        } catch { /* nothing left to try */ }
+          continue; // Tool was executed, next round with Gemini
+        }
+
+        // Gemini failed — try Claude (with tools!)
+        const lenBeforeClaude = aiMessages.length;
+        const claudeOk = await callClaude();
+        if (claudeOk) {
+          if (lastText && aiMessages.length === lenBeforeClaude) {
+            return NextResponse.json({
+              reply: lastText,
+              newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: lastText }],
+            });
+          }
+          continue; // Tool was executed, next round
+        }
+
+        // Ambos fallaron — Groq como respaldo. SOLO LECTURA: jamás muta campañas.
+        if (!groqKey) break;
+        useFallback = true;
+        debugLog.push("Fallback: Groq (solo lectura)");
       }
 
-      break; // All providers failed
+      const groqResult = await callGroqReadOnly();
+      if (groqResult === "fail") break;
+      if (groqResult === "done") {
+        // En respaldo, el usuario DEBE saber que no habla con el asistente normal.
+        const replyText = FALLBACK_BANNER + (lastText || "No se pudo completar la solicitud.");
+        return NextResponse.json({
+          reply: replyText,
+          newHistory: [...(Array.isArray(history) ? history : []), { role: "user", content: message }, { role: "assistant", content: replyText }],
+        });
+      }
+      // "tools": herramienta de lectura ejecutada — siguiente ronda con Groq
     }
 
     const debugInfo = debugLog.length > 0 ? `\n\n_Debug: ${debugLog.join(" → ")}_` : "";
-    const fallback = lastText || `No se pudo procesar la solicitud.${debugInfo}`;
+    const exhaustedText = lastText || `No se pudo procesar la solicitud.${debugInfo}`;
+    const replyText = useFallback ? FALLBACK_BANNER + exhaustedText : exhaustedText;
     return NextResponse.json({
-      reply: fallback,
+      reply: replyText,
       newHistory: [
         ...(Array.isArray(history) ? history : []),
         { role: "user", content: message },
-        { role: "assistant", content: fallback },
+        { role: "assistant", content: replyText },
       ],
     });
 
