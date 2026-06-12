@@ -1,17 +1,18 @@
 /**
- * Storage del Estudio Creativo — implementado sobre el CDN de fal.ai.
+ * Storage del Estudio Creativo — PREFIERE Vercel Blob (capa gratis, no fal),
+ * cae al CDN de fal si no hay Blob configurado.
  *
- * NOTA: la implementación original usaba Firebase Storage, pero la cuenta de
- * facturación de Google Cloud del proyecto está cerrada ("billing account…
- * disabled in state closed") y Storage no opera sin ella. El CDN de fal ya
- * está pagado (es el mismo proveedor que genera los assets), las URLs son
- * públicas-no-adivinables y sin expiración práctica. Si algún día se habilita
- * el billing de Firebase, basta con reimplementar estas 4 funciones.
+ * Historia: Firebase Storage se cerró (billing) → se usó el CDN de fal, pero
+ * al agotarse el saldo de fal TODO se bloqueaba (hasta guardar la voz gratis).
+ * Vercel Blob desacopla el almacenamiento del saldo de fal: si
+ * BLOB_READ_WRITE_TOKEN está presente (se crea con 1 clic en Vercel y el token
+ * se inyecta solo), el modo $0 (imágenes Gemini + voz Edge) NO toca fal.
  *
- * Convención: los campos *Path de creative_jobs guardan directamente la URL
- * pública (https://v3b.fal.media/...). `signedUrl()` se conserva como
- * passthrough para no tocar a los consumidores.
+ * Convención: los campos *Path/*Url de creative_jobs guardan la URL pública.
+ * `signedUrl()` se conserva como passthrough.
  */
+
+import { put as blobPut } from "@vercel/blob";
 
 const FAL_STORAGE_INITIATE =
   "https://rest.alpha.fal.ai/storage/upload/initiate?storage_type=fal-cdn-v3";
@@ -22,18 +23,32 @@ function falKey(): string {
   return key;
 }
 
+export function blobAvailable(): boolean {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
 /**
- * Sube un buffer al CDN de fal y devuelve la URL pública.
- * `fileName` es solo un nombre sugerido (fal le antepone un id aleatorio).
+ * Sube un buffer y devuelve la URL pública. Usa Vercel Blob si está
+ * configurado (gratis, independiente de fal); si no, el CDN de fal.
  */
 export async function saveBuffer(
   fileName: string,
   buf: Buffer,
   contentType: string
 ): Promise<string> {
-  // Sanea el nombre (fal lo incluye literal en la URL)
   const safeName = fileName.replace(/[^\w.-]/g, "_").slice(-80);
 
+  // 1) Vercel Blob (preferido — no depende del saldo de fal)
+  if (blobAvailable()) {
+    const { url } = await blobPut(`creative/${Date.now()}_${safeName}`, buf, {
+      access: "public",
+      contentType,
+      addRandomSuffix: true,
+    });
+    return url;
+  }
+
+  // 2) Fallback: CDN de fal (requiere saldo)
   const initRes = await fetch(FAL_STORAGE_INITIATE, {
     method: "POST",
     headers: {
@@ -43,7 +58,15 @@ export async function saveBuffer(
     body: JSON.stringify({ file_name: safeName, content_type: contentType }),
   });
   if (!initRes.ok) {
-    throw new Error(`fal storage initiate HTTP ${initRes.status}: ${(await initRes.text()).slice(0, 200)}`);
+    const body = (await initRes.text()).slice(0, 200);
+    // Saldo agotado → mensaje accionable (no el 403 crudo de fal)
+    if (initRes.status === 403 && /balance|locked|exhausted/i.test(body)) {
+      throw new Error(
+        "Se agotó el saldo de fal.ai y no hay almacenamiento gratis configurado. " +
+        "Activa Vercel Blob (1 clic en el panel de Vercel) o recarga fal en fal.ai/dashboard/billing."
+      );
+    }
+    throw new Error(`fal storage initiate HTTP ${initRes.status}: ${body}`);
   }
   const { file_url, upload_url } = (await initRes.json()) as {
     file_url?: string;
