@@ -269,6 +269,33 @@ function getDateRange(range: string, custom?: DateRangeCustom): { startDate: str
   }
 }
 
+/**
+ * Predicado GAQL de fecha para el WHERE de las queries de métricas.
+ *
+ * Para los rangos con literal nativo de GAQL (TODAY, YESTERDAY, LAST_7_DAYS,
+ * LAST_30_DAYS, THIS_MONTH, LAST_MONTH) usamos `segments.date DURING X`:
+ * Google lo evalúa en la ZONA HORARIA DE LA CUENTA de Ads. Calcular la fecha
+ * aquí con new Date()/toISOString() usa UTC (Vercel) — después de las ~18:00
+ * de CDMX la fecha UTC ya es "mañana", por lo que "Hoy" devolvía 0 resultados
+ * y "Ayer" mostraba los datos de hoy. Los rangos sin literal nativo
+ * (90d, 12 meses, este año, CUSTOM) siguen con BETWEEN y fechas calculadas.
+ */
+function dateWhere(range: string, custom?: DateRangeCustom): string {
+  switch (range) {
+    case "TODAY":
+    case "YESTERDAY":
+    case "LAST_7_DAYS":
+    case "LAST_30_DAYS":
+    case "THIS_MONTH":
+    case "LAST_MONTH":
+      return `segments.date DURING ${range}`;
+    default: {
+      const { startDate, endDate } = getDateRange(range, custom);
+      return `segments.date BETWEEN '${startDate}' AND '${endDate}'`;
+    }
+  }
+}
+
 // ── Token Refresh ─────────────────────────────────────────────────────
 
 /**
@@ -816,7 +843,7 @@ export async function getReporting(
     segments: { date: string };
   };
 
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
 
   const rows = await gaqlSearch<Row>(
     customerId,
@@ -826,7 +853,7 @@ export async function getReporting(
             metrics.ctr, metrics.average_cpc, metrics.conversions,
             metrics.cost_per_conversion, segments.date
      FROM campaign
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+     WHERE ${dateCond}
        AND campaign.status != 'REMOVED'
      ORDER BY segments.date`
   );
@@ -1531,12 +1558,12 @@ export async function createRemarketingLists(
 
 export async function getHourlyPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsHourlyRow[]> {
   type Row = { segments: { hour: number; dayOfWeek: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.hour, segments.day_of_week, metrics.cost_micros, metrics.clicks,
             metrics.impressions, metrics.conversions, metrics.ctr, metrics.average_cpc
      FROM campaign
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED'`);
+     WHERE ${dateCond} AND campaign.status != 'REMOVED'`);
   return rows.map((r) => ({
     hour: Number(r.segments.hour ?? 0), dayOfWeek: r.segments.dayOfWeek ?? "",
     cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
@@ -1547,12 +1574,12 @@ export async function getHourlyPerformance(customerId: string, auth: GoogleAdsAu
 
 export async function getDevicePerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsDeviceRow[]> {
   type Row = { segments: { device: string }; metrics: { costMicros: string; clicks: string; impressions: string; conversions: string; ctr: string; averageCpc: string } };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.device, metrics.cost_micros, metrics.clicks, metrics.impressions,
             metrics.conversions, metrics.ctr, metrics.average_cpc
      FROM campaign
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign.status != 'REMOVED'`);
+     WHERE ${dateCond} AND campaign.status != 'REMOVED'`);
   return rows.map((r) => ({
     device: r.segments.device ?? "UNKNOWN", cost: microsToUnit(r.metrics.costMicros ?? 0),
     clicks: Number(r.metrics.clicks ?? 0), impressions: Number(r.metrics.impressions ?? 0),
@@ -1563,12 +1590,12 @@ export async function getDevicePerformance(customerId: string, auth: GoogleAdsAu
 
 export async function getGeoPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsGeoRow[]> {
   type Row = { segments?: { geoTargetRegion?: string; geoTargetCity?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT segments.geo_target_city, segments.geo_target_region,
             metrics.cost_micros, metrics.clicks, metrics.conversions
      FROM geographic_view
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'`).catch(() => [] as Row[]);
+     WHERE ${dateCond}`).catch(() => [] as Row[]);
   const out = rows.map((r) => ({
     locationId: (r.segments?.geoTargetCity || r.segments?.geoTargetRegion || "").split("/").pop() || "",
     locationName: "", cost: microsToUnit(r.metrics.costMicros ?? 0),
@@ -1590,12 +1617,12 @@ export async function getGeoPerformance(customerId: string, auth: GoogleAdsAuth,
 
 export async function getAudiencePerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsAudienceRow[]> {
   type Row = { adGroupCriterion?: { type?: string; displayName?: string }; metrics: { costMicros: string; clicks: string; conversions: string } };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT ad_group_criterion.type, ad_group_criterion.display_name,
             metrics.cost_micros, metrics.clicks, metrics.conversions
      FROM ad_group_audience_view
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'`).catch(() => [] as Row[]);
+     WHERE ${dateCond}`).catch(() => [] as Row[]);
   return rows.map((r) => ({
     name: r.adGroupCriterion?.displayName || "(audiencia)", type: r.adGroupCriterion?.type || "",
     cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
@@ -1605,11 +1632,11 @@ export async function getAudiencePerformance(customerId: string, auth: GoogleAds
 
 export async function getExtensionPerformance(customerId: string, auth: GoogleAdsAuth, dateRange: string, custom?: DateRangeCustom): Promise<GoogleAdsExtensionRow[]> {
   type Row = { asset?: { id?: string; type?: string; name?: string }; metrics: { costMicros: string; clicks: string; impressions: string } };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT asset.id, asset.type, asset.name, metrics.cost_micros, metrics.clicks, metrics.impressions
      FROM campaign_asset
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}' AND campaign_asset.status != 'REMOVED'`).catch(() => [] as Row[]);
+     WHERE ${dateCond} AND campaign_asset.status != 'REMOVED'`).catch(() => [] as Row[]);
   return rows.map((r) => ({
     assetId: r.asset?.id || "", type: r.asset?.type || "", name: r.asset?.name || "",
     cost: microsToUnit(r.metrics.costMicros ?? 0), clicks: Number(r.metrics.clicks ?? 0),
@@ -1773,14 +1800,14 @@ export async function getKeywordPerformance(customerId: string, auth: GoogleAdsA
       ctr: string; averageCpc: string; conversions: string; costPerConversion: string;
     };
   };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT ad_group_criterion.criterion_id, ad_group_criterion.keyword.text,
             ad_group_criterion.keyword.match_type, campaign.id, campaign.name,
             metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
             metrics.average_cpc, metrics.conversions, metrics.cost_per_conversion
      FROM keyword_view
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+     WHERE ${dateCond}
        AND ad_group_criterion.status != 'REMOVED'
      ORDER BY metrics.cost_micros DESC
      LIMIT 500`).catch(() => [] as Row[]);
@@ -1809,13 +1836,13 @@ export async function getSearchTerms(customerId: string, auth: GoogleAdsAuth, da
       ctr: string; conversions: string; costPerConversion: string;
     };
   };
-  const { startDate, endDate } = getDateRange(dateRange, custom);
+  const dateCond = dateWhere(dateRange, custom);
   const rows = await gaqlSearch<Row>(customerId, auth,
     `SELECT search_term_view.search_term, search_term_view.status, campaign.name,
             metrics.cost_micros, metrics.clicks, metrics.impressions, metrics.ctr,
             metrics.conversions, metrics.cost_per_conversion
      FROM search_term_view
-     WHERE segments.date BETWEEN '${startDate}' AND '${endDate}'
+     WHERE ${dateCond}
      ORDER BY metrics.cost_micros DESC
      LIMIT 200`).catch(() => [] as Row[]);
   return rows.map((r) => ({
