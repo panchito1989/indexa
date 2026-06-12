@@ -41,11 +41,25 @@ async function falFetch(url: string, init?: RequestInit): Promise<Record<string,
   }
   if (!res.ok) {
     const detail = (json as { detail?: unknown }).detail;
-    throw new Error(
-      `fal HTTP ${res.status}: ${typeof detail === "string" ? detail : JSON.stringify(detail ?? json).slice(0, 300)}`
-    );
+    const raw = typeof detail === "string" ? detail : JSON.stringify(detail ?? json);
+    // El content checker de fal/Veo rechaza prompts (menores, marcas,
+    // personas reales…) con 422 content_policy_violation — error TIPADO para
+    // que el pipeline reintente con prompt saneado en vez de morir.
+    if (raw.includes("content_policy_violation") || /content checker|flagged/i.test(raw)) {
+      throw new ContentPolicyError(`fal rechazó el contenido por políticas: ${raw.slice(0, 200)}`);
+    }
+    throw new Error(`fal HTTP ${res.status}: ${raw.slice(0, 300)}`);
   }
   return json;
+}
+
+/** El generador rechazó el prompt por políticas de contenido (no es un fallo
+ *  transitorio: reintentar igual NO sirve — hay que cambiar el prompt). */
+export class ContentPolicyError extends Error {
+  constructor(detail: string) {
+    super(detail);
+    this.name = "ContentPolicyError";
+  }
 }
 
 // ── Imágenes (síncrono, ~10-20s) ────────────────────────────────────────
