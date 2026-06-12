@@ -5,7 +5,7 @@ import { checkRateLimit } from "@/lib/rateLimit";
 import {
   getGoogleAdsContext, getCampaigns, getAdGroups, getAds, getKeywords,
   getReporting, getAccountInfo, getAccountBudget,
-  updateCampaignStatus, updateCampaignBudget,
+  updateCampaignStatus, updateCampaignBudget, updateKeywordStatus,
   getHourlyPerformance, getDevicePerformance, getGeoPerformance, getAudiencePerformance, getExtensionPerformance,
   createFullCampaign, activateCampaign, addNegativeKeywords, addLocationTargeting,
   setDeviceBidModifier, setAdScheduleBidModifier, setLocationBidModifier,
@@ -279,6 +279,8 @@ const tools = [
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
   { name: "remove_campaign", description: "ELIMINA una campaña (estado REMOVED — PERMANENTE, no se puede deshacer; deja de gastar y desaparece de la gestión, solo queda en reportes históricos). USAR SOLO tras confirmación explícita del usuario. Si solo quiere detener el gasto, recomiéndale pausarla en su lugar.",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" } }, required: ["campaign_resource_name"] } },
+  { name: "set_keyword_status", description: "Activa (ENABLED) o pausa (PAUSED) keywords INDIVIDUALES existentes, en lote. Usa los resourceName exactos que devuelve list_keywords (customers/.../adGroupCriteria/GRUPO~CRITERIO). PAUSAR es seguro (reduce gasto). ACTIVAR keywords pausadas puede aumentar el gasto → USAR SOLO tras confirmación explícita del usuario, nombrando las keywords exactas.",
+    input_schema: { type: "object" as const, properties: { keyword_resource_names: { type: "array", items: { type: "string" }, description: "resourceName de cada keyword (de list_keywords)" }, status: { type: "string", enum: ["ENABLED", "PAUSED"] } }, required: ["keyword_resource_names", "status"] } },
   { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["campaign_resource_name","keywords"] } },
   { name: "set_device_bid_modifier", description: "Aplica un modificador de puja por dispositivo a una campaña. USAR SOLO tras confirmación. bid_modifier: 1.0=sin cambio, 0.8=-20%, 1.3=+30% (se acota a 0.1-3.0).",
@@ -402,6 +404,15 @@ async function executeTool(
       case "add_negative_keywords": {
         const added = await addNegativeKeywords(customerId, auth, input.campaign_resource_name as string, input.keywords as string[]);
         return `Agregadas ${added} keywords negativas.`;
+      }
+      case "set_keyword_status": {
+        const n = await updateKeywordStatus(
+          customerId, auth,
+          input.keyword_resource_names as string[],
+          input.status as "ENABLED" | "PAUSED"
+        );
+        if (n === 0) return "No se actualizó ninguna keyword — verifica los resourceName (deben venir de list_keywords, formato customers/.../adGroupCriteria/GRUPO~CRITERIO).";
+        return `${n} keyword(s) ${input.status === "ENABLED" ? "ACTIVADA(S)" : "pausada(s)"}.`;
       }
       case "set_device_bid_modifier": {
         const n = await setDeviceBidModifier(customerId, auth, input.campaign_resource_name as string, input.device as string, input.bid_modifier as number);

@@ -563,6 +563,22 @@ const tools = [
   },
 ];
 
+// ── Modo respaldo: SOLO LECTURA ───────────────────────────────────────
+// El fallback (Groq/Gemini) es mucho más débil que Claude: alucina inputs y
+// no respeta las reglas anti-improvisación. JAMÁS debe poder crear, pausar,
+// activar ni modificar campañas o anuncios — en respaldo solo analiza.
+const READ_ONLY_PREFIXES = ["get_", "list_", "search_", "analyze_"];
+function isReadOnlyTool(name: string): boolean {
+  return READ_ONLY_PREFIXES.some((p) => name.startsWith(p));
+}
+const readOnlyTools = tools.filter((t) => isReadOnlyTool(t.name));
+
+const FALLBACK_MODE_NOTE =
+  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar, eliminar ni modificar nada. Si el usuario pide un cambio, dile que el asistente está temporalmente en modo respaldo (créditos de Claude agotados) y que el cambio queda pendiente hasta recargar. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
+
+const FALLBACK_BANNER =
+  "⚠️ **Asistente en modo respaldo** — los créditos de Claude se agotaron (recárgalos en console.anthropic.com). En este modo solo puedo LEER y analizar; los cambios a campañas están bloqueados por seguridad.\n\n";
+
 // ── Tool executor ────────────────────────────────────────────────────
 async function executeTool(
   name: string,
@@ -1526,10 +1542,11 @@ export async function POST(request: NextRequest) {
           body: JSON.stringify({
             model: fallbackModel,
             max_tokens: 1536,
-            tools: toGroqTools(tools),
+            // Solo herramientas de lectura — el respaldo nunca muta campañas.
+            tools: toGroqTools(readOnlyTools),
             tool_choice: "auto",
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: SYSTEM_PROMPT + FALLBACK_MODE_NOTE },
               ...toGroqMessages(claudeMessages as AnthropicMessage[]),
             ],
           }),
@@ -1562,12 +1579,16 @@ export async function POST(request: NextRequest) {
       if (textBlock?.text) lastText = textBlock.text;
 
       if (response.stop_reason === "end_turn") {
+        // En respaldo, el usuario DEBE saber que no está hablando con Claude
+        // (sin banner el degradado es invisible y las respuestas malas parecen
+        // del asistente normal).
+        const replyText = useFallback ? FALLBACK_BANNER + lastText : lastText;
         return NextResponse.json({
-          reply: lastText,
+          reply: replyText,
           newHistory: [
             ...(Array.isArray(history) ? history : []),
             { role: "user", content: message },
-            { role: "assistant", content: lastText },
+            { role: "assistant", content: replyText },
           ],
         });
       }
@@ -1583,6 +1604,17 @@ export async function POST(request: NextRequest) {
         // Execute tools sequentially to stay within time budget
         const toolResults: { type: string; tool_use_id: string; content: string }[] = [];
         for (const block of toolBlocks) {
+          // Candado duro: en modo respaldo JAMÁS se ejecuta una herramienta
+          // mutadora, aunque el modelo la pida (el filtrado de tools no basta
+          // — los modelos de respaldo a veces alucinan nombres de herramienta).
+          if (useFallback && !isReadOnlyTool(block.name)) {
+            toolResults.push({
+              type: "tool_result",
+              tool_use_id: block.id,
+              content: "ERROR: herramienta deshabilitada en modo respaldo (solo lectura). NO se realizó ningún cambio. Informa al usuario que recargue créditos de Claude para hacer cambios.",
+            });
+            continue;
+          }
           const toolElapsed = Date.now() - startTime;
           if (toolElapsed > DEADLINE_MS) {
             toolResults.push({ type: "tool_result", tool_use_id: block.id, content: "Tiempo agotado, no se pudo ejecutar esta herramienta." });
@@ -1600,13 +1632,14 @@ export async function POST(request: NextRequest) {
     }
 
     // If we exhausted the loop or time, return last captured text or a fallback
-    const fallback = lastText || "No se pudo completar la solicitud. Si pediste crear anuncios, intenta de nuevo — el sistema usa procesamiento en paralelo.";
+    const exhaustedText = lastText || "No se pudo completar la solicitud. Si pediste crear anuncios, intenta de nuevo — el sistema usa procesamiento en paralelo.";
+    const replyText = useFallback ? FALLBACK_BANNER + exhaustedText : exhaustedText;
     return NextResponse.json({
-      reply: fallback,
+      reply: replyText,
       newHistory: [
         ...(Array.isArray(history) ? history : []),
         { role: "user", content: message },
-        { role: "assistant", content: fallback },
+        { role: "assistant", content: replyText },
       ],
     });
 
