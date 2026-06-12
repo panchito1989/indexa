@@ -20,6 +20,7 @@ import {
   Megaphone,
   Shield,
   Target,
+  Clapperboard,
 } from "lucide-react";
 import {
   collection,
@@ -44,6 +45,7 @@ const NAV_ITEMS = [
   { href: "/admin/campanas/tiktok", label: "TikTok Ads", icon: Video },
   { href: "/admin/campanas/facebook", label: "Facebook Ads", icon: Megaphone },
   { href: "/admin/campanas/google-ads", label: "Google Ads", icon: Target },
+  { href: "/admin/estudio-creativo", label: "Estudio Creativo", icon: Clapperboard },
   { href: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
 

@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // ffmpeg-static resuelve la ruta de su binario en runtime — si el bundler lo
+  // empaqueta, la ruta queda rota ("\ROOT\...\ffmpeg.exe ENOENT"). Externo +
+  // incluir el binario en el trace de las DOS rutas que lo usan (Vercel).
+  serverExternalPackages: ["ffmpeg-static"],
+  outputFileTracingIncludes: {
+    "/api/creative/scene": ["./node_modules/ffmpeg-static/ffmpeg*"],
+    "/api/creative/stitch": ["./node_modules/ffmpeg-static/ffmpeg*"],
+  },
   images: {
     remotePatterns: [
       {
@@ -24,7 +32,7 @@ const nextConfig: NextConfig = {
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
         { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
         { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.stripe.com https://business-api.tiktok.com https://graph.facebook.com https://generativelanguage.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com wss://*.firebaseio.com https://indexa-web-production.up.railway.app; frame-src https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'" },
+        { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://apis.google.com https://www.googletagmanager.com https://www.google-analytics.com https://js.stripe.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://*.googleusercontent.com https://*.google-analytics.com https://*.googletagmanager.com https://*.fal.media; media-src 'self' blob: https://*.fal.media; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.stripe.com https://business-api.tiktok.com https://graph.facebook.com https://generativelanguage.googleapis.com https://www.google-analytics.com https://www.googletagmanager.com https://region1.google-analytics.com wss://*.firebaseio.com https://indexa-web-production.up.railway.app; frame-src https://js.stripe.com https://hooks.stripe.com; object-src 'none'; base-uri 'self'" },
       ],
     },
     {

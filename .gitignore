@@ -62,3 +62,6 @@ tmp-*.cjs
 next-env.d.ts
 
 .vercel
+
+# Assets generados por IA (Estudio Creativo) — nunca commitear
+/creatives/
