@@ -193,6 +193,7 @@ REGLAS DE ORO DEL GUION:
 - titulo: título de YouTube optimizado para click (curiosidad/beneficio, sin clickbait vacío, ≤70 chars).
 - descripcion: descripción de YouTube (2-3 párrafos + 3-5 hashtags).
 - EL TEMA MANDA AL 100%: el video trata SOLO del TEMA/IDEA que da el usuario. El nombre del proyecto y su contexto de negocio son la CARPETA donde se organiza (el canal produce videos de varios nichos) — NUNCA los metas en el titulo, la descripcion ni la narración, salvo que el TEMA hable explícitamente de ese negocio.
+- visualPrompt SEGURO para los filtros de contenido de los generadores de imagen/video: NUNCA menores de edad humanos (para contenido infantil usa animales o personajes de caricatura — "cute 3D cartoon animals", nunca "children"/"kids"), ni celebridades o personas reales identificables, ni marcas/logos, ni armas o violencia.
 - El número de segmentos lo da el usuario — respétalo EXACTAMENTE.${REFS_NOTE}
 
 Respondes SOLO con JSON válido, sin markdown, con esta forma exacta:
@@ -241,4 +242,22 @@ Escribe EXACTAMENTE ${numSegments} segmentos. Usa kind="veo" en MÁXIMO ${maxVeo
 /** Prompt de Veo para un segmento de video LARGO (sin diálogo — narración TTS encima). */
 export function buildLongVeoPrompt(segment: LongSegment): string {
   return `Cinematic shot, no people talking to camera, no on-screen text. ${segment.visualPrompt} Smooth subtle camera movement, high production value. No dialogue, ambient mood only.`;
+}
+
+/**
+ * Reescribe un visualPrompt rechazado por el content checker de fal/Veo
+ * (content_policy_violation). Los disparadores más comunes en nuestros videos
+ * son menciones de menores (contenido infantil) — se sustituyen por personajes
+ * de caricatura — y se antepone un encuadre familiar explícito sin personas
+ * reales ni marcas. Se usa como SEGUNDO intento automático; si también falla,
+ * el segmento se degrada a imagen o se pide editarlo a mano.
+ */
+export function sanitizeVisualPrompt(prompt: string): string {
+  const safe = prompt
+    .replace(
+      /\b(school)?(children|child|kids?|boys?|girls?|babies|baby|toddlers?|infants?|minors?|teens?|teenagers?)\b/gi,
+      "cute cartoon animal characters"
+    )
+    .replace(/\b(niñ[oa]s?|bebés?|chiquit[oa]s?|adolescentes?)\b/gi, "personajes animados de animalitos");
+  return `Wholesome family-friendly 3D animated cartoon illustration, no real people, no human children, no brand logos, no on-screen text. ${safe}`;
 }

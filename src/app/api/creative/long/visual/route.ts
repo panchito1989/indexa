@@ -15,8 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdmin } from "@/lib/verifyAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
-import { generateHeroImage, submitVeoScene, pollVeo } from "@/lib/falClient";
-import { buildLongVeoPrompt } from "@/lib/creativeScript";
+import { generateHeroImage, submitVeoScene, pollVeo, ContentPolicyError } from "@/lib/falClient";
+import { buildLongVeoPrompt, sanitizeVisualPrompt } from "@/lib/creativeScript";
 import { saveBuffer, fetchToBuffer } from "@/lib/creativeStorage";
 
 export const runtime = "nodejs";
@@ -92,7 +92,22 @@ export async function POST(request: NextRequest) {
 
       // 1) Imagen del segmento (base para "veo", final para "image")
       if (!seg.imageUrl) {
-        const img = await generateHeroImage(seg.visualPrompt, refs, aspect);
+        let img;
+        try {
+          img = await generateHeroImage(seg.visualPrompt, refs, aspect);
+        } catch (e) {
+          if (!(e instanceof ContentPolicyError)) throw e;
+          // 2º intento automático: prompt saneado (sin menores humanos /
+          // marcas / personas reales — estilo caricatura familiar).
+          try {
+            img = await generateHeroImage(sanitizeVisualPrompt(seg.visualPrompt), refs, aspect);
+          } catch (e2) {
+            if (!(e2 instanceof ContentPolicyError)) throw e2;
+            const m = `Segmento ${i + 1}: el generador rechazó el visual por políticas de contenido (ni saneado pasó). Edítalo con el lápiz — evita niños humanos, marcas o personas reales — y dale Continuar.`;
+            await jobRef.update({ error: m.slice(0, 300) }).catch(() => {});
+            return NextResponse.json({ error: m }, { status: 422 });
+          }
+        }
         const buf = await fetchToBuffer(img.url);
         seg.imageUrl = await saveBuffer(`long_${jobId}_img_${i}.jpg`, buf, "image/jpeg");
         segments[i] = seg;
@@ -102,13 +117,37 @@ export async function POST(request: NextRequest) {
 
       // 2) Veo del segmento clave (sin audio — narración TTS encima)
       if (!seg.falRequestId) {
-        const { requestId } = await submitVeoScene({
-          prompt: buildLongVeoPrompt(seg),
-          imageUrl: seg.imageUrl!,
-          aspectRatio: aspect,
-          generateAudio: false,
-        });
-        seg.falRequestId = requestId;
+        try {
+          const { requestId } = await submitVeoScene({
+            prompt: buildLongVeoPrompt(seg),
+            imageUrl: seg.imageUrl!,
+            aspectRatio: aspect,
+            generateAudio: false,
+          });
+          seg.falRequestId = requestId;
+        } catch (e) {
+          if (!(e instanceof ContentPolicyError)) throw e;
+          try {
+            // 2º intento: prompt de movimiento saneado
+            const { requestId } = await submitVeoScene({
+              prompt: sanitizeVisualPrompt(buildLongVeoPrompt(seg)),
+              imageUrl: seg.imageUrl!,
+              aspectRatio: aspect,
+              generateAudio: false,
+            });
+            seg.falRequestId = requestId;
+          } catch (e2) {
+            if (!(e2 instanceof ContentPolicyError)) throw e2;
+            // Veo no lo acepta ni saneado → DEGRADAR a imagen: la imagen base
+            // YA pasó el filtro, así que el segmento sale como imagen animada
+            // (Ken Burns) y el video completo NO se atora por un clip.
+            seg.kind = "image";
+            seg.degraded = "policy";
+            segments[i] = seg;
+            await persist();
+            continue;
+          }
+        }
         segments[i] = seg;
         await persist();
       }
@@ -117,8 +156,17 @@ export async function POST(request: NextRequest) {
       while (Date.now() < deadline) {
         const r = await pollVeo(seg.falRequestId!);
         if (r.state === "failed") {
-          // Limpia para re-encolar en el siguiente intento
           delete seg.falRequestId;
+          // Si Veo lo rechazó por políticas, reintentar es inútil → degradar
+          // a imagen animada (la base ya pasó el filtro) y seguir.
+          if (/policy|flagged|content checker/i.test(String(r.error || ""))) {
+            seg.kind = "image";
+            seg.degraded = "policy";
+            segments[i] = seg;
+            await persist();
+            break;
+          }
+          // Fallo transitorio: limpia para re-encolar en el siguiente intento
           segments[i] = seg;
           await persist();
           // Persistir también en el job — la tarjeta debe decir QUÉ falló
@@ -135,7 +183,7 @@ export async function POST(request: NextRequest) {
         }
         await sleep(POLL_EVERY_MS);
       }
-      if (!seg.videoUrl) return NextResponse.json({ state: "pending", visualDone: countDone() });
+      if (!visualReady(seg)) return NextResponse.json({ state: "pending", visualDone: countDone() });
     }
 
     return NextResponse.json({ state: "done", visualDone: countDone() });
