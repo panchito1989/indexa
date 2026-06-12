@@ -44,7 +44,7 @@ const faqJsonLd = {
       name: "¿Qué opción es mejor para una PYME con poco presupuesto?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Para PYMES con presupuesto limitado, una plataforma como INDEXA es la mejor opción. Por $299 MXN/mes obtienes un sitio profesional con SEO, WhatsApp, SSL y hosting incluidos. Un freelance cobra mínimo $5,000 MXN de pago único y una agencia desde $20,000 MXN. Además, con INDEXA tu sitio está listo en minutos, no en semanas.",
+        text: "Para PYMES con presupuesto limitado, una plataforma como INDEXA es la mejor opción. Por $699 MXN/mes (plan único) obtienes un sitio profesional con SEO, WhatsApp, SSL, hosting y campañas con asistente IA incluidos. Un freelance cobra mínimo $5,000 MXN de pago único y una agencia desde $20,000 MXN. Además, con INDEXA tu sitio está listo en minutos, no en semanas.",
       },
     },
     {
@@ -60,7 +60,7 @@ const faqJsonLd = {
       name: "¿Puedo empezar con una opción económica y escalar después?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sí. Con INDEXA puedes empezar con el plan Starter ($299/mes) y escalar a Profesional o Enterprise cuando tu negocio crezca. No pierdes contenido ni posicionamiento al cambiar de plan. Esta flexibilidad es ideal para negocios que están empezando.",
+        text: "Con INDEXA no necesitas escalar: es un solo plan de $699 MXN/mes con todo incluido, sin niveles ni sorpresas. Sitio web, panel CMS, SEO local avanzado, estadísticas y campañas con asistente IA están disponibles desde el día uno, así que tu plataforma crece contigo sin cambiar de plan.",
       },
     },
   ],
@@ -166,14 +166,14 @@ export default function GuiaComoElegirPaginaWeb() {
           </p>
           <h3>Ventajas</h3>
           <ul>
-            <li><strong>Costo: desde $299 MXN/mes</strong> — Todo incluido (hosting, SSL, SEO, WhatsApp)</li>
+            <li><strong>Costo: $699 MXN/mes (plan único)</strong> — Todo incluido (hosting, SSL, SEO, WhatsApp, campañas con IA)</li>
             <li><strong>Listo en 3 minutos</strong> — No esperas semanas, tu sitio está en línea hoy</li>
             <li><strong>SEO automático</strong> — Schema.org, meta tags y velocidad optimizada sin configurar nada</li>
             <li><strong>Panel de edición visual</strong> — Editas textos, imágenes y colores tú mismo, al instante</li>
             <li><strong>Sin contrato</strong> — Pagas mes a mes, cancela cuando quieras</li>
             <li><strong>WhatsApp integrado</strong> — Botón flotante en todas las páginas</li>
             <li><strong>Actualizaciones automáticas</strong> — Nuevas funciones sin costo extra</li>
-            <li><strong>Soporte incluido</strong> — Email, WhatsApp o asesor personal según tu plan</li>
+            <li><strong>Soporte incluido</strong> — Soporte prioritario por WhatsApp</li>
           </ul>
           <h3>Desventajas</h3>
           <ul>
@@ -200,7 +200,7 @@ export default function GuiaComoElegirPaginaWeb() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 <tr><td className="px-4 py-2.5 font-medium">Costo inicial</td><td className="px-4 py-2.5 text-center">$5K-$15K</td><td className="px-4 py-2.5 text-center">$20K-$80K</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">$0</td></tr>
-                <tr><td className="px-4 py-2.5 font-medium">Costo mensual</td><td className="px-4 py-2.5 text-center">$0*</td><td className="px-4 py-2.5 text-center">$2K-$10K</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">$299-$1,299</td></tr>
+                <tr><td className="px-4 py-2.5 font-medium">Costo mensual</td><td className="px-4 py-2.5 text-center">$0*</td><td className="px-4 py-2.5 text-center">$2K-$10K</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">$699 (plan único)</td></tr>
                 <tr><td className="px-4 py-2.5 font-medium">Tiempo de entrega</td><td className="px-4 py-2.5 text-center">2-4 sem</td><td className="px-4 py-2.5 text-center">4-8 sem</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">3 min</td></tr>
                 <tr><td className="px-4 py-2.5 font-medium">SEO incluido</td><td className="px-4 py-2.5 text-center">❌</td><td className="px-4 py-2.5 text-center">$$$</td><td className="px-4 py-2.5 text-center">✅</td></tr>
                 <tr><td className="px-4 py-2.5 font-medium">WhatsApp integrado</td><td className="px-4 py-2.5 text-center">Variable</td><td className="px-4 py-2.5 text-center">✅</td><td className="px-4 py-2.5 text-center">✅</td></tr>
@@ -239,7 +239,7 @@ export default function GuiaComoElegirPaginaWeb() {
           </p>
           <ul>
             <li><strong>No están optimizadas para México</strong> — Sin Schema.org LocalBusiness automático, sin optimización para búsquedas en español mexicano</li>
-            <li><strong>Precios en dólares</strong> — $16-$45 USD/mes (más caros que INDEXA)</li>
+            <li><strong>Precios en dólares</strong> — $16-$45 USD/mes; el costo en pesos varía con el tipo de cambio y no incluye campañas ni WhatsApp</li>
             <li><strong>Sin WhatsApp integrado</strong> — Necesitas plugins de terceros</li>
             <li><strong>Velocidad variable</strong> — Los sitios pueden ser lentos si agregas muchos elementos</li>
             <li><strong>Soporte en inglés</strong> — No ideal para dueños de negocios mexicanos</li>
@@ -247,8 +247,7 @@ export default function GuiaComoElegirPaginaWeb() {
 
           <h2>Nuestra recomendación según tu situación</h2>
           <ul>
-            <li><strong>Negocio local que quiere empezar ya</strong> → INDEXA Starter ($299/mes)</li>
-            <li><strong>Negocio en crecimiento que necesita marketing</strong> → INDEXA Profesional ($599/mes)</li>
+            <li><strong>Negocio local o en crecimiento que quiere empezar ya</strong> → el plan único de INDEXA ($699 MXN/mes, todo incluido: web, SEO, WhatsApp y campañas con IA)</li>
             <li><strong>Negocio con presupuesto amplio y necesidades complejas</strong> → Agencia + SEO</li>
             <li><strong>Proyecto con funcionalidad muy específica</strong> → Freelance senior</li>
             <li><strong>Tienda en línea con carrito de compras</strong> → Shopify + INDEXA para landing page</li>
@@ -258,15 +257,16 @@ export default function GuiaComoElegirPaginaWeb() {
 
           <h3>¿Qué opción es mejor para una PYME con poco presupuesto?</h3>
           <p>
-            Una plataforma como INDEXA. Por $299 MXN/mes obtienes un sitio profesional
-            con SEO, WhatsApp, SSL y hosting incluidos. Es la opción con mejor relación
-            costo-beneficio para negocios locales.
+            Una plataforma como INDEXA. Por $699 MXN/mes (plan único) obtienes un sitio
+            profesional con SEO, WhatsApp, SSL, hosting y campañas con asistente IA
+            incluidos. Es la opción con mejor relación costo-beneficio para negocios locales.
           </p>
 
           <h3>¿Puedo empezar con una opción económica y escalar después?</h3>
           <p>
-            Sí. Con INDEXA puedes empezar con Starter y escalar a Profesional o
-            Enterprise cuando tu negocio crezca. No pierdes contenido ni posicionamiento.
+            Con INDEXA no necesitas escalar: es un solo plan con todo incluido, sin
+            niveles ni sorpresas. Todas las funciones están disponibles desde el día
+            uno y nunca pierdes contenido ni posicionamiento.
           </p>
 
           <h3>¿WordPress es buena opción para mi negocio?</h3>
@@ -281,7 +281,7 @@ export default function GuiaComoElegirPaginaWeb() {
               ¿Listo para la opción más inteligente?
             </p>
             <p className="mt-2 text-sm text-gray-500">
-              Tu sitio web profesional en 3 minutos. Desde $299 MXN/mes.
+              Tu sitio web profesional en 3 minutos. $699 MXN/mes, todo incluido.
             </p>
             <Link
               href="/registro"

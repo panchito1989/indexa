@@ -13,15 +13,14 @@ export default function TrialBanner({ sitioId = null }: TrialBannerProps) {
   const [checkingOut, setCheckingOut] = useState(false);
 
   const handleCheckout = useCallback(async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
-    if (!user || !sitioId || !priceId) return;
+    if (!user || !sitioId) return;
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId: "starter", sitioId, authToken: token }),
+        body: JSON.stringify({ sitioId, authToken: token }),
       });
       const data = await res.json();
       if (data.success && data.url) {

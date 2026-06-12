@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en Puebla — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Puebla en menos de 3 minutos. SEO local para Puebla capital y todo el estado, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Puebla en menos de 3 minutos. SEO local para Puebla capital y todo el estado, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web Puebla", "sitio web Puebla", "presencia digital Puebla", "diseño web Puebla", "página web negocio Puebla"],
   alternates: { canonical: "/pagina-web-puebla" },
   openGraph: {
@@ -47,7 +47,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web profesional para un negocio en Puebla?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, tu página web en Puebla cuesta desde $299 MXN/mes. Incluye diseño con IA, SEO local para Puebla y el estado, WhatsApp directo y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
+        text: "Con INDEXA, tu página web en Puebla cuesta $699 MXN/mes con el plan único todo incluido: diseño con IA, SEO local para Puebla y el estado, WhatsApp directo y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
       },
     },
     {

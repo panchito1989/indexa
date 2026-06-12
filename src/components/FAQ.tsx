@@ -6,7 +6,7 @@ const FAQS: FAQItemData[] = [
   {
     question: "¿Cómo funciona la prueba gratis de 14 días?",
     answer:
-      "Te registras sin tarjeta de crédito y obtienes acceso completo a cualquier plan por 14 días — incluyendo sitio web generado con IA, SEO local automático, WhatsApp integrado y panel de edición. Al terminar la prueba, eliges el plan que más te convenga (desde $299 MXN/mes) para seguir con tu sitio activo. Si decides no continuar, no se te cobra nada y tu sitio queda pausado sin penalización.",
+      "Te registras sin tarjeta de crédito y obtienes acceso completo a cualquier plan por 14 días — incluyendo sitio web generado con IA, SEO local automático, WhatsApp integrado y panel de edición. Al terminar la prueba, activas el plan único de $699 MXN/mes (todo incluido) para seguir con tu sitio activo. Si decides no continuar, no se te cobra nada y tu sitio queda pausado sin penalización.",
   },
   {
     question: "¿Necesito saber programar para usar INDEXA?",

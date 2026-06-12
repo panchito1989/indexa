@@ -64,9 +64,12 @@ export async function GET(request: NextRequest) {
 
     // Compute totals
     const totalSaving = logs.reduce((sum, l) => sum + (l.estimatedSaving || 0), 0);
+    // Plan único $699; los precios viejos se conservan para clientes
+    // legados que siguen pagando su tarifa original.
     const subscriptionCost = sitioData?.plan === "enterprise" ? 1299
       : sitioData?.plan === "profesional" ? 599
-      : 299;
+      : sitioData?.plan === "starter" ? 299
+      : 699;
     const roi = subscriptionCost > 0 ? Math.round(totalSaving / subscriptionCost) : 0;
 
     return NextResponse.json({ logs, totalSaving, subscriptionCost, roi });

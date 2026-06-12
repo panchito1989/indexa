@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
 import { checkRateLimit } from "@/lib/rateLimit";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+import { consumeMonthlyQuota } from "@/lib/monthlyQuota";
 import OpenAI from "openai";
 
 export const maxDuration = 300; // Vercel Pro: hasta 300s para flujos de creación de anuncios
@@ -942,6 +943,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
     }
 
+    // Cupo mensual del plan único (150 msgs IA/mes entre los 3 asistentes):
+    // acota el costo de Claude por cliente. Admin/subadmin exentos.
+    const quota = await consumeMonthlyQuota(user.uid, "ai");
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quota.message }, { status: 429 });
+    }
+
     // AI keys — at least one free model must be available
     const geminiKey = process.env.GEMINI_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
@@ -1297,7 +1305,9 @@ export async function POST(request: NextRequest) {
         const cRes = await fetch(ANTHROPIC_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-api-key": anthropicKey, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 1536, system: effectivePrompt, tools, messages: aiMessages }),
+          // cache_control: cachea el prefijo (tools + system) → ~90% menos
+          // costo de input en iteraciones del loop y turnos siguientes.
+          body: JSON.stringify({ model: CLAUDE_MODEL, max_tokens: 1536, system: [{ type: "text", text: effectivePrompt, cache_control: { type: "ephemeral" } }], tools, messages: aiMessages }),
         });
         const cText = await cRes.text();
         if (!cRes.ok) { debugLog.push(`Claude HTTP ${cRes.status}: ${cText.slice(0, 150)}`); return false; }

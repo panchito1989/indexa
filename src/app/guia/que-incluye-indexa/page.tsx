@@ -237,13 +237,10 @@ export default function GuaQueIncluyeIndexa() {
 
           <h2>Soporte humano real</h2>
           <p>
-            No eres un número. Según tu plan, tienes acceso a:
+            No eres un número. El plan único incluye <strong>soporte prioritario
+            por WhatsApp</strong>: personas reales que te responden rápido, te
+            ayudan a optimizar tu perfil y resuelven tus dudas técnicas.
           </p>
-          <ul>
-            <li><strong>Starter</strong> — Soporte por email con respuesta en menos de 24 horas</li>
-            <li><strong>Profesional</strong> — Soporte prioritario por WhatsApp con asesoría para optimizar tu perfil</li>
-            <li><strong>Enterprise</strong> — Asesor personal dedicado, configuración premium, capacitación 1 a 1 y soporte técnico urgente</li>
-          </ul>
 
           <h2>Comparativa: INDEXA vs alternativas</h2>
           <div className="not-prose my-8 overflow-x-auto">
@@ -257,7 +254,7 @@ export default function GuaQueIncluyeIndexa() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                <tr><td className="px-4 py-2.5">Precio mensual</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">$299-$1,299</td><td className="px-4 py-2.5 text-center">$5,000-$15,000*</td><td className="px-4 py-2.5 text-center">$20,000-$80,000*</td></tr>
+                <tr><td className="px-4 py-2.5">Precio mensual</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">$699 (plan único)</td><td className="px-4 py-2.5 text-center">$5,000-$15,000*</td><td className="px-4 py-2.5 text-center">$20,000-$80,000*</td></tr>
                 <tr><td className="px-4 py-2.5">Tiempo de entrega</td><td className="px-4 py-2.5 text-center font-semibold text-indexa-orange">3 minutos</td><td className="px-4 py-2.5 text-center">2-4 semanas</td><td className="px-4 py-2.5 text-center">4-8 semanas</td></tr>
                 <tr><td className="px-4 py-2.5">SEO automático</td><td className="px-4 py-2.5 text-center">✅</td><td className="px-4 py-2.5 text-center">❌</td><td className="px-4 py-2.5 text-center">Extra $$$</td></tr>
                 <tr><td className="px-4 py-2.5">WhatsApp integrado</td><td className="px-4 py-2.5 text-center">✅</td><td className="px-4 py-2.5 text-center">Variable</td><td className="px-4 py-2.5 text-center">✅</td></tr>
@@ -280,7 +277,7 @@ export default function GuaQueIncluyeIndexa() {
 
           <h3>¿El hosting y el dominio están incluidos?</h3>
           <p>
-            El hosting está incluido en todos los planes sin costo adicional. El
+            El hosting está incluido en el plan único sin costo adicional. El
             dominio personalizado (.com, .com.mx) se contrata por separado con el
             proveedor de tu preferencia. INDEXA te proporciona una URL gratuita
             desde el primer momento.

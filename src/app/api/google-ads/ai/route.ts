@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyIdToken } from "@/lib/verifyAuth";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { consumeMonthlyQuota } from "@/lib/monthlyQuota";
 import {
   getGoogleAdsContext, getCampaigns, getAdGroups, getAds, getKeywords,
   getReporting, getAccountInfo, getAccountBudget,
@@ -650,6 +651,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Demasiadas solicitudes. Espera un momento." }, { status: 429 });
     }
 
+    // Cupo mensual del plan único (150 msgs IA/mes entre los 3 asistentes):
+    // acota el costo de Claude por cliente. Admin/subadmin exentos.
+    const quota = await consumeMonthlyQuota(user.uid, "ai");
+    if (!quota.allowed) {
+      return NextResponse.json({ error: quota.message }, { status: 429 });
+    }
+
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
     if (!anthropicKey) {
       return NextResponse.json(
@@ -726,7 +734,10 @@ export async function POST(request: NextRequest) {
               model: CLAUDE_MODEL,
               max_tokens: 1536,
               temperature: 0, // determinista → recomendaciones consistentes
-              system: systemPrompt,
+              // cache_control: cachea el prefijo completo (tools + system) →
+              // ~90% menos costo de input en cada iteración del loop y en
+              // turnos siguientes de la conversación (TTL 5 min).
+              system: [{ type: "text", text: systemPrompt, cache_control: { type: "ephemeral" } }],
               tools,
               messages: sanitizeForApi(messages as LoopMsg[]),
             }),

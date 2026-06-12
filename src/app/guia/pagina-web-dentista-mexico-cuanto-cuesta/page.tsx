@@ -53,7 +53,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta la página web de un dentista en México al mes?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "El sitio web de un consultorio dental en México cuesta entre $299 MXN y $1,299 MXN al mes en 2026, dependiendo de las funciones que se incluyan. Plan Starter de INDEXA: $299 MXN/mes (sitio con IA, WhatsApp, SEO local básico, SSL). Plan Profesional: $599 MXN/mes (agrega Schema.org Dentist, citas en línea, estadísticas, soporte prioritario). Plan Enterprise: $1,299 MXN/mes (agrega dominio propio tipo dentistadrgomez.com, anuncios Facebook/Instagram/TikTok integrados y asesor dedicado). Un desarrollador freelance cobra entre $5,000 y $20,000 MXN por un sitio similar sin SEO ni mantenimiento incluidos.",
+        text: "Con INDEXA, el sitio web de un consultorio dental en México cuesta $699 MXN al mes en 2026 (plan único, todo incluido): sitio generado con IA, panel CMS completo, Schema.org Dentist + LocalBusiness, botón de WhatsApp para agendar citas, campañas de Google, Facebook/Instagram y TikTok con asistente IA, estadísticas de visitas y clics, SSL, hosting y soporte prioritario por WhatsApp. Un desarrollador freelance cobra entre $5,000 y $20,000 MXN por un sitio similar sin SEO ni mantenimiento incluidos.",
       },
     },
     {
@@ -85,7 +85,7 @@ const faqJsonLd = {
       name: "¿Qué Schema.org necesita la página web de un dentista?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "El sitio web de un consultorio dental debe implementar Schema.org Dentist (subtipo de MedicalBusiness) y LocalBusiness en formato JSON-LD. Esto incluye: name, address, telephone, openingHours, geo (coordenadas GPS), medicalSpecialty (Dentistry, Orthodontics, Endodontics según corresponda), priceRange, aggregateRating si tienes reseñas. INDEXA lo implementa automáticamente desde el plan Profesional ($599 MXN/mes).",
+        text: "El sitio web de un consultorio dental debe implementar Schema.org Dentist (subtipo de MedicalBusiness) y LocalBusiness en formato JSON-LD. Esto incluye: name, address, telephone, openingHours, geo (coordenadas GPS), medicalSpecialty (Dentistry, Orthodontics, Endodontics según corresponda), priceRange, aggregateRating si tienes reseñas. INDEXA lo implementa automáticamente — incluido en el plan único ($699 MXN/mes).",
       },
     },
     {
@@ -93,7 +93,7 @@ const faqJsonLd = {
       name: "¿Vale la pena pagar anuncios de Facebook o Google Ads siendo dentista?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Sí, especialmente para servicios de alto margen como ortodoncia, implantes y blanqueamiento. Inversión mínima recomendada: $50 a $150 MXN por día (≈ $1,500 a $4,500 MXN/mes) en Facebook Ads o Instagram Ads, segmentando por código postal en radio de 5 km del consultorio y por edad/intereses. Costo por consulta agendada típico en México: $80 a $250 MXN. INDEXA Enterprise incluye el panel para correr estas campañas sin contratar agencia.",
+        text: "Sí, especialmente para servicios de alto margen como ortodoncia, implantes y blanqueamiento. Inversión mínima recomendada: $50 a $150 MXN por día (≈ $1,500 a $4,500 MXN/mes) en Facebook Ads o Instagram Ads, segmentando por código postal en radio de 5 km del consultorio y por edad/intereses. Costo por consulta agendada típico en México: $80 a $250 MXN. El plan único de INDEXA ($699 MXN/mes) incluye el panel para correr estas campañas con asistente IA, sin contratar agencia.",
       },
     },
   ],
@@ -149,18 +149,16 @@ export default function GuiaDentistaCuantoCuesta() {
         <article className="prose prose-lg prose-gray mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h2>Respuesta corta</h2>
           <p>
-            La página web de un consultorio dental en México cuesta <strong>entre $299 y $1,299 MXN al mes</strong> en 2026 con plataformas SaaS como INDEXA. Un desarrollador freelance cobra de $5,000 a $20,000 MXN por hacer el sitio una vez, sin incluir mantenimiento ni SEO. Para un consultorio que quiere atraer pacientes nuevos por Google Maps y WhatsApp, el plan recomendado es el Profesional de INDEXA ($599 MXN/mes) porque incluye Schema.org Dentist (crítico para SEO local) y soporte prioritario por WhatsApp.
+            Con una plataforma SaaS como INDEXA, la página web de un consultorio dental en México cuesta <strong>$699 MXN al mes</strong> en 2026 (plan único, todo incluido). Un desarrollador freelance cobra de $5,000 a $20,000 MXN por hacer el sitio una vez, sin incluir mantenimiento ni SEO. Para un consultorio que quiere atraer pacientes nuevos por Google Maps y WhatsApp, el plan único incluye Schema.org Dentist (crítico para SEO local), campañas de anuncios con asistente IA y soporte prioritario por WhatsApp.
           </p>
 
-          <h2>Tabla de precios (planes mensuales en México)</h2>
+          <h2>Precio en México (plan único mensual)</h2>
         </article>
 
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="grid gap-6 sm:grid-cols-3">
+        <div className="mx-auto max-w-md px-4 sm:px-6">
+          <div className="grid gap-6">
             {[
-              { plan: "Starter", precio: "$299", incluye: ["Sitio generado con IA", "Botón de WhatsApp", "SEO básico automático", "Certificado SSL", "1 plantilla a elegir", "Soporte por email"], cta: "Empezar gratis" },
-              { plan: "Profesional", precio: "$599", recomendado: true, incluye: ["Todo lo de Starter", "Schema.org Dentist + LocalBusiness", "Panel CMS visual", "Estadísticas de visitas y clics", "3 plantillas a elegir", "Soporte prioritario por WhatsApp", "Asesoría SEO local"], cta: "Probar 14 días gratis" },
-              { plan: "Enterprise", precio: "$1,299", incluye: ["Todo lo de Profesional", "Dominio personalizado (drsmith.mx)", "Anuncios Facebook/Instagram/TikTok integrados", "Bio links para redes sociales", "Asesor dedicado", "Estrategia mensual personalizada"], cta: "Hablar con un asesor" },
+              { plan: "Plan Único", precio: "$699", recomendado: true, incluye: ["Sitio web profesional generado con IA", "Schema.org Dentist + LocalBusiness", "Botón de WhatsApp para agendar citas", "Campañas Google, Facebook/Instagram y TikTok con asistente IA (150 acciones de IA/mes)", "Imágenes publicitarias con IA (20/mes)", "Panel CMS visual", "Estadísticas de visitas y clics", "Certificado SSL + hosting incluidos", "Soporte prioritario por WhatsApp", "14 días gratis sin tarjeta"], cta: "Probar 14 días gratis" },
             ].map((p) => (
               <div key={p.plan} className={`rounded-2xl border p-6 ${p.recomendado ? "border-indexa-orange bg-orange-50 shadow-xl" : "border-gray-200 bg-white"}`}>
                 {p.recomendado && <span className="mb-3 inline-block rounded-full bg-indexa-orange px-3 py-1 text-xs font-bold uppercase text-white">Recomendado</span>}

@@ -145,7 +145,7 @@ const PROVIDERS: ProviderRow[] = [
   {
     proveedor: "INDEXA",
     setup: "Gratis",
-    mensualidad: "Incluido en plan ($299-1,299 MXN)",
+    mensualidad: "Incluido en el plan único ($699 MXN)",
     conversacion: "Tarifa Meta directa, sin markup",
     panelEspañol: "Sí, panel completo en español",
     pros: "Chatbot IA incluido, integración con sitio web, soporte WhatsApp",
@@ -269,7 +269,7 @@ export default function GuiaWhatsAppBusinessAPIPrecio() {
           </p>
           <ul>
             <li><strong>Más barato (técnico):</strong> Meta Cloud API directo + un developer = $0 fijo + tarifas por conversación (~$200-800 MXN/mes para una PYME típica).</li>
-            <li><strong>Más fácil (recomendado para PYMES):</strong> Una plataforma como <Link href="/servicios/chatbot-inteligente" className="font-semibold text-indexa-orange">INDEXA</Link> que incluye chatbot IA, panel en español y tarifas Meta sin markup = desde $299 MXN/mes todo incluido.</li>
+            <li><strong>Más fácil (recomendado para PYMES):</strong> Una plataforma como <Link href="/servicios/chatbot-inteligente" className="font-semibold text-indexa-orange">INDEXA</Link> que incluye chatbot IA, panel en español y tarifas Meta sin markup = $699 MXN/mes (plan único) todo incluido.</li>
             <li><strong>Internacional:</strong> Twilio o 360dialog = $5-19 USD/mes + tarifas + markup. Caro a escala y sin soporte local.</li>
           </ul>
           <p>
@@ -326,7 +326,7 @@ export default function GuiaWhatsAppBusinessAPIPrecio() {
             <li>Notificaciones de pedido confirmado: ~150 al mes a $0.14 MXN = <strong>$21 MXN</strong></li>
             <li>Recordatorios de reserva (utilidad): ~80 al mes a $0.14 MXN = <strong>$11 MXN</strong></li>
             <li>Marketing (1 envío a 200 clientes): 1×200×$1.43 = <strong>$286 MXN</strong></li>
-            <li><strong>Total Meta: ~$318 MXN/mes</strong> + plan INDEXA $599 MXN = <strong>$917 MXN totales</strong></li>
+            <li><strong>Total Meta: ~$318 MXN/mes</strong> + plan único INDEXA $699 MXN = <strong>$1,017 MXN totales</strong></li>
           </ul>
 
           <h3>🦷 Consultorio dental con agenda de citas</h3>
@@ -334,14 +334,14 @@ export default function GuiaWhatsAppBusinessAPIPrecio() {
             <li>Conversaciones de servicio: ~60 al mes (gratis)</li>
             <li>Recordatorios de cita 24h y 1h antes: ~400 al mes a $0.14 = <strong>$56 MXN</strong></li>
             <li>Cero campañas marketing</li>
-            <li><strong>Total Meta: ~$56 MXN/mes</strong> + plan INDEXA $599 = <strong>$655 MXN totales</strong></li>
+            <li><strong>Total Meta: ~$56 MXN/mes</strong> + plan único INDEXA $699 = <strong>$755 MXN totales</strong></li>
           </ul>
 
           <h3>🛠️ Taller mecánico con sitio web pequeño</h3>
           <ul>
             <li>Conversaciones de servicio: ~40 al mes (gratis)</li>
             <li>Notificaciones de orden lista: ~50 al mes = <strong>$7 MXN</strong></li>
-            <li><strong>Total Meta: ~$7 MXN/mes</strong> + plan INDEXA $299 = <strong>$306 MXN totales</strong></li>
+            <li><strong>Total Meta: ~$7 MXN/mes</strong> + plan único INDEXA $699 = <strong>$706 MXN totales</strong></li>
           </ul>
 
           <h2>Comparativa de proveedores en México (2026)</h2>

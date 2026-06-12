@@ -149,8 +149,8 @@ export default function GuiaMarketingDigital() {
 
           <h2>Cómo INDEXA simplifica el marketing digital</h2>
           <p>
-            Con el plan Enterprise de <Link href="/">INDEXA</Link>, puedes crear
-            y gestionar campañas de <strong>Meta Ads y TikTok Ads</strong>{" "}
+            Con el plan único de <Link href="/">INDEXA</Link> ($699 MXN/mes), puedes
+            crear y gestionar campañas de <strong>Google, Meta Ads y TikTok Ads</strong>{" "}
             directamente desde tu panel de control. La IA te ayuda a:
           </p>
           <ul>

@@ -10,7 +10,7 @@ const PAGE_PATH = "/agencia-google-ads";
 export const metadata: Metadata = {
   title: "Agencia de Google Ads en México | INDEXA — Aparece Arriba en Google",
   description:
-    "INDEXA es la agencia de Google Ads para PYMES en México. Campañas de búsqueda, Maps y Display optimizadas por IA. Leads directos a WhatsApp. Sin contratos, desde $299 MXN/mes.",
+    "INDEXA es la agencia de Google Ads para PYMES en México. Campañas de búsqueda, Maps y Display optimizadas por IA. Leads directos a WhatsApp. Sin contratos, plan único de $699 MXN/mes todo incluido.",
   keywords: [
     "agencia google ads",
     "google ads agencia",
@@ -38,12 +38,12 @@ const faq = [
   {
     pregunta: "¿Qué hace una agencia de Google Ads?",
     respuesta:
-      "Una agencia de Google Ads se especializa en crear y administrar campañas de publicidad pagada dentro del ecosistema de Google: anuncios en resultados de búsqueda (Search), en Google Maps (Local), en YouTube, en la red Display (banners) y en Performance Max. Sus tareas típicas incluyen investigación de keywords, escritura de anuncios, configuración de extensiones, gestión de pujas, optimización de páginas de destino y reportes de ROAS. INDEXA es una agencia de Google Ads con IA que automatiza el 80% del trabajo y entrega leads directos a WhatsApp desde $299 MXN/mes.",
+      "Una agencia de Google Ads se especializa en crear y administrar campañas de publicidad pagada dentro del ecosistema de Google: anuncios en resultados de búsqueda (Search), en Google Maps (Local), en YouTube, en la red Display (banners) y en Performance Max. Sus tareas típicas incluyen investigación de keywords, escritura de anuncios, configuración de extensiones, gestión de pujas, optimización de páginas de destino y reportes de ROAS. INDEXA es una agencia de Google Ads con IA que automatiza el 80% del trabajo y entrega leads directos a WhatsApp por $699 MXN/mes (plan único, todo incluido).",
   },
   {
     pregunta: "¿Cuánto cobra una agencia de Google Ads en México?",
     respuesta:
-      "El fee típico de una agencia de Google Ads en México va de $5,000 a $30,000 MXN/mes según el tamaño de la cuenta y el número de campañas. Algunas agencias cobran un porcentaje del gasto en anuncios (10–20%). INDEXA cobra fee desde $299 MXN/mes (incluye plataforma + setup + optimización con IA) en el plan Crecimiento; el presupuesto de anuncios va directo a Google Ads y tú lo controlas. Total realista para una PYME: $5,000–$15,000 MXN/mes incluyendo INDEXA + presupuesto de Google Ads.",
+      "El fee típico de una agencia de Google Ads en México va de $5,000 a $30,000 MXN/mes según el tamaño de la cuenta y el número de campañas. Algunas agencias cobran un porcentaje del gasto en anuncios (10–20%). INDEXA cobra un fee fijo de $699 MXN/mes con su plan único todo incluido (plataforma + setup + optimización con IA); el presupuesto de anuncios va directo a Google Ads y tú lo controlas. Total realista para una PYME: $5,000–$15,000 MXN/mes incluyendo INDEXA + presupuesto de Google Ads.",
   },
   {
     pregunta: "¿Cuánto presupuesto necesito para hacer Google Ads?",
@@ -63,7 +63,7 @@ const faq = [
   {
     pregunta: "¿Qué tipo de campañas de Google Ads incluye INDEXA?",
     respuesta:
-      "INDEXA configura las cinco campañas principales según tu negocio: (1) Search — anuncios de texto cuando alguien busca tu servicio; (2) Maps / Local — aparece en Google Maps cuando buscan 'cerca de mí'; (3) Display — banners en sitios de la red de Google; (4) YouTube — videos cortos en pre-roll; (5) Performance Max — campaña automatizada que cubre todos los canales. El plan Crecimiento incluye Search + Maps; el plan Dominio Local incluye los 5 tipos.",
+      "INDEXA configura las cinco campañas principales según tu negocio: (1) Search — anuncios de texto cuando alguien busca tu servicio; (2) Maps / Local — aparece en Google Maps cuando buscan 'cerca de mí'; (3) Display — banners en sitios de la red de Google; (4) YouTube — videos cortos en pre-roll; (5) Performance Max — campaña automatizada que cubre todos los canales. El plan único de INDEXA ($699 MXN/mes, todo incluido) cubre los 5 tipos según lo que tu negocio necesite.",
   },
   {
     pregunta: "¿Funciona Google Ads para mi industria?",
@@ -133,8 +133,8 @@ export default function AgenciaGoogleAdsPage() {
 
             <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-white/70 sm:text-xl">
               Cuando alguien busca tu servicio en Google, apareces tú primero. Campañas de Search, Maps, Display y
-              Performance Max optimizadas por IA. Leads directos a tu WhatsApp desde{" "}
-              <span className="font-semibold text-white">$299 MXN/mes</span>.
+              Performance Max optimizadas por IA. Leads directos a tu WhatsApp por{" "}
+              <span className="font-semibold text-white">$699 MXN/mes</span>, plan único todo incluido.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -168,7 +168,7 @@ export default function AgenciaGoogleAdsPage() {
             <p className="mt-4 text-lg leading-relaxed text-white/80">
               <strong>INDEXA</strong> automatiza el 80% del trabajo de una agencia de Google Ads usando IA. La cuenta
               se configura en menos de 24 horas, las pujas se optimizan solas y los leads llegan directo a tu WhatsApp
-              con nombre, servicio que buscan y zona — todo desde <strong>$299 MXN al mes</strong>, sin contrato anual.
+              con nombre, servicio que buscan y zona — todo por <strong>$699 MXN al mes</strong> en un plan único todo incluido, sin contrato anual.
             </p>
           </div>
         </section>

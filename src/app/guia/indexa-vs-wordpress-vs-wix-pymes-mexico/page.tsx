@@ -84,7 +84,7 @@ const faqJsonLd = {
       acceptedAnswer: {
         "@type": "Answer",
         text:
-          "INDEXA: $7,188 MXN/año (plan Profesional, todo incluido). WordPress autogestionado: $8,500-25,000 MXN/año (hosting + plugins + tema + mantenimiento + developer ocasional). Wix Business Elite: $7,200 MXN/año + plugins de WhatsApp y chat ($1,500-3,000 extra). El total real depende mucho del tiempo que dediques tú o un freelancer.",
+          "INDEXA: $8,388 MXN/año (plan único, todo incluido). WordPress autogestionado: $8,500-25,000 MXN/año (hosting + plugins + tema + mantenimiento + developer ocasional). Wix Business Elite: $7,200 MXN/año + plugins de WhatsApp y chat ($1,500-3,000 extra). El total real depende mucho del tiempo que dediques tú o un freelancer.",
       },
     },
     {
@@ -136,7 +136,7 @@ interface CompareRow {
 
 const COMPARE: CompareRow[] = [
   { feature: "Tiempo de tener sitio operando", indexa: "<3 minutos con IA", wordpress: "1-3 semanas (tú o freelancer)", wix: "1-3 días", ganador: "indexa" },
-  { feature: "Costo total anual real (PYME típica)", indexa: "$3,588-15,588 MXN según plan", wordpress: "$8,500-25,000 MXN", wix: "$3,600-15,600 MXN + plugins", ganador: "indexa" },
+  { feature: "Costo total anual real (PYME típica)", indexa: "$8,388 MXN (plan único, todo incluido)", wordpress: "$8,500-25,000 MXN", wix: "$3,600-15,600 MXN + plugins", ganador: "indexa" },
   { feature: "Soporte en español por WhatsApp", indexa: "Sí, soporte directo", wordpress: "Solo via foros / freelancer", wix: "Email / chat en inglés primario", ganador: "indexa" },
   { feature: "WhatsApp Business integrado", indexa: "Nativo + chatbot IA", wordpress: "Plugins de terceros ($)", wix: "Plugin básico", ganador: "indexa" },
   { feature: "SEO local (Schema.org México)", indexa: "Configurado de fábrica", wordpress: "Requiere Yoast/RankMath + setup", wix: "Limitado", ganador: "indexa" },
@@ -284,7 +284,7 @@ export default function GuiaIndexaVsWordPressVsWix() {
 
           <h3>📈 Caso 6: PYME con presupuesto $0 disponible este mes</h3>
           <p>
-            <strong>Ganador: INDEXA (prueba gratis 14 días).</strong> WordPress.com tiene plan gratis pero te muestra ads de WordPress, dominio feo y nada de SEO. INDEXA gratis 14 días te da todo (sitio, SEO, WhatsApp, panel) sin tarjeta. Cuando termina el trial, $299/mes.
+            <strong>Ganador: INDEXA (prueba gratis 14 días).</strong> WordPress.com tiene plan gratis pero te muestra ads de WordPress, dominio feo y nada de SEO. INDEXA gratis 14 días te da todo (sitio, SEO, WhatsApp, panel) sin tarjeta. Cuando termina el trial, $699 MXN/mes (plan único, todo incluido).
           </p>
 
           <h2>El costo real anual: análisis financiero</h2>
@@ -292,14 +292,15 @@ export default function GuiaIndexaVsWordPressVsWix() {
             Aquí desglosamos el costo total real (no el de propaganda) para una PYME típica mexicana en 2026:
           </p>
 
-          <h3>💰 INDEXA Profesional (caso típico)</h3>
+          <h3>💰 INDEXA plan único (caso típico)</h3>
           <ul>
-            <li>Plan: $599 MXN/mes × 12 = $7,188 MXN/año</li>
-            <li>Hosting, dominio, SSL, soporte: <strong>incluido</strong></li>
+            <li>Plan: $699 MXN/mes × 12 = $8,388 MXN/año</li>
+            <li>Hosting, SSL, soporte: <strong>incluido</strong></li>
             <li>WhatsApp + chatbot IA: <strong>incluido</strong></li>
             <li>SEO local + analíticas: <strong>incluido</strong></li>
+            <li>Campañas Google/Meta/TikTok con asistente IA: <strong>incluido</strong></li>
             <li>Tu tiempo de operación: ~30 min/mes editando contenido</li>
-            <li className="font-bold">Total año 1: $7,188 MXN | Costo neto post-deducción: ~$4,338 MXN</li>
+            <li className="font-bold">Total año 1: $8,388 MXN | Costo neto post-deducción: ~$5,062 MXN</li>
           </ul>
 
           <h3>💰 WordPress autogestionado (caso típico)</h3>

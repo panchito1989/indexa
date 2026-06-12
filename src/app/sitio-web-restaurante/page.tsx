@@ -11,7 +11,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Restaurante en México — INDEXA",
   description:
-    "Crea la página web de tu restaurante en menos de 3 minutos con IA. Menú digital, galería de platillos, reservaciones por WhatsApp y SEO local para aparecer en Google. Desde $299 MXN/mes.",
+    "Crea la página web de tu restaurante en menos de 3 minutos con IA. Menú digital, galería de platillos, reservaciones por WhatsApp y SEO local para aparecer en Google. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web restaurante", "sitio web restaurante México", "menú digital restaurante", "web para fonda", "página web taquería", "sitio web cocina"],
   alternates: { canonical: "/sitio-web-restaurante" },
   openGraph: {
@@ -48,7 +48,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta la página web de un restaurante en México?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, la página web de tu restaurante cuesta desde $299 MXN/mes. Incluye diseño profesional con menú digital, galería de fotos, SEO local, botón de WhatsApp y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
+        text: "Con INDEXA, la página web de tu restaurante cuesta $699 MXN/mes con el plan único todo incluido: diseño profesional con menú digital, galería de fotos, SEO local, botón de WhatsApp y certificado SSL. Sin pagos iniciales ni contratos forzosos.",
       },
     },
     {

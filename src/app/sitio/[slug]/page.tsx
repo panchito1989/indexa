@@ -97,17 +97,12 @@ export async function generateMetadata({ params }: SitioPageProps): Promise<Meta
     ? [{ url: sitio.data.logoUrl, width: 400, height: 400, alt: `Logo de ${nombre}` }]
     : [];
 
-  // Indexability policy:
-  // Microsites of clients consumed crawl budget while attracting brand queries
-  // of the *client* (not INDEXA). To keep INDEXA's commercial pages prioritized
-  // in Google, only allow indexing of microsites whose owners pay for plans
-  // Profesional or Enterprise — i.e. those that have explicitly invested in SEO.
-  // Starter / inactive / preview sites stay noindex but follow links.
-  const plan = sitio.data.plan;
+  // Indexability policy (plan único): TODO sitio activo/publicado es indexable
+  // — el SEO en Google es parte de lo que el cliente paga en el plan de $699.
+  // Inactivos / preview / demo siguen noindex (follow) para no gastar crawl
+  // budget en sitios que no pagan.
   const statusPago = sitio.data.statusPago;
-  const isPaidActive = statusPago === "activo" || statusPago === "publicado";
-  const hasIndexablePlan = plan === "profesional" || plan === "enterprise";
-  const shouldIndex = isPaidActive && hasIndexablePlan;
+  const shouldIndex = statusPago === "activo" || statusPago === "publicado";
 
   return {
     title: seoTitle,

@@ -55,7 +55,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta tener una página web en México?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Los precios varían mucho. Un freelance cobra entre $5,000 y $15,000 MXN sin mantenimiento. Una agencia entre $20,000 y $80,000 MXN. Con plataformas como INDEXA, puedes tener un sitio web profesional desde $299 MXN/mes con hosting, SSL, SEO automático y panel de edición incluidos.",
+        text: "Los precios varían mucho. Un freelance cobra entre $5,000 y $15,000 MXN sin mantenimiento. Una agencia entre $20,000 y $80,000 MXN. Con plataformas como INDEXA, puedes tener un sitio web profesional por $699 MXN/mes (plan único) con hosting, SSL, SEO automático, panel de edición y campañas con asistente IA incluidos.",
       },
     },
     {
@@ -244,13 +244,13 @@ export default function GuiaBeneficiosPaginaWeb() {
           <p>
             Muchos dueños de PYMES creen que una página web profesional cuesta
             decenas de miles de pesos. La realidad es que con plataformas modernas
-            como INDEXA, puedes tener un sitio web completo <strong>desde $299 MXN/mes</strong>
-            — menos de lo que gastas en café al mes.
+            como INDEXA, puedes tener un sitio web completo por <strong>$699 MXN/mes</strong>
+            (plan único) — una fracción de lo que cobra un freelance o una agencia.
           </p>
           <p>
             Incluye diseño profesional, hosting, certificado SSL, SEO automático,
-            WhatsApp integrado, panel de edición y soporte. Sin contratos, sin costos
-            ocultos y sin necesidad de conocimientos técnicos.
+            WhatsApp integrado, panel de edición, campañas con asistente IA y soporte.
+            Sin contratos, sin costos ocultos y sin necesidad de conocimientos técnicos.
           </p>
 
           <h2>Preguntas frecuentes</h2>

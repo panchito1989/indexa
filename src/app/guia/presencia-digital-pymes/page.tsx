@@ -158,9 +158,9 @@ export default function GuiaPresenciaDigital() {
           </p>
           <p>
             Con <Link href="/">INDEXA</Link>, la presencia digital profesional
-            empieza desde <strong>$299 MXN/mes</strong>, incluyendo sitio web con
-            IA, SEO automático, WhatsApp integrado, SSL y hosting — sin contratos
-            ni costos ocultos.
+            cuesta <strong>$699 MXN/mes</strong> (plan único), incluyendo sitio web
+            con IA, SEO automático, WhatsApp integrado, SSL, hosting y campañas con
+            asistente IA — sin contratos ni costos ocultos.
           </p>
 
           <h2>Cómo empezar hoy</h2>

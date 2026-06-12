@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en Monterrey — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Monterrey en menos de 3 minutos. SEO local para Nuevo León, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Monterrey en menos de 3 minutos. SEO local para Nuevo León, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web Monterrey", "sitio web Monterrey", "presencia digital Monterrey", "diseño web Nuevo León", "página web negocio Monterrey"],
   alternates: { canonical: "/pagina-web-monterrey" },
   openGraph: {
@@ -47,7 +47,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para un negocio en Monterrey?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, tu página web en Monterrey cuesta desde $299 MXN/mes. Incluye diseño generado con IA, SEO local para Nuevo León, WhatsApp y SSL. Sin pagos iniciales ni contratos anuales.",
+        text: "Con INDEXA, tu página web en Monterrey cuesta $699 MXN/mes con el plan único todo incluido: diseño generado con IA, SEO local para Nuevo León, WhatsApp y SSL. Sin pagos iniciales ni contratos anuales.",
       },
     },
     {

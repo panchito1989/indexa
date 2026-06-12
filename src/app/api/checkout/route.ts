@@ -14,12 +14,21 @@ function getStripe() {
 const limiter = createRateLimiter({ windowMs: 60_000, max: 5 });
 
 interface CheckoutBody {
-  priceId: string;
-  planId: string;
+  priceId?: string; // ignorado — el servidor decide el precio (plan único)
+  planId?: string; // ignorado — siempre "indexa"
   sitioId: string;
   authToken: string;
   trialDays?: number;
 }
+
+// PLAN ÚNICO $699 MXN/mes (live: price_1ThaK54lkeFmBzRmghGJxbTL).
+// El priceId se resuelve SOLO en el servidor: nunca confiamos en el del body
+// (un cliente podía mandar el priceId de un plan más barato).
+const SINGLE_PRICE_ID =
+  process.env.STRIPE_PRICE_SINGLE ||
+  process.env.NEXT_PUBLIC_STRIPE_PRICE_SINGLE ||
+  "price_1ThaK54lkeFmBzRmghGJxbTL";
+const SINGLE_PLAN_ID = "indexa";
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -40,11 +49,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const body: CheckoutBody = await request.json();
-    const { priceId, planId, sitioId, authToken, trialDays } = body;
+    const { sitioId, authToken, trialDays } = body;
+    const priceId = SINGLE_PRICE_ID;
+    const planId = SINGLE_PLAN_ID;
 
-    if (!priceId || !sitioId || !authToken || !planId) {
+    if (!sitioId || !authToken) {
       return NextResponse.json(
-        { success: false, message: `Faltan parámetros.${!priceId ? " priceId" : ""}${!planId ? " planId" : ""}${!sitioId ? " sitioId" : ""}${!authToken ? " authToken" : ""}` },
+        { success: false, message: `Faltan parámetros.${!sitioId ? " sitioId" : ""}${!authToken ? " authToken" : ""}` },
         { status: 400 }
       );
     }

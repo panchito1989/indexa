@@ -28,7 +28,6 @@ type PreviewMode = "facebook" | "instagram";
 export default function CrearAnuncioPage() {
   const { user, loading: authLoading } = useAuth();
 
-  const [apiKey, setApiKey] = useState("");
   const [pageLoading, setPageLoading] = useState(true);
   const [prompt, setPrompt] = useState("");
   const [headline, setHeadline] = useState("Tu Negocio Digital");
@@ -41,28 +40,20 @@ export default function CrearAnuncioPage() {
   const [error, setError] = useState("");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("facebook");
 
-  // ── Load NanoBanana API key ──────────────────────────────────
+  // ── Load business name ───────────────────────────────────────
+  // (La generación de imágenes usa la llave del SERVIDOR con cupo mensual —
+  // ya no se le pide al cliente su propia API key.)
   useEffect(() => {
     if (authLoading || !user || !db) return;
 
     (async () => {
       try {
-        const authToken = await user.getIdToken();
-        const res = await fetch("/api/tokens", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-          body: JSON.stringify({ action: "load" }),
-        });
-        const { tokens: data } = await res.json();
-        if (data?.nanoBananaApiKey) {
-          setApiKey(data.nanoBananaApiKey);
-        }
         const snap = await getDoc(doc(db, "usuarios", user.uid));
         if (snap.exists() && snap.data().displayName) {
           setBusinessName(snap.data().displayName);
         }
       } catch (err) {
-        console.error("Error loading API key:", err instanceof Error ? err.message : "unknown");
+        console.error("Error loading profile:", err instanceof Error ? err.message : "unknown");
       } finally {
         setPageLoading(false);
       }
@@ -71,7 +62,7 @@ export default function CrearAnuncioPage() {
 
   // ── Generate image ───────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
-    if (!user || !apiKey || !prompt.trim()) return;
+    if (!user || !prompt.trim()) return;
     setGenerating(true);
     setError("");
 
@@ -84,7 +75,6 @@ export default function CrearAnuncioPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          apiKey,
           prompt: `Professional advertisement image for social media (Facebook/Instagram ad). ${prompt.trim()}. High quality, commercial photography style, clean composition, vibrant colors, no text overlay.`,
           aspectRatio: previewMode === "instagram" ? "1:1" : "16:9",
         }),
@@ -104,7 +94,7 @@ export default function CrearAnuncioPage() {
     } finally {
       setGenerating(false);
     }
-  }, [user, apiKey, prompt, previewMode]);
+  }, [user, prompt, previewMode]);
 
   // ── Download image ───────────────────────────────────────────
   const handleDownload = () => {
@@ -121,26 +111,6 @@ export default function CrearAnuncioPage() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <Loader2 className="h-8 w-8 animate-spin text-indexa-blue" />
-      </div>
-    );
-  }
-
-  if (!apiKey) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-sm text-center">
-          <Wand2 size={40} className="mx-auto text-gray-300" />
-          <h1 className="mt-4 text-lg font-bold text-indexa-gray-dark">API Key requerida</h1>
-          <p className="mt-2 text-sm text-gray-500">
-            Configura tu API key de NanoBanana en el panel de Marketing para generar imágenes con IA.
-          </p>
-          <Link
-            href="/dashboard/marketing"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-indexa-blue px-5 py-2.5 text-sm font-bold text-white"
-          >
-            <ArrowLeft size={16} /> Ir a Marketing
-          </Link>
-        </div>
       </div>
     );
   }

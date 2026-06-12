@@ -141,7 +141,7 @@ export function buildIndustryServiceSchema(opts: {
     name: `Página web para ${opts.industryName}`,
     description:
       opts.description ??
-      `INDEXA crea sitios web profesionales optimizados para ${opts.industryName} en México. SEO local, WhatsApp integrado y panel visual desde $299 MXN/mes.`,
+      `INDEXA crea sitios web profesionales optimizados para ${opts.industryName} en México. SEO local, WhatsApp integrado y panel visual por $699 MXN/mes (plan único, todo incluido).`,
     provider: indexaProvider,
     areaServed: { "@type": "Country", name: "México" },
     audience: {

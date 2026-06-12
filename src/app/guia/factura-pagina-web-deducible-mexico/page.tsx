@@ -154,15 +154,15 @@ interface DeductionTable {
 const DEDUCTION_EXAMPLES: DeductionTable[] = [
   {
     modalidad: "Plataforma SaaS (INDEXA, Wix, etc.)",
-    costoEjemplo: "$599 MXN/mes (Profesional)",
+    costoEjemplo: "$699 MXN/mes (plan único)",
     comoSeDeducce: "Gasto deducible 100% al mes que se paga.",
-    ahorroFiscal: "ISR 30% PM = ahorras $179.70 MXN/mes en impuestos. Real: pagas $419.30 netos.",
+    ahorroFiscal: "ISR 30% PM = ahorras $209.70 MXN/mes en impuestos. Real: pagas $489.30 netos.",
   },
   {
     modalidad: "Pago anual SaaS (descuento típico 15%)",
-    costoEjemplo: "$6,108 MXN/año",
+    costoEjemplo: "$7,130 MXN/año",
     comoSeDeducce: "Deducible en el ejercicio fiscal del pago.",
-    ahorroFiscal: "Ahorras ~$1,832 MXN al año en ISR.",
+    ahorroFiscal: "Ahorras ~$2,139 MXN al año en ISR.",
   },
   {
     modalidad: "Desarrollo a la medida (freelancer)",
@@ -293,17 +293,17 @@ export default function GuiaPaginaWebDeducible() {
         <article className="prose prose-lg prose-gray mx-auto max-w-3xl px-4 py-16 sm:px-6">
           <h2>Caso real: cuánto te ahorras al deducir tu sitio</h2>
           <p>
-            Un restaurante S.A. de C.V. en CDMX con plan INDEXA Profesional ($599 MXN/mes):
+            Un restaurante S.A. de C.V. en CDMX con el plan único de INDEXA ($699 MXN/mes):
           </p>
           <ul>
-            <li>Gasto anual: $599 × 12 = <strong>$7,188 MXN</strong></li>
-            <li>IVA acreditable (16% incluido): <strong>$991.45 MXN/año</strong></li>
-            <li>Base deducible para ISR: <strong>$6,196.55 MXN</strong></li>
-            <li>Ahorro ISR (30%): <strong>$1,858.96 MXN/año</strong></li>
-            <li>Costo neto real anualizado: <strong>$4,337.59 MXN/año = $361 MXN/mes</strong></li>
+            <li>Gasto anual: $699 × 12 = <strong>$8,388 MXN</strong></li>
+            <li>IVA acreditable (16% incluido): <strong>$1,156.97 MXN/año</strong></li>
+            <li>Base deducible para ISR: <strong>$7,231.03 MXN</strong></li>
+            <li>Ahorro ISR (30%): <strong>$2,169.31 MXN/año</strong></li>
+            <li>Costo neto real anualizado: <strong>$5,061.72 MXN/año = $422 MXN/mes</strong></li>
           </ul>
           <p>
-            <strong>Resultado:</strong> el plan que &quot;cuesta $599&quot; cuesta de verdad $361 después del beneficio fiscal. Y eso sin contar el IVA acreditable contra otras ventas.
+            <strong>Resultado:</strong> el plan que &quot;cuesta $699&quot; cuesta de verdad $422 después del beneficio fiscal. Y eso sin contar el IVA acreditable contra otras ventas.
           </p>
 
           <h2>Errores caros que te detiene el SAT</h2>

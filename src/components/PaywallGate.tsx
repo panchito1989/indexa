@@ -25,20 +25,18 @@ export function PaywallOverlay({
   const [checkingOut, setCheckingOut] = useState(false);
 
   const handleCheckout = useCallback(async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
     // Sin sitio vinculado no se puede cobrar un plan de sitio → mandamos al hub
     // a crear/configurar el sitio (antes el botón quedaba MUDO: retorno
     // silencioso, "no pasa nada").
     if (!user) return;
     if (!sitioId) { window.location.href = "/dashboard"; return; }
-    if (!priceId) { alert("Configuración de pago no disponible. Contacta a soporte."); return; }
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId: "starter", sitioId, authToken: token }),
+        body: JSON.stringify({ sitioId, authToken: token }),
       });
       const data = await res.json();
       if (data.success && data.url) {
@@ -119,20 +117,18 @@ export function PaywallModal({
   const [checkingOut, setCheckingOut] = useState(false);
 
   const handleCheckout = useCallback(async () => {
-    const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER || "";
     // Sin sitio vinculado no se puede cobrar un plan de sitio → mandamos al hub
     // a crear/configurar el sitio (antes el botón quedaba MUDO: retorno
     // silencioso, "no pasa nada").
     if (!user) return;
     if (!sitioId) { window.location.href = "/dashboard"; return; }
-    if (!priceId) { alert("Configuración de pago no disponible. Contacta a soporte."); return; }
     setCheckingOut(true);
     try {
       const token = await user.getIdToken();
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId, planId: "starter", sitioId, authToken: token }),
+        body: JSON.stringify({ sitioId, authToken: token }),
       });
       const data = await res.json();
       if (data.success && data.url) {
@@ -218,7 +214,7 @@ export function PaywallModal({
             ) : (
               <Zap className="h-5 w-5" />
             )}
-            {checkingOut ? "Redirigiendo a pago..." : "Activar plan desde $299/mes"}
+            {checkingOut ? "Redirigiendo a pago..." : "Activar plan — $699/mes"}
             {!checkingOut && (
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             )}

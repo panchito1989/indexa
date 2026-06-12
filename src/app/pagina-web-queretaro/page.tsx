@@ -13,7 +13,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Página Web para Negocios en Querétaro — INDEXA",
   description:
-    "Crea tu página web profesional para tu negocio en Querétaro en menos de 3 minutos. SEO local para Querétaro capital y municipios, WhatsApp integrado e IA. Desde $299 MXN/mes.",
+    "Crea tu página web profesional para tu negocio en Querétaro en menos de 3 minutos. SEO local para Querétaro capital y municipios, WhatsApp integrado e IA. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web Querétaro", "sitio web Querétaro", "presencia digital Querétaro", "diseño web Querétaro", "página web negocio Querétaro"],
   alternates: { canonical: "/pagina-web-queretaro" },
   openGraph: {
@@ -33,7 +33,7 @@ const faqJsonLd = {
       name: "¿Cuánto cuesta una página web para un negocio en Querétaro?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con INDEXA, una página web profesional para tu negocio en Querétaro cuesta desde $299 MXN/mes, incluyendo diseño con IA, SEO local para Querétaro, WhatsApp y SSL. Sin pagos iniciales ni contratos forzosos.",
+        text: "Con INDEXA, una página web profesional para tu negocio en Querétaro cuesta $699 MXN/mes (plan único, todo incluido), con diseño con IA, SEO local para Querétaro, WhatsApp y SSL. Sin pagos iniciales ni contratos forzosos.",
       },
     },
     {

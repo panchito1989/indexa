@@ -10,7 +10,7 @@ const PAGE_PATH = "/agencia-de-marketing-digital";
 export const metadata: Metadata = {
   title: "Agencia de Marketing Digital en México | INDEXA — Plataforma con IA",
   description:
-    "INDEXA es la agencia de marketing digital para PYMES en México: sitios web, Google Ads, Meta Ads, SEO local, redes sociales y leads directos a WhatsApp. Desde $299 MXN/mes. 14 días gratis.",
+    "INDEXA es la agencia de marketing digital para PYMES en México: sitios web, Google Ads, Meta Ads, SEO local, redes sociales y leads directos a WhatsApp. Plan único de $699 MXN/mes, todo incluido. 14 días gratis.",
   keywords: [
     "agencia de marketing digital",
     "agencia marketing digital",
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Agencia de Marketing Digital en México — INDEXA",
     description:
-      "Sitios web + Google Ads + Meta Ads + SEO + WhatsApp en una sola agencia con IA. Para PYMES en México desde $299/mes.",
+      "Sitios web + Google Ads + Meta Ads + SEO + WhatsApp en una sola agencia con IA. Para PYMES en México: plan único de $699 MXN/mes, todo incluido.",
     url: `${SITE_URL}${PAGE_PATH}`,
     locale: "es_MX",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
@@ -38,12 +38,12 @@ const faq = [
   {
     pregunta: "¿Qué es una agencia de marketing digital?",
     respuesta:
-      "Una agencia de marketing digital es una empresa que ayuda a otros negocios a conseguir clientes a través de internet. Sus servicios típicos incluyen: diseño de páginas web optimizadas para vender, anuncios pagados en Google y Meta (Facebook e Instagram), posicionamiento SEO en buscadores, gestión de redes sociales, email marketing, automatizaciones con WhatsApp y reportes de resultados. INDEXA es una agencia de marketing digital con IA, especializada en PYMES de México y USA-Hispano, que combina los servicios anteriores en una sola plataforma con planes desde $299 MXN/mes.",
+      "Una agencia de marketing digital es una empresa que ayuda a otros negocios a conseguir clientes a través de internet. Sus servicios típicos incluyen: diseño de páginas web optimizadas para vender, anuncios pagados en Google y Meta (Facebook e Instagram), posicionamiento SEO en buscadores, gestión de redes sociales, email marketing, automatizaciones con WhatsApp y reportes de resultados. INDEXA es una agencia de marketing digital con IA, especializada en PYMES de México y USA-Hispano, que combina los servicios anteriores en una sola plataforma con un plan único de $699 MXN/mes, todo incluido.",
   },
   {
     pregunta: "¿Cuánto cuesta contratar una agencia de marketing digital en México?",
     respuesta:
-      "Los precios de agencias de marketing digital en México varían según el tamaño y el alcance: agencias pequeñas y freelancers cobran $5,000–$15,000 MXN/mes; agencias medianas $15,000–$50,000 MXN/mes; agencias grandes $50,000+ MXN/mes con contrato anual. INDEXA ofrece tres planes: Starter $299 MXN/mes (sitio web + WhatsApp + SEO local básico), Profesional $599 MXN/mes (incluye CMS, analítica y soporte prioritario) y Enterprise $1,299 MXN/mes (asesor dedicado y todas las funciones). Sin pagos iniciales, sin contratos anuales, prueba 14 días gratis.",
+      "Los precios de agencias de marketing digital en México varían según el tamaño y el alcance: agencias pequeñas y freelancers cobran $5,000–$15,000 MXN/mes; agencias medianas $15,000–$50,000 MXN/mes; agencias grandes $50,000+ MXN/mes con contrato anual. INDEXA ofrece un plan único de $699 MXN/mes con todo incluido: sitio web con IA, panel CMS, campañas en Google, Meta y TikTok con asistente IA, SEO local, estadísticas en tiempo real y soporte por WhatsApp. Sin pagos iniciales, sin contratos anuales, prueba 14 días gratis.",
   },
   {
     pregunta: "¿Qué servicios incluye INDEXA como agencia de marketing digital?",
@@ -53,12 +53,12 @@ const faq = [
   {
     pregunta: "¿En qué se diferencia INDEXA de una agencia de marketing digital tradicional?",
     respuesta:
-      "Una agencia tradicional te asigna un equipo humano que toma 4–8 semanas en arrancar tus campañas, con honorarios de $20,000–$80,000 MXN/mes y contrato de 6–12 meses. INDEXA usa IA para automatizar el 80% del trabajo: tu sitio web está listo en 3 minutos, las campañas se optimizan solas 24/7 y el chatbot atiende a tus clientes mientras duermes. Pagas mes a mes desde $299 MXN sin contrato y obtienes resultados desde la primera semana. Es como tener una agencia de marketing digital pero por una décima parte del costo.",
+      "Una agencia tradicional te asigna un equipo humano que toma 4–8 semanas en arrancar tus campañas, con honorarios de $20,000–$80,000 MXN/mes y contrato de 6–12 meses. INDEXA usa IA para automatizar el 80% del trabajo: tu sitio web está listo en 3 minutos, las campañas se optimizan solas 24/7 y el chatbot atiende a tus clientes mientras duermes. Pagas $699 MXN mes a mes (plan único, todo incluido) sin contrato y obtienes resultados desde la primera semana. Es como tener una agencia de marketing digital pero por una décima parte del costo.",
   },
   {
     pregunta: "¿INDEXA funciona para mi industria?",
     respuesta:
-      "Sí. INDEXA tiene plantillas y campañas pre-optimizadas para los giros más comunes en México: restaurantes, dentistas, talleres mecánicos, abogados, médicos, ecommerce, salones de belleza, gimnasios, inmobiliarias, contadores, agencias de viajes, escuelas y consultorios. Si tu industria no aparece, igual funciona — la IA adapta los textos, imágenes y campañas a cualquier negocio que tenga clientes locales. En el plan Profesional incluye configuración personalizada para tu giro.",
+      "Sí. INDEXA tiene plantillas y campañas pre-optimizadas para los giros más comunes en México: restaurantes, dentistas, talleres mecánicos, abogados, médicos, ecommerce, salones de belleza, gimnasios, inmobiliarias, contadores, agencias de viajes, escuelas y consultorios. Si tu industria no aparece, igual funciona — la IA adapta los textos, imágenes y campañas a cualquier negocio que tenga clientes locales. El plan único incluye configuración personalizada para tu giro.",
   },
   {
     pregunta: "¿Cuánto tarda en verse resultados con una agencia de marketing digital?",
@@ -73,12 +73,12 @@ const faq = [
   {
     pregunta: "¿Necesito tener una página web o cuenta de Facebook ya hecha para contratar?",
     respuesta:
-      "No. INDEXA crea tu sitio web desde cero con IA en menos de 3 minutos a partir de la información de tu negocio. Si ya tienes Facebook, Instagram o Google Business, los conectamos al panel para sincronizar campañas y reportes. Si no los tienes, te ayudamos a crearlos durante el onboarding. La plataforma también funciona si solo quieres administrar tu sitio web sin campañas pagadas (plan Starter).",
+      "No. INDEXA crea tu sitio web desde cero con IA en menos de 3 minutos a partir de la información de tu negocio. Si ya tienes Facebook, Instagram o Google Business, los conectamos al panel para sincronizar campañas y reportes. Si no los tienes, te ayudamos a crearlos durante el onboarding. La plataforma también funciona si solo quieres administrar tu sitio web sin campañas pagadas.",
   },
   {
     pregunta: "¿Cuál es la mejor agencia de marketing digital en México?",
     respuesta:
-      "La mejor agencia de marketing digital depende de tu tamaño y presupuesto. Para empresas grandes con presupuesto $100K+ MXN/mes hay agencias premium como Neoattack o Findasense. Para PYMES con presupuesto $5–50K/mes, las opciones incluyen agencias locales y freelancers especializados. INDEXA se posiciona como la mejor opción para negocios pequeños y medianos que quieren resultados rápidos sin gastar $20K/mes ni firmar contratos largos: una sola plataforma con IA que cubre los 6 frentes (web, ads, SEO, chatbot, analytics, automatizaciones) desde $299 MXN/mes.",
+      "La mejor agencia de marketing digital depende de tu tamaño y presupuesto. Para empresas grandes con presupuesto $100K+ MXN/mes hay agencias premium como Neoattack o Findasense. Para PYMES con presupuesto $5–50K/mes, las opciones incluyen agencias locales y freelancers especializados. INDEXA se posiciona como la mejor opción para negocios pequeños y medianos que quieren resultados rápidos sin gastar $20K/mes ni firmar contratos largos: una sola plataforma con IA que cubre los 6 frentes (web, ads, SEO, chatbot, analytics, automatizaciones) por $699 MXN/mes en un plan único todo incluido.",
   },
   {
     pregunta: "¿Atienden empresas fuera de la Ciudad de México?",
@@ -139,46 +139,19 @@ const ciudades = [
 
 const planes = [
   {
-    nombre: "Starter",
-    precio: "$299",
+    nombre: "Plan Único",
+    precio: "$699",
     sufijo: "MXN / mes",
-    desc: "Para arrancar tu presencia digital.",
+    desc: "Todo lo que necesita tu negocio, en un solo plan.",
     incluye: [
       "Sitio web profesional con IA",
-      "Botón de WhatsApp directo",
-      "SEO local automático",
-      "Certificado SSL incluido",
-      "3 plantillas de diseño",
-    ],
-    destacado: false,
-  },
-  {
-    nombre: "Profesional",
-    precio: "$599",
-    sufijo: "MXN / mes",
-    desc: "Más visibilidad y soporte directo.",
-    incluye: [
-      "Todo lo de Starter",
       "Panel de edición completo (CMS)",
+      "Campañas Google, Meta y TikTok Ads con asistente IA",
       "SEO local avanzado (Schema.org)",
       "Estadísticas de visitas y clics",
-      "Soporte prioritario por WhatsApp",
+      "Soporte por WhatsApp",
     ],
     destacado: true,
-  },
-  {
-    nombre: "Enterprise",
-    precio: "$1,299",
-    sufijo: "MXN / mes",
-    desc: "Atención personalizada y prioridad total.",
-    incluye: [
-      "Todo lo de Profesional",
-      "Asesor personal dedicado",
-      "Configuración premium",
-      "Capacitación 1 a 1",
-      "Prioridad en nuevas funciones",
-    ],
-    destacado: false,
   },
 ];
 
@@ -188,7 +161,7 @@ export default function AgenciaMarketingDigitalPage() {
     serviceType: "Marketing digital, sitios web, Google Ads, Meta Ads y SEO local para PYMES",
     pagePath: PAGE_PATH,
     description:
-      "INDEXA es la agencia de marketing digital con IA para PYMES en México. Sitios web, Google Ads, Meta Ads, SEO local, redes sociales y WhatsApp en una sola plataforma desde $299 MXN/mes.",
+      "INDEXA es la agencia de marketing digital con IA para PYMES en México. Sitios web, Google Ads, Meta Ads, SEO local, redes sociales y WhatsApp en una sola plataforma por $699 MXN/mes (plan único, todo incluido).",
     audienceType: "PYMES, emprendedores y negocios locales en México",
     faq,
   });
@@ -231,8 +204,8 @@ export default function AgenciaMarketingDigitalPage() {
 
             <p className="mx-auto mt-7 max-w-3xl text-lg leading-relaxed text-white/70 sm:text-xl">
               Sitio web profesional, Google Ads, Meta Ads, SEO local, redes sociales y leads directos a WhatsApp — en
-              una sola plataforma con IA, desde <span className="font-semibold text-white">$299 MXN al mes</span>.
-              Sin contratos, sin sorpresas, sin agencias caras de 8 personas que no contestan tu correo.
+              una sola plataforma con IA, por <span className="font-semibold text-white">$699 MXN al mes</span>, todo
+              incluido. Sin contratos, sin sorpresas, sin agencias caras de 8 personas que no contestan tu correo.
             </p>
 
             <div className="mt-9 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -283,7 +256,8 @@ export default function AgenciaMarketingDigitalPage() {
             <p className="mt-4 text-lg leading-relaxed text-white/80">
               <strong>INDEXA</strong> es una agencia de marketing digital con inteligencia artificial, especializada en
               PYMES de México y negocios hispanos en USA. Combina los seis servicios anteriores en una sola plataforma
-              con planes desde <strong>$299 MXN al mes</strong>, sin contratos anuales y con 14 días gratis para probar.
+              con un plan único de <strong>$699 MXN al mes</strong>, todo incluido, sin contratos anuales y con 14 días
+              gratis para probar.
             </p>
           </div>
         </section>
@@ -366,7 +340,7 @@ export default function AgenciaMarketingDigitalPage() {
                     <td className="px-6 py-4">
                       <span className="text-indexa-orange">INDEXA (con IA)</span>
                     </td>
-                    <td className="px-6 py-4">$299–$1,299 MXN</td>
+                    <td className="px-6 py-4">$699 MXN/mes (plan único)</td>
                     <td className="px-6 py-4">Mes a mes</td>
                     <td className="px-6 py-4">Menos de 24h</td>
                   </tr>
