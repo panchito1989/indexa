@@ -227,7 +227,7 @@ function isReadOnlyTool(name: string): boolean {
 }
 
 const FALLBACK_MODE_NOTE =
-  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar ni modificar nada. Si el usuario pide un cambio, dile que el asistente está temporalmente en modo respaldo (los modelos principales de IA no están disponibles) y que el cambio queda pendiente. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
+  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar ni modificar nada. PROHIBIDO decir 'ahora creo...', 'voy a crear...' o cualquier promesa de acción: si el usuario pide crear/modificar algo, tu ÚNICA respuesta válida es decirle de inmediato que estás en modo respaldo (los modelos principales no están disponibles) y ofrecerle análisis de lectura mientras tanto. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
 
 const FALLBACK_BANNER =
   "⚠️ **Asistente en modo respaldo** — los modelos principales de IA (Gemini/Claude) no están disponibles en este momento. En este modo solo puedo LEER y analizar; los cambios a campañas están bloqueados por seguridad.\n\n";

@@ -574,7 +574,7 @@ function isReadOnlyTool(name: string): boolean {
 const readOnlyTools = tools.filter((t) => isReadOnlyTool(t.name));
 
 const FALLBACK_MODE_NOTE =
-  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar, eliminar ni modificar nada. Si el usuario pide un cambio, dile que el asistente está temporalmente en modo respaldo (créditos de Claude agotados) y que el cambio queda pendiente hasta recargar. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
+  "\n\nMODO RESPALDO (SOLO LECTURA): ahora solo tienes herramientas de análisis. NO puedes crear, pausar, activar, eliminar ni modificar nada. PROHIBIDO decir 'ahora creo...', 'voy a crear...' o cualquier promesa de acción: si el usuario pide crear/modificar algo, tu ÚNICA respuesta válida es decirle de inmediato que estás en modo respaldo (créditos de Claude agotados), que recargue en console.anthropic.com, y ofrecerle análisis de lectura mientras tanto. Responde SOLO con datos que devuelvan las herramientas — NUNCA inventes campañas, anuncios ni números.";
 
 const FALLBACK_BANNER =
   "⚠️ **Asistente en modo respaldo** — los créditos de Claude se agotaron (recárgalos en console.anthropic.com). En este modo solo puedo LEER y analizar; los cambios a campañas están bloqueados por seguridad.\n\n";
@@ -1554,6 +1554,21 @@ export async function POST(request: NextRequest) {
 
         const groqText = await groqRes.text();
         if (!groqRes.ok) {
+          // El respaldo intentó llamar una herramienta MUTADORA (bloqueada en
+          // solo-lectura) — respuesta clara en el chat en vez del error técnico.
+          if (/not in request\.tools|tool call validation failed/i.test(groqText)) {
+            const blockedReply =
+              FALLBACK_BANNER +
+              "Me pediste una acción que CREA o MODIFICA campañas, y en modo respaldo esas herramientas están bloqueadas por seguridad.\n\n👉 Recarga créditos de Claude en console.anthropic.com y vuélvemelo a pedir — con Claude activo esto se ejecuta en un minuto. Mientras tanto sí puedo seguir analizando datos.";
+            return NextResponse.json({
+              reply: blockedReply,
+              newHistory: [
+                ...(Array.isArray(history) ? history : []),
+                { role: "user", content: message },
+                { role: "assistant", content: blockedReply },
+              ],
+            });
+          }
           let errMsg = `Error de IA fallback (HTTP ${groqRes.status}): ${groqText.slice(0, 300)}`;
           try {
             const parsed = JSON.parse(groqText);
