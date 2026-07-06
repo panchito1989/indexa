@@ -220,6 +220,31 @@ function extractId(resourceName: string): string {
   return resourceName.split("/").pop() ?? "";
 }
 
+/**
+ * Verifica que un resourceName pertenezca al customer activo antes de mutarlo.
+ *
+ * Toda mutación va a `customers/{customerId}/{recurso}:mutate`, así que el prefijo
+ * `customers/{id}` del resourceName DEBE ser ese mismo customerId. Cuando llega uno
+ * de otra cuenta —típico al cambiar de cuenta de Google Ads a mitad de conversación:
+ * el historial del cliente aún trae los resourceName de la cuenta anterior y el modelo
+ * los reutiliza— Google responde 400 [INVALID_CUSTOMER_ID] y aborta TODO el lote con un
+ * mensaje críptico. Lo detectamos aquí y lanzamos un error accionable.
+ *
+ * No reescribimos el prefijo al customer activo a propósito: el sufijo (p.ej.
+ * GRUPO~CRITERIO) identifica al objeto DENTRO de la otra cuenta y no corresponde a la
+ * misma keyword/campaña en la actual — reescribirlo pausaría el objeto equivocado o uno
+ * inexistente. Mejor pedir que se vuelva a listar desde la cuenta activa y reintentar.
+ */
+function assertResourceCustomer(customerId: string, resourceName: string, label: string): void {
+  const owner = typeof resourceName === "string" ? resourceName.match(/^customers\/(\d+)\//)?.[1] : undefined;
+  if (owner && owner !== customerId) {
+    throw new Error(
+      `El ${label} pertenece a la cuenta de Google Ads ${owner}, pero la cuenta activa es ${customerId}. ` +
+      `Vuelve a listar los datos desde la cuenta actual (p.ej. list_keywords / list_campaigns) y reintenta.`
+    );
+  }
+}
+
 function getDateRange(range: string, custom?: DateRangeCustom): { startDate: string; endDate: string } {
   const today = new Date();
   const fmt = (d: Date) => d.toISOString().split("T")[0];
@@ -1125,6 +1150,7 @@ export async function updateCampaignStatus(
   // La API rechaza status=REMOVED vía update ([INVALID_ENUM_VALUE]
   // "Enum value 'REMOVED' cannot be used"): eliminar una campaña requiere
   // la operación `remove` dedicada, no un update de status.
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const operation =
     status === "REMOVED"
       ? { remove: campaignResourceName }
@@ -1147,12 +1173,16 @@ export async function updateKeywordStatus(
   keywordResourceNames: string[],
   status: "ENABLED" | "PAUSED"
 ): Promise<number> {
-  const ops = (keywordResourceNames || [])
-    .filter((rn) => typeof rn === "string" && rn.includes("/adGroupCriteria/"))
-    .map((rn) => ({
-      updateMask: "status",
-      update: { resourceName: rn, status },
-    }));
+  const names = (keywordResourceNames || [])
+    .filter((rn): rn is string => typeof rn === "string" && rn.includes("/adGroupCriteria/"));
+  // Un solo resourceName de otra cuenta hace fallar TODO el mutate con
+  // 400 [INVALID_CUSTOMER_ID] (customers/{customerId}/adGroupCriteria:mutate solo
+  // acepta criterios de esa cuenta). Validamos antes de enviar el lote.
+  names.forEach((rn) => assertResourceCustomer(customerId, rn, "resourceName de la keyword"));
+  const ops = names.map((rn) => ({
+    updateMask: "status",
+    update: { resourceName: rn, status },
+  }));
   if (!ops.length) return 0;
   await gaqlMutate(customerId, auth, "adGroupCriteria", ops);
   return ops.length;
@@ -1164,6 +1194,7 @@ export async function updateCampaignBudget(
   budgetResourceName: string,
   amountMicros: number
 ): Promise<void> {
+  assertResourceCustomer(customerId, budgetResourceName, "resourceName del presupuesto");
   await gaqlMutate(customerId, auth, "campaignBudgets", [
     {
       updateMask: "amountMicros",
@@ -1418,6 +1449,7 @@ export async function addCampaignExtensions(
   campaignResourceName: string,
   params: CampaignExtensionsParams
 ): Promise<{ callouts: number; snippet: boolean; call: boolean }> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const rn = (kind: string, id: number) => `customers/${customerId}/${kind}/${id}`;
   const ops: unknown[] = [];
   let tempId = 0;
@@ -1675,6 +1707,7 @@ export async function getExtensionPerformance(customerId: string, auth: GoogleAd
 // ── Write Helpers ─────────────────────────────────────────────────────
 
 export async function activateCampaign(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string): Promise<void> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const campaignId = extractId(campaignResourceName);
   type AdGroupRow = { adGroup: { resourceName: string } };
   type AdRow = { adGroupAd: { resourceName: string } };
@@ -1691,6 +1724,7 @@ export async function activateCampaign(customerId: string, auth: GoogleAdsAuth, 
 }
 
 export async function addNegativeKeywords(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, keywords: string[]): Promise<number> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const ops = keywords.filter((k) => k.trim()).map((text) => ({
     create: { campaign: campaignResourceName, negative: true, keyword: { text: text.trim(), matchType: "BROAD" } },
   }));
@@ -1761,6 +1795,7 @@ export async function addLocationTargeting(customerId: string, auth: GoogleAdsAu
 function clampBidModifier(m: number): number { return Math.min(3.0, Math.max(0.1, Number(m) || 1.0)); }
 
 export async function setDeviceBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, device: string, bidModifier: number): Promise<number> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const mod = clampBidModifier(bidModifier);
   const dev = device.toUpperCase();
   if (!["MOBILE", "DESKTOP", "TABLET"].includes(dev)) throw new Error("Dispositivo inválido (usa MOBILE/DESKTOP/TABLET).");
@@ -1787,6 +1822,7 @@ export async function setDeviceBidModifier(customerId: string, auth: GoogleAdsAu
 }
 
 export async function setAdScheduleBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, schedule: { dayOfWeek: string; startHour: number; endHour: number }, bidModifier: number): Promise<void> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const mod = clampBidModifier(bidModifier);
   await gaqlMutate(customerId, auth, "campaignCriteria",
     [{ create: { campaign: campaignResourceName, bidModifier: mod,
@@ -1794,6 +1830,7 @@ export async function setAdScheduleBidModifier(customerId: string, auth: GoogleA
 }
 
 export async function setLocationBidModifier(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string, bidModifier: number): Promise<void> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   const mod = clampBidModifier(bidModifier);
   const campaignId = extractId(campaignResourceName);
   const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80); // strip quotes/backslashes (GAQL injection guard)
