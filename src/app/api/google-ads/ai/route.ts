@@ -284,6 +284,12 @@ const tools = [
     input_schema: { type: "object" as const, properties: { keyword_resource_names: { type: "array", items: { type: "string" }, description: "resourceName de cada keyword (de list_keywords)" }, status: { type: "string", enum: ["ENABLED", "PAUSED"] } }, required: ["keyword_resource_names", "status"] } },
   { name: "add_negative_keywords", description: "Agrega keywords negativas a una campaña (corta búsquedas irrelevantes; seguro, solo reduce gasto).",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, keywords: { type: "array", items: { type: "string" } } }, required: ["campaign_resource_name","keywords"] } },
+  { name: "add_location_targeting", description: "Agrega ubicaciones (municipios/alcaldías/ciudades) a una campaña EXISTENTE para que el anuncio pueda aparecer a personas en esas zonas. Seguro: no sube el presupuesto, solo amplía DÓNDE puede mostrarse. Usa el campaign_resource_name de list_campaigns y nombres de lugar (ej. 'Huixquilucan', 'Miguel Hidalgo').",
+    input_schema: { type: "object" as const, properties: {
+      campaign_resource_name: { type: "string" },
+      location_names: { type: "array", items: { type: "string" }, description: "municipios/alcaldías/ciudades a agregar, ej. ['Huixquilucan','Naucalpan de Juárez']" },
+      country_code: { type: "string", description: "MX (default) o US" },
+    }, required: ["campaign_resource_name","location_names"] } },
   { name: "set_device_bid_modifier", description: "Aplica un modificador de puja por dispositivo a una campaña. USAR SOLO tras confirmación. bid_modifier: 1.0=sin cambio, 0.8=-20%, 1.3=+30% (se acota a 0.1-3.0).",
     input_schema: { type: "object" as const, properties: { campaign_resource_name: { type: "string" }, device: { type: "string", enum: ["MOBILE","DESKTOP","TABLET"] }, bid_modifier: { type: "number" } }, required: ["campaign_resource_name","device","bid_modifier"] } },
   { name: "set_ad_schedule_bid_modifier", description: "Aplica un modificador de puja por horario (día + franja horaria). USAR SOLO tras confirmación.",
@@ -405,6 +411,24 @@ async function executeTool(
       case "add_negative_keywords": {
         const added = await addNegativeKeywords(customerId, auth, input.campaign_resource_name as string, input.keywords as string[]);
         return `Agregadas ${added} keywords negativas.`;
+      }
+      case "add_location_targeting": {
+        const locNames = ((input.location_names as string[]) || []).filter((n) => typeof n === "string" && n.trim());
+        if (!locNames.length) return "ERROR: pasa location_names con al menos una ubicación.";
+        // addLocationTargeting devuelve false cuando Google no reconoce el nombre
+        // (y lanza en errores reales del API, que captura el catch de executeTool).
+        const agregadas: string[] = [];
+        const noEncontradas: string[] = [];
+        for (const n of locNames) {
+          (await addLocationTargeting(customerId, auth, input.campaign_resource_name as string, n, (input.country_code as string) || "MX")
+            ? agregadas : noEncontradas).push(n);
+        }
+        return JSON.stringify({
+          agregadas, noEncontradas,
+          note: noEncontradas.length
+            ? "Las de noEncontradas no coincidieron con el catálogo de lugares de Google — confirma el nombre exacto con el usuario (municipio/alcaldía oficial) y reintenta solo esas."
+            : "Ubicaciones agregadas a la segmentación de la campaña.",
+        }, null, 2);
       }
       case "set_keyword_status": {
         const n = await updateKeywordStatus(
@@ -582,6 +606,7 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 - Cada mensaje del usuario recibe UNA sola respuesta tuya. NO existe un "después": no puedes contestar en otro momento ni trabajar en segundo plano.
 - PROHIBIDO prometer trabajo futuro. Nunca digas "voy a revisar y te aviso", "dame un momento", "en breve te digo", "ahora lo analizo y vuelvo", "permíteme un instante". Si necesitas datos, USA las herramientas AHORA (en este mismo turno) y entrega el resultado completo.
 - Si mencionas que vas a usar una herramienta, úsala en este turno; no la anuncies y termines.
+- HONESTIDAD ABSOLUTA SOBRE ACCIONES: SOLO puedes afirmar que un cambio se aplicó si una herramienta lo ejecutó EN ESTE TURNO y devolvió éxito. PROHIBIDO mostrar tablas, palomitas (✅) o resúmenes de confirmación de acciones que ninguna herramienta ejecutó — eso es mentirle al usuario y destruye su confianza. Si te piden algo para lo que NO tienes herramienta, dilo textual ("no tengo una herramienta para X") y explica cómo hacerlo manualmente en Google Ads. Ante la duda de si algo se ejecutó, revisa los tool_results del turno: si no está ahí, NO pasó.
 - CIERRA SIEMPRE: termina con (a) el resultado concreto + qué hiciste, o (b) una pregunta de confirmación clara si necesitas un "sí" antes de una acción que gasta. Nunca termines a medias ni dejes al usuario esperando.
 - Tras usar herramientas, di en concreto qué encontraste/hiciste y que YA está hecho.
 
@@ -620,6 +645,10 @@ const SYSTEM_PROMPT = `Eres el gestor de Google Ads de Indexa: ayudas a dueños 
 - Tras crear la primera campaña de un usuario, RECOMIENDA configurar la medición (1 línea, simple: "¿quieres que cada WhatsApp que te llegue del anuncio se cuente como conversión? Lo dejo listo yo").
 - Las campañas nuevas usan Maximizar clics por defecto. Sugiere bidding_strategy=MAXIMIZE_CONVERSIONS SOLO cuando: la medición ya está configurada Y la cuenta acumula ~30+ conversiones en 30 días. Cambiar la puja afecta el gasto → pide confirmación.
 - Si el usuario pregunta "¿cuántos leads/conversiones tengo?", usa get_reporting (columna conversions) y aclara el periodo.
+
+═══ UBICACIONES ═══
+- La segmentación geográfica vive en la CAMPAÑA (no en las keywords): no hace falta poner la ciudad/colonia en la keyword para segmentar.
+- add_location_targeting agrega municipios/alcaldías/ciudades a una campaña EXISTENTE (es seguro: no sube el presupuesto). Úsalo cuando pidan cubrir más zonas (ej. "agrega Huixquilucan"). Si Google no reconoce un nombre, la herramienta lo devuelve en noEncontradas — confirma el nombre oficial con el usuario, no lo des por agregado.
 
 ═══ OPTIMIZAR ═══
 - Diagnostica con get_reporting + get_hourly/device/geo/audience/extension_performance. Compara contra el promedio.

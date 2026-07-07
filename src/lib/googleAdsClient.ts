@@ -1734,6 +1734,7 @@ export async function addNegativeKeywords(customerId: string, auth: GoogleAdsAut
 }
 
 export async function addLocationTargeting(customerId: string, auth: GoogleAdsAuth, campaignResourceName: string, locationName: string, countryCode = "MX"): Promise<boolean> {
+  assertResourceCustomer(customerId, campaignResourceName, "resourceName de la campaña");
   if (!locationName?.trim()) return false;
   const name = locationName.trim().replace(/[\\'"]/g, "").slice(0, 80);
 
