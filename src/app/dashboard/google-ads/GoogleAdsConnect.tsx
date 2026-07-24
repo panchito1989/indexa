@@ -21,6 +21,7 @@ interface GoogleCustomer {
   currencyCode: string;
   timeZone: string;
   loginCustomerId?: string; // MCC que administra esta cuenta ("" / ausente = directa)
+  isManager?: boolean;      // cuenta administradora (MCC): no tiene campañas, no es elegible
 }
 
 interface Props {
@@ -77,8 +78,11 @@ export default function GoogleAdsConnect({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "No se pudieron cargar las cuentas.");
-      setCustomers(data.customers ?? []);
-      if (data.customers?.length === 1) setPickedCustomer(data.customers[0].id);
+      const list: GoogleCustomer[] = data.customers ?? [];
+      setCustomers(list);
+      // Autoseleccionar solo si hay UNA cuenta gestionable (un MCC no cuenta).
+      const selectables = list.filter((c) => !c.isManager);
+      if (selectables.length === 1) setPickedCustomer(selectables[0].id);
       setPhase("selecting");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido.");
@@ -259,7 +263,7 @@ export default function GoogleAdsConnect({
         </div>
       )}
 
-      {(phase === "selecting" || phase === "saving") && customers.length > 0 && (
+      {(phase === "selecting" || phase === "saving") && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm">
           <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-[#0f0f17] shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
@@ -281,8 +285,48 @@ export default function GoogleAdsConnect({
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto px-6 py-5 space-y-2">
+              {customers.filter((c) => !c.isManager).length === 0 && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+                  {customers.length === 0 ? (
+                    <>
+                      Tu cuenta de Google no tiene ninguna cuenta de Google Ads activa.
+                      Crea una en <span className="font-semibold">ads.google.com</span> (o dentro
+                      de tu cuenta administradora) y vuelve a intentar.
+                    </>
+                  ) : (
+                    <>
+                      Solo encontramos tu cuenta administradora (MCC). Un MCC no tiene campañas
+                      propias: crea una subcuenta dentro de él, o vincula la cuenta que ya tienes
+                      al MCC (invitación desde el MCC + aceptar), y vuelve a abrir este selector.
+                    </>
+                  )}
+                </div>
+              )}
               {customers.map((c) => {
                 const picked = pickedCustomer === c.id;
+                // Una cuenta administradora (MCC) no puede gestionarse: no tiene campañas.
+                // Se muestra para dar contexto de la jerarquía, pero no es elegible.
+                if (c.isManager) {
+                  return (
+                    <div
+                      key={c.id}
+                      className="flex w-full items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-left opacity-60"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/5">
+                          <Building2 size={16} className="text-white/40" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-white/70">{c.name}</p>
+                          <p className="text-[11px] text-white/35">ID: {c.id} · administradora</p>
+                        </div>
+                      </div>
+                      <span className="shrink-0 rounded-md bg-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+                        MCC
+                      </span>
+                    </div>
+                  );
+                }
                 return (
                   <button
                     key={c.id}
@@ -301,7 +345,10 @@ export default function GoogleAdsConnect({
                       <div>
                         <p className="text-sm font-semibold text-white">{c.name}</p>
                         <p className="text-[11px] text-white/40">
-                          ID: {c.id} · {c.currencyCode} · {c.timeZone}
+                          ID: {c.id}
+                          {c.currencyCode ? ` · ${c.currencyCode}` : ""}
+                          {c.timeZone ? ` · ${c.timeZone}` : ""}
+                          {c.loginCustomerId ? ` · vía MCC ${c.loginCustomerId}` : ""}
                         </p>
                       </div>
                     </div>

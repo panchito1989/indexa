@@ -22,9 +22,22 @@ const PLAIN_FIELDS = [
   "googleAdsCustomerId",
   "googleAdsLoginCustomerId",
 ] as const;
-const ALL_FIELDS = [...ENCRYPTED_FIELDS, ...PLAIN_FIELDS] as const;
+type TokenField = (typeof ENCRYPTED_FIELDS)[number] | (typeof PLAIN_FIELDS)[number];
 
-type TokenField = (typeof ALL_FIELDS)[number];
+// Qué borra el "Desconectar" de CADA plataforma. Antes existía un solo `clear`
+// que arrasaba TODOS los campos: desconectar Meta te tumbaba también Google Ads y
+// TikTok en silencio (y había que rehacer todo el OAuth). Cada plataforma borra
+// SOLO lo suyo. `nanoBananaApiKey` no pertenece a ninguna: nunca se borra aquí.
+const PLATFORM_FIELDS: Record<string, readonly TokenField[]> = {
+  meta: ["metaAccessToken", "metaAdAccountId", "metaPageId"],
+  tiktok: ["tiktokAccessToken", "tiktokAdvertiserId"],
+  google_ads: [
+    "googleAdsRefreshToken",
+    "googleAdsAccessToken",
+    "googleAdsCustomerId",
+    "googleAdsLoginCustomerId",
+  ],
+};
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -39,7 +52,7 @@ export async function POST(request: NextRequest) {
   const user = await verifyIdToken(idToken);
   if (!user) return NextResponse.json({ error: "Token inválido." }, { status: 401 });
 
-  let body: { action?: string; tokens?: Partial<Record<TokenField, string>> };
+  let body: { action?: string; platform?: string; tokens?: Partial<Record<TokenField, string>> };
   try {
     body = await request.json();
   } catch {
@@ -117,25 +130,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ tokens: result }, { headers: { "Cache-Control": "no-store" } });
     }
 
-    // ── Clear: wipe token fields ────────────────────────────────
-    if (action === "clear") {
-      const update: Record<string, string> = {};
-      for (const field of ALL_FIELDS) update[field] = "";
-      await docRef.set(update, { merge: true });
-      return NextResponse.json({ success: true });
-    }
+    // ── Disconnect: borra SOLO los campos de la plataforma pedida ───
+    // `clear` es el alias legado del botón "Desconectar" de Meta (bundles viejos
+    // en caché siguen mandándolo); acepta `platform` explícito por si acaso.
+    const platform =
+      action === "clear"
+        ? (typeof body.platform === "string" && body.platform) || "meta"
+        : action?.startsWith("disconnect_")
+          ? action.slice("disconnect_".length)
+          : null;
 
-    // ── Disconnect Google Ads only: wipe its account + tokens ────
-    if (action === "disconnect_google_ads") {
-      await docRef.set(
-        {
-          googleAdsCustomerId: "",
-          googleAdsRefreshToken: "",
-          googleAdsAccessToken: "",
-          googleAdsTokenExpiresAt: 0,
-        },
-        { merge: true }
-      );
+    if (platform) {
+      const fields = PLATFORM_FIELDS[platform];
+      if (!fields) {
+        return NextResponse.json({ error: "Plataforma no válida." }, { status: 400 });
+      }
+      const update: Record<string, string | number> = {};
+      for (const field of fields) update[field] = "";
+      // El vencimiento del access token vive fuera de ALL_FIELDS (es numérico).
+      if (platform === "google_ads") update.googleAdsTokenExpiresAt = 0;
+      await docRef.set(update, { merge: true });
       return NextResponse.json({ success: true });
     }
 

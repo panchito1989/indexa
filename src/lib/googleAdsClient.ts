@@ -107,6 +107,8 @@ export interface GoogleAdsCustomer {
   timeZone: string;
   status: string;
   loginCustomerId: string;
+  /** true = cuenta administradora (MCC): no tiene campañas propias, no es elegible. */
+  isManager?: boolean;
 }
 
 export interface CreateCampaignParams {
@@ -1005,15 +1007,75 @@ export async function getAccessibleCustomers(
     } catch { /* skip accounts we can't read (CUSTOMER_NOT_ENABLED, etc.) */ }
   }
 
-  const mccId = discovered.find((d) => d.isManager)?.c.id || "";
-  return discovered.map(({ c, isManager }) => ({
+  // Cuentas con acceso DIRECTO del Google conectado. Arrancan en modo directo
+  // (login-customer-id = su propio id); si la expansión de abajo confirma que
+  // cuelgan de un MCC, se les asigna ese MCC como login-customer-id.
+  const out: GoogleAdsCustomer[] = discovered.map(({ c, isManager }) => ({
     id: c.id,
     name: c.descriptiveName,
     currencyCode: c.currencyCode,
     timeZone: c.timeZone,
     status: c.status,
-    loginCustomerId: isManager ? "" : (mccId || ""),
+    loginCustomerId: "",
+    isManager,
   }));
+
+  // `listAccessibleCustomers` SOLO devuelve cuentas donde el Google conectado es
+  // usuario DIRECTO — las subcuentas creadas dentro del MCC NO aparecen ahí. Por eso
+  // expandimos el árbol de cada manager accesible (customer_client trae todos sus
+  // descendientes) y agregamos las que falten: son direccionables con
+  // login-customer-id = ese MCC, que es justo cómo opera una cuenta de agencia.
+  type ClientRow = {
+    customerClient?: {
+      id?: string;
+      descriptiveName?: string;
+      currencyCode?: string;
+      timeZone?: string;
+      status?: string;
+      manager?: boolean;
+      level?: string | number;
+    };
+  };
+  const byId = new Map(out.map((c) => [c.id, c]));
+  for (const { c: manager } of discovered.filter((d) => d.isManager)) {
+    try {
+      const rows = await gaqlSearch<ClientRow>(
+        manager.id,
+        { accessToken, loginCustomerId: manager.id },
+        `SELECT customer_client.id, customer_client.descriptive_name,
+                customer_client.currency_code, customer_client.time_zone,
+                customer_client.status, customer_client.manager,
+                customer_client.level
+         FROM customer_client
+         WHERE customer_client.status = 'ENABLED'
+         LIMIT 200`
+      );
+      for (const r of rows) {
+        const cc = r.customerClient;
+        // level 0 = el manager mismo; ya está en la lista.
+        if (!cc?.id || Number(cc.level ?? 0) === 0) continue;
+        const existing = byId.get(cc.id);
+        if (existing) {
+          // Ya la teníamos por acceso directo: ahora sabemos QUÉ MCC la administra.
+          existing.loginCustomerId = manager.id;
+          continue;
+        }
+        const added: GoogleAdsCustomer = {
+          id: cc.id,
+          name: cc.descriptiveName || `Cuenta ${cc.id}`,
+          currencyCode: cc.currencyCode || "",
+          timeZone: cc.timeZone || "",
+          status: cc.status || "ENABLED",
+          loginCustomerId: manager.id,
+          isManager: cc.manager === true,
+        };
+        byId.set(cc.id, added);
+        out.push(added);
+      }
+    } catch { /* best-effort: si el MCC no deja listar, quedan las directas */ }
+  }
+
+  return out;
 }
 
 // ── Diagnóstico de acceso (para depurar 403 USER_PERMISSION_DENIED) ──────
