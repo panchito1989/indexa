@@ -513,7 +513,8 @@ export default function MarketingPage() {
       await fetch("/api/tokens", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${authToken}` },
-        body: JSON.stringify({ action: "clear" }),
+        // Solo Meta: antes mandaba "clear", que borraba TAMBIÉN Google Ads y TikTok.
+        body: JSON.stringify({ action: "disconnect_meta" }),
       });
       setSavedToken("");
       setSavedAccount("");
