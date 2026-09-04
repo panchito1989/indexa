@@ -1014,7 +1014,8 @@ git commit -m "docs: llms.txt declara administracion de campanas y el numero cor
 - [ ] **Step 1: Correr toda la suite**
 
 Run: `npm test`
-Expected: PASS, 15 tests en 4 archivos — `contact` (3), `emailTemplates` (3), `publicRoutes` (6), `robots` (3)
+Expected: PASS, 18 tests en 5 archivos — `contact` (3), `emailTemplates` (3),
+`contactUsage` (2), `whatsappFloatRoutes` (7), `robots` (3)
 
 - [ ] **Step 2: Lint**
 
