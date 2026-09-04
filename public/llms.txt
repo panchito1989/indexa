@@ -15,6 +15,8 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 
 ## Servicios principales
 
+- **Administración de campañas publicitarias** — INDEXA opera las cuentas de Google Ads, Meta Ads y TikTok Ads del cliente de principio a fin: estructura de campañas, presupuestos, pujas, creativos, medición de conversiones y optimización continua. Está dirigido a dueños de negocio que no saben operar estas plataformas o que ya gastaron dinero sin resultados. El cliente no necesita aprender nada ni tener conocimientos previos de publicidad digital.
+- **Auditoría de cuentas publicitarias** — Diagnóstico de una cuenta de Google Ads o Meta Ads existente: detecta conversiones mal configuradas, Performance Max sin exclusiones de marca, términos de búsqueda irrelevantes y presupuesto desperdiciado, comparado contra los costos reales por industria y ciudad que INDEXA mide en las cuentas que administra.
 - **Sitios web con IA** — Páginas web profesionales generadas en menos de 3 minutos, optimizadas para conversión y SEO local
 - **Google Ads** — Campañas en Search, Maps, Display, YouTube y Performance Max optimizadas por IA
 - **Meta Ads** — Anuncios en Facebook e Instagram segmentados por ZIP, edad e intereses
@@ -107,7 +109,7 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/directorio](https://indexaia.com/directorio): Directorio de negocios
 
 ### Contacto
-- WhatsApp: +52 55 5622 0428 (México) — atención en español
+- WhatsApp: +52 56 1066 9353 (México y USA-Hispano) — atención en español
 - Sitio: https://indexaia.com
 - Documento expandido: https://indexaia.com/llms-full.txt
 - País: México y USA (mercado hispano)
