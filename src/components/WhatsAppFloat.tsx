@@ -4,12 +4,12 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { MessageCircle, X } from "lucide-react";
 import { whatsappUrl } from "@/lib/contact";
-import { isPublicRoute } from "@/lib/publicRoutes";
+import { showsWhatsAppFloat } from "@/lib/whatsappFloatRoutes";
 
 export default function WhatsAppFloat() {
   const [tooltip, setTooltip] = useState(true);
   const pathname = usePathname();
-  if (!pathname || !isPublicRoute(pathname)) return null;
+  if (!pathname || !showsWhatsAppFloat(pathname)) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">

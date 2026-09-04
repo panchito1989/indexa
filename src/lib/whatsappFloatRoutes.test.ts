@@ -1,32 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { isPublicRoute } from "./whatsappFloatRoutes";
+import { showsWhatsAppFloat } from "./whatsappFloatRoutes";
 
-describe("isPublicRoute", () => {
+describe("showsWhatsAppFloat", () => {
   it("acepta la home", () => {
-    expect(isPublicRoute("/")).toBe(true);
+    expect(showsWhatsAppFloat("/")).toBe(true);
   });
 
   it("acepta las guias", () => {
-    expect(isPublicRoute("/guia/seo-local-mexico")).toBe(true);
+    expect(showsWhatsAppFloat("/guia/seo-local-mexico")).toBe(true);
   });
 
   it("acepta /administracion-de-campanas aunque empiece con /admin", () => {
-    expect(isPublicRoute("/administracion-de-campanas")).toBe(true);
-    expect(isPublicRoute("/administracion-de-campanas-usa")).toBe(true);
+    expect(showsWhatsAppFloat("/administracion-de-campanas")).toBe(true);
+    expect(showsWhatsAppFloat("/administracion-de-campanas-usa")).toBe(true);
   });
 
   it("rechaza el panel de admin y sus subrutas", () => {
-    expect(isPublicRoute("/admin")).toBe(false);
-    expect(isPublicRoute("/admin/dashboard")).toBe(false);
+    expect(showsWhatsAppFloat("/admin")).toBe(false);
+    expect(showsWhatsAppFloat("/admin/dashboard")).toBe(false);
   });
 
   it("rechaza agency y dashboard", () => {
-    expect(isPublicRoute("/agency/dashboard")).toBe(false);
-    expect(isPublicRoute("/dashboard")).toBe(false);
+    expect(showsWhatsAppFloat("/agency/dashboard")).toBe(false);
+    expect(showsWhatsAppFloat("/dashboard")).toBe(false);
   });
 
   it("rechaza login y registro", () => {
-    expect(isPublicRoute("/login")).toBe(false);
-    expect(isPublicRoute("/registro")).toBe(false);
+    expect(showsWhatsAppFloat("/login")).toBe(false);
+    expect(showsWhatsAppFloat("/registro")).toBe(false);
+  });
+
+  it("rechaza los sitios de clientes, que traen su propio boton", () => {
+    expect(showsWhatsAppFloat("/sitio/taller-ruiz")).toBe(false);
+    expect(showsWhatsAppFloat("/sitio")).toBe(false);
   });
 });
