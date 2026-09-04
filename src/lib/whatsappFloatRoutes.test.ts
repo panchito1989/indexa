@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isPublicRoute } from "./publicRoutes";
+import { isPublicRoute } from "./whatsappFloatRoutes";
 
 describe("isPublicRoute", () => {
   it("acepta la home", () => {
