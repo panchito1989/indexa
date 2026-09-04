@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
@@ -328,7 +329,7 @@ export default function GuiaPreguntasFrecuentes() {
                 Prueba 14 días gratis
               </Link>
               <a
-                href="https://wa.me/525622042820?text=Hola%2C%20tengo%20una%20duda%20sobre%20INDEXA"
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20tengo%20una%20duda%20sobre%20INDEXA`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-8 py-4 text-base font-bold text-indexa-gray-dark transition-all hover:shadow-md hover:-translate-y-0.5"

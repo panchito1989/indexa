@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { addDocument } from "@/lib/firestoreRest";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 import type { LeadFormData, ContactApiResponse } from "@/types/lead";
 
 let _resend: Resend | null = null;
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
-    const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+    const waNumber = WHATSAPP_NUMBER;
     const agenciasUrl = `${siteUrl}/agencias`;
     const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hola, soy ${contactName.trim()} de ${businessName.trim()}. Acabo de solicitar una demo B2B en INDEXA y quiero conocer los detalles para agencias.`)}`;
 

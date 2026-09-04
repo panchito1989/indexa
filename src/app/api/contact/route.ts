@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { addDocument } from "@/lib/firestoreRest";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 import type { LeadFormData, ContactApiResponse } from "@/types/lead";
 
 let _resend: Resend | null = null;
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
 
     // ── 2. Correo de confirmación al cliente ──────────────────────
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
-    const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+    const waNumber = WHATSAPP_NUMBER;
     const signupUrl = `${siteUrl}/registro`;
     const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(`Hola, soy ${contactName.trim()} de ${businessName.trim()}. Acabo de solicitar información en INDEXA y quiero activar mi sitio web.`)}`;
 

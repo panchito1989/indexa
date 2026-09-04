@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Para Agencias — Multiplica tu Operación con INDEXA",
@@ -411,7 +412,7 @@ export default function AgenciasPage() {
                 </svg>
               </Link>
               <a
-                href="https://wa.me/525622042820?text=Hola%2C%20soy%20de%20una%20agencia%20y%20quiero%20saber%20m%C3%A1s%20sobre%20INDEXA%20B2B"
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20soy%20de%20una%20agencia%20y%20quiero%20saber%20m%C3%A1s%20sobre%20INDEXA%20B2B`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:border-white/30 hover:bg-white/10"

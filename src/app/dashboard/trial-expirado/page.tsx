@@ -6,6 +6,7 @@ import Link from "next/link";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/lib/AuthContext";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 import { AlertTriangle, Check, Loader2, Zap, MessageCircle } from "lucide-react";
 
 const PLAN_FEATURES = [
@@ -134,7 +135,7 @@ export default function TrialExpiradoPage() {
             {checkingOut ? "Redirigiendo a pago..." : "Activar plan — $699 MXN/mes"}
           </button>
           <a
-            href="https://wa.me/525622042820?text=Hola%2C%20mi%20prueba%20de%20INDEXA%20termin%C3%B3%20y%20necesito%20ayuda"
+            href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20mi%20prueba%20de%20INDEXA%20termin%C3%B3%20y%20necesito%20ayuda`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-4 text-sm font-semibold text-indexa-gray-dark transition-all hover:border-indexa-blue hover:text-indexa-blue"

@@ -2,6 +2,7 @@
 
 import FAQItem, { type FAQItemData } from "@/components/FAQItem";
 import Link from "next/link";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 const HELP_FAQS: FAQItemData[] = [
   {
@@ -46,7 +47,7 @@ const HELP_FAQS: FAQItemData[] = [
   },
 ];
 
-const SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+const SUPPORT_WHATSAPP = WHATSAPP_NUMBER;
 const SUPPORT_MESSAGE = encodeURIComponent(
   "Hola, soy cliente de INDEXA y necesito ayuda con mi sitio web."
 );

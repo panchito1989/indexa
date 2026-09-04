@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Más clientes para tu negocio de plomería en USA — INDEXA",
@@ -173,7 +174,7 @@ export default function PlomerosUsaPage() {
 
               <div className="mt-9 flex flex-col items-start gap-4 sm:flex-row">
                 <a
-                  href="https://wa.me/525622042820?text=Hola%2C%20soy%20plomero%20y%20quiero%20m%C3%A1s%20clientes"
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20soy%20plomero%20y%20quiero%20m%C3%A1s%20clientes`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-7 py-3.5 text-base font-bold text-white shadow-2xl shadow-indigo-500/25 transition-all hover:-translate-y-0.5"
@@ -342,7 +343,7 @@ export default function PlomerosUsaPage() {
                 Auditoría gratis: te decimos cuántas llamadas está perdiendo tu negocio cada mes y cómo las recuperamos.
               </p>
               <a
-                href="https://wa.me/525622042820?text=Hola%2C%20soy%20plomero%20y%20quiero%20la%20auditor%C3%ADa%20gratis"
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20soy%20plomero%20y%20quiero%20la%20auditor%C3%ADa%20gratis`}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-indigo-500/25 transition-all hover:-translate-y-0.5"
