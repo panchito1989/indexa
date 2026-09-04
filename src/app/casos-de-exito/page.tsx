@@ -24,7 +24,7 @@ const casos = [
       "15+ mensajes por WhatsApp de clientes nuevos en el primer mes",
       "Primer resultado orgánico para \"tlapalería Chalco\"",
     ],
-    plan: "Profesional",
+    plan: "INDEXA",
     slug: "tlapaleria-cuauhtemoc",
   },
   {
@@ -40,7 +40,7 @@ const casos = [
       "Bio link generó 200+ clics en el primer mes desde Instagram",
       "Posicionamiento en Google para \"estética en Iztapalapa\"",
     ],
-    plan: "Profesional",
+    plan: "INDEXA",
     slug: "estetica-glamour",
   },
   {
@@ -56,7 +56,7 @@ const casos = [
       "3x más solicitudes de cotización por WhatsApp",
       "Aparición en Google Maps para \"contador en Puebla\"",
     ],
-    plan: "Enterprise",
+    plan: "INDEXA",
     slug: "despacho-contable-ramirez",
   },
 ];

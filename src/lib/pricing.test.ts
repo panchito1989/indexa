@@ -13,7 +13,19 @@ const RETIRED_PRICES = ["$299", "$599", "$1,299", "$1299"];
  * para no chocar con el uso legítimo de "profesional" como adjetivo
  * ("sitio web profesional"), que aparece por todo el copy.
  */
-const RETIRED_TIERS = ["plan Starter", "plan Profesional", "plan Enterprise", "En Starter"];
+const RETIRED_TIERS = [
+  // Prosa: "en el plan Profesional puedes..."
+  "plan Starter",
+  "plan Profesional",
+  "plan Enterprise",
+  "En Starter",
+  // Datos: `plan: "Profesional"` en el registro de casos de éxito. La primera
+  // versión de esta guarda sólo cubría la prosa y por eso dejó pasar tres
+  // insignias "Plan Profesional" visibles en /casos-de-exito.
+  'plan: "Starter"',
+  'plan: "Profesional"',
+  'plan: "Enterprise"',
+];
 
 describe("precio del plan", () => {
   it("es el plan unico de 699 MXN", () => {
@@ -49,6 +61,7 @@ describe("precio del plan", () => {
       "public/llms.txt",
       "public/llms-full.txt",
       "src/components/FAQ.tsx",
+      "src/app/casos-de-exito/page.tsx",
     ];
 
     const offenders = surfaces.flatMap((rel) => {
