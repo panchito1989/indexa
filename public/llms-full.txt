@@ -18,7 +18,7 @@ En menos de 3 minutos. La IA de INDEXA genera el sitio completo a partir del nom
 No. La IA genera el sitio completo. Solo llenas datos básicos (nombre, descripción, WhatsApp, ciudad) y todo se edita desde un panel visual. Si necesitas ayuda, el equipo soporta por WhatsApp.
 
 ### ¿Mi sitio aparece en Google automáticamente?
-Sí. Cada sitio incluye optimización SEO automática: meta-tags, Schema.org JSON-LD (LocalBusiness, FAQPage), títulos optimizados y estructura preparada para búsquedas locales. En el plan Profesional, además se configura ciudad, categoría y coordenadas GPS para dominar las búsquedas de zona.
+Sí. Cada sitio incluye optimización SEO automática: meta-tags, Schema.org JSON-LD (LocalBusiness, FAQPage), títulos optimizados y estructura preparada para búsquedas locales. Además se configura ciudad, categoría y coordenadas GPS para dominar las búsquedas de zona.
 
 ### ¿Cómo funciona la prueba gratis de 14 días?
 Te registras sin tarjeta de crédito y obtienes acceso completo al Plan INDEXA por 14 días. Al terminar, activas el plan único ($699 MXN/mes, todo incluido) para seguir con tu sitio activo. Si decides no continuar, no se te cobra nada y tu sitio queda pausado sin penalización.
@@ -27,7 +27,7 @@ Te registras sin tarjeta de crédito y obtienes acceso completo al Plan INDEXA p
 Cualquier momento desde el Dashboard, sección suscripción. Sin contratos ni penalizaciones. Tu sitio sigue activo hasta el fin del periodo pagado. También puedes pedirlo por WhatsApp y se hace al instante.
 
 ### ¿Puedo usar mi propio dominio?
-Sí, en el plan Profesional o Enterprise puedes conectar tu dominio personalizado (ej: www.tunegocio.com). Si aún no tienes dominio, INDEXA te ayuda a registrarlo. Tu sitio siempre estará disponible también en una URL gratuita tipo `indexaia.com/sitio/tunegocio`.
+Sí, puedes conectar tu dominio personalizado (ej: www.tunegocio.com). Si aún no tienes dominio, INDEXA te ayuda a registrarlo. Tu sitio siempre estará disponible también en una URL gratuita tipo `indexaia.com/sitio/tunegocio`.
 
 ### ¿INDEXA funciona para mi tipo de negocio?
 INDEXA está diseñado para PYMES de cualquier giro en México: restaurantes, fondas, taquerías, estéticas, salones de belleza, barberías, talleres mecánicos, consultorios médicos, dentistas, ortodoncistas, pastelerías, dulcerías, tiendas locales, despachos contables, plomeros, electricistas, servicios de mensajería y servicios profesionales en general.

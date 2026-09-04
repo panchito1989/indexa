@@ -8,6 +8,13 @@ const ROOT = path.resolve(__dirname, "..", "..");
 /** Precios de los tres planes retirados en jun-2026. */
 const RETIRED_PRICES = ["$299", "$599", "$1,299", "$1299"];
 
+/**
+ * Nombres de los planes retirados. Se buscan con la palabra "plan" delante
+ * para no chocar con el uso legítimo de "profesional" como adjetivo
+ * ("sitio web profesional"), que aparece por todo el copy.
+ */
+const RETIRED_TIERS = ["plan Starter", "plan Profesional", "plan Enterprise", "En Starter"];
+
 describe("precio del plan", () => {
   it("es el plan unico de 699 MXN", () => {
     expect(PLAN_MXN.price).toBe("699");
@@ -29,6 +36,26 @@ describe("precio del plan", () => {
     const offenders = ["public/llms.txt", "public/llms-full.txt"].filter((rel) => {
       const content = readFileSync(path.join(ROOT, rel), "utf8");
       return RETIRED_PRICES.some((price) => content.includes(price));
+    });
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("no se ofertan funciones detras de un plan que ya no existe", () => {
+    // Con plan único, decir "en el plan Profesional puedes..." es falso en la
+    // dirección más costosa: sugiere que hay que subir de plan para algo que
+    // ya viene incluido.
+    const surfaces = [
+      "public/llms.txt",
+      "public/llms-full.txt",
+      "src/components/FAQ.tsx",
+    ];
+
+    const offenders = surfaces.flatMap((rel) => {
+      const content = readFileSync(path.join(ROOT, rel), "utf8");
+      return RETIRED_TIERS.filter((tier) => content.includes(tier)).map(
+        (tier) => `${rel}: ${tier}`
+      );
     });
 
     expect(offenders).toEqual([]);
