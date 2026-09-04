@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
 
 // NOTA: el `export const dynamic = "force-dynamic"` global se removió porque
 // rompía SSG/ISR para AI crawlers (GPTBot, ClaudeBot, PerplexityBot priorizan
@@ -159,6 +160,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased`}>
         {children}
+        <WhatsAppFloat />
       </body>
     </html>
   );

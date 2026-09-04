@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { getServiceVisual } from "@/components/ServiceVisuals";
 import { servicios, getServicioBySlug } from "@/lib/serviciosData";
 import {
@@ -738,7 +737,6 @@ export default async function ServicioPage({ params }: PageProps) {
         </section>
       </main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }

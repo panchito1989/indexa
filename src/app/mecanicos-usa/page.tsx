@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas";
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
@@ -368,7 +367,6 @@ export default function MecanicosUsaPage() {
         </section>
       </main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }

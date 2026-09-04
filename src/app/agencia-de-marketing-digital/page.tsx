@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 
 const PAGE_PATH = "/agencia-de-marketing-digital";
@@ -476,7 +475,6 @@ export default function AgenciaMarketingDigitalPage() {
         </section>
       </main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }
