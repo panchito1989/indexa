@@ -1043,6 +1043,174 @@ Expected: limpio salvo `next.config.ts`, que trae cambios previos ajenos a este 
 
 ---
 
+## Task 9: El precio publicado no corresponde al producto
+
+**Files:**
+- Create: `src/lib/pricing.ts`
+- Test: `src/lib/pricing.test.ts`
+- Modify: `src/components/Pricing.tsx:6`, `src/app/layout.tsx:104-110`, `src/lib/seoSchemas.ts:25-32`, `src/lib/agenciaSeoSchemas.ts:46-53`, `src/components/FAQ.tsx:40`, `public/llms.txt`, `public/llms-full.txt`
+
+**El bug:** el producto es un **plan único de $699 MXN/mes** (`src/components/Pricing.tsx:6`, decisión de negocio jun-2026). Pero el sitio sigue publicando los tres planes viejos de $299 / $599 / $1,299 en ocho lugares, tres de ellos **datos estructurados** (`AggregateOffer` con `lowPrice: "299"`, `offerCount: "3"`).
+
+El `AggregateOffer` es la señal de precio más autoritativa del sitio: es lo que Google y los modelos de IA leen antes que cualquier prosa. Hoy, ante "¿cuánto cuesta INDEXA?", responden **$299** — 57% por debajo del precio real.
+
+Con plan único, un `AggregateOffer` con rango ya no es el tipo correcto: corresponde un `Offer` simple con `price`.
+
+**NO TOCAR — no son el mismo bug:**
+- `src/app/api/savings/route.ts:71` (`sitioData?.plan === "starter" ? 299`)
+- `src/app/dashboard/vault/page.tsx:218` (`savingsData?.subscriptionCost || 299`)
+
+Esos mapean la tarifa **de los clientes legados**, que conservaron su precio al migrar al plan único. Cambiarlos corrompería lo que ven clientes reales en su panel de ahorro.
+
+- [ ] **Step 1: Escribir el test que falla**
+
+Crear `src/lib/pricing.test.ts`:
+
+```ts
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+import { PLAN_MXN, planOfferMx } from "./pricing";
+
+const ROOT = path.resolve(__dirname, "..", "..");
+
+/** Precios de los tres planes retirados en jun-2026. */
+const RETIRED_PRICES = ["$299", "$599", "$1,299", "$1299"];
+
+describe("precio del plan", () => {
+  it("es el plan unico de 699 MXN", () => {
+    expect(PLAN_MXN.price).toBe("699");
+    expect(PLAN_MXN.currency).toBe("MXN");
+  });
+
+  it("expone un Offer simple, no un rango de tres planes", () => {
+    expect(planOfferMx["@type"]).toBe("Offer");
+    expect(planOfferMx.price).toBe("699");
+    expect(JSON.stringify(planOfferMx)).not.toContain("299");
+  });
+
+  it("la pagina de precios muestra el mismo numero", () => {
+    const pricing = readFileSync(path.join(ROOT, "src/components/Pricing.tsx"), "utf8");
+    expect(pricing).toContain(PLAN_MXN.price);
+  });
+
+  it("ningun texto publico anuncia los planes retirados", () => {
+    const offenders = ["public/llms.txt", "public/llms-full.txt"].filter((rel) => {
+      const content = readFileSync(path.join(ROOT, rel), "utf8");
+      return RETIRED_PRICES.some((price) => content.includes(price));
+    });
+
+    expect(offenders).toEqual([]);
+  });
+});
+```
+
+- [ ] **Step 2: Correr el test para verificar que falla**
+
+Run: `npx vitest run src/lib/pricing.test.ts`
+Expected: FAIL — no existe `./pricing`.
+
+- [ ] **Step 3: Crear la fuente única**
+
+Crear `src/lib/pricing.ts`:
+
+```ts
+/**
+ * Precio público de INDEXA — fuente única.
+ *
+ * Desde jun-2026 hay UN solo plan ($699 MXN/mes, todo incluido). Los tres
+ * planes anteriores ($299 / $599 / $1,299) están retirados; los clientes que
+ * ya los tenían conservan su tarifa, y esa lógica vive en el cálculo de
+ * ahorro (`api/savings`), no aquí.
+ *
+ * La administración de campañas hecha por INDEXA es un servicio APARTE que se
+ * cotiza según la inversión publicitaria del cliente; no tiene precio fijo y
+ * por eso no aparece en este módulo.
+ */
+export const PLAN_MXN = {
+  price: "699",
+  currency: "MXN",
+} as const;
+
+/** Offer de schema.org para el plan único. Un solo precio, no un rango. */
+export const planOfferMx = {
+  "@type": "Offer",
+  price: PLAN_MXN.price,
+  priceCurrency: PLAN_MXN.currency,
+  availability: "https://schema.org/InStock",
+  priceValidUntil: "2026-12-31",
+} as const;
+```
+
+- [ ] **Step 4: Correr el test — sigue fallando en los otros casos**
+
+Run: `npx vitest run src/lib/pricing.test.ts`
+Expected: pasan los dos primeros; falla `ningun texto publico anuncia los planes retirados`.
+
+- [ ] **Step 5: Migrar los tres schemas**
+
+En los tres archivos, sustituir el bloque `AggregateOffer` por el `Offer` compartido:
+
+- `src/lib/seoSchemas.ts`: eliminar `indexaAggregateOffer` y reemplazar sus usos (`offers: indexaAggregateOffer`) por `offers: planOfferMx`, importando desde `./pricing`.
+- `src/lib/agenciaSeoSchemas.ts`: eliminar `aggregateOfferMx` y reemplazar sus usos por `planOfferMx`.
+- `src/app/layout.tsx`: el `offers` inline del `softwareAppJsonLd` pasa a `offers: planOfferMx`, importando desde `@/lib/pricing`.
+
+`priceValidUntil` ya viene dentro de `planOfferMx`; no duplicarlo.
+
+- [ ] **Step 6: `Pricing.tsx` usa la constante**
+
+En `src/components/Pricing.tsx`, cambiar `price: "$699"` por:
+
+```tsx
+  price: `$${PLAN_MXN.price}`,
+```
+
+con `import { PLAN_MXN } from "@/lib/pricing";`.
+
+- [ ] **Step 7: Corregir los textos públicos**
+
+`src/components/FAQ.tsx:40` — la respuesta describe los planes Starter y Profesional. Reescribirla a:
+
+```
+"Con INDEXA, un sitio web profesional generado con inteligencia artificial cuesta $699 MXN/mes en el Plan INDEXA, que incluye todo: sitio web, panel de edición, campañas de Google, Facebook y TikTok Ads con asistente de IA, SEO local con Schema.org, estadísticas, botón de WhatsApp y SSL. En comparación, un desarrollador freelance cobra entre $5,000 y $15,000 MXN por un sitio similar sin mantenimiento ni SEO incluido."
+```
+
+`public/llms.txt` — en la línea 3 cambiar `desde $299 MXN/mes (México)` por `$699 MXN/mes (México)`; sustituir los tres bullets de `### México (MXN)` por uno solo:
+
+```markdown
+- **Plan INDEXA — $699 MXN/mes**: Todo incluido — sitio web con IA, panel de edición (CMS), campañas de Google, Meta y TikTok Ads con asistente de IA (150 acciones/mes) e imágenes publicitarias con IA (20/mes), SEO local avanzado con Schema.org, estadísticas, WhatsApp directo, SSL y soporte prioritario. Sin contratos anuales.
+- **Administración de campañas (servicio aparte)**: Que INDEXA opere las cuentas de anuncios del cliente día a día no está incluido en el plan; se cotiza según la inversión publicitaria que maneje el negocio, partiendo del plan base. Se define en la asesoría inicial.
+```
+
+y en la línea 50 cambiar `pagás desde $299 MXN/mes sin contrato` por `pagás $699 MXN/mes sin contrato`.
+
+`public/llms-full.txt` — mismas correcciones en sus líneas 3, 12 y 24: el plan es único, $699, todo incluido; eliminar toda mención a Starter / Profesional / Enterprise y a `$299` / `$599` / `$1,299`.
+
+- [ ] **Step 8: Correr el test y verificar**
+
+Run: `npx vitest run`
+Expected: PASS. La suite sube a 22 tests en 6 archivos.
+
+Run: `npx tsc --noEmit`
+Expected: exit 0.
+
+Run: `npm run build`
+Expected: build exitoso.
+
+- [ ] **Step 9: Verificar que no queda precio viejo en superficie pública**
+
+Run: `grep -rn '\$299\|\$599\|\$1,299' src/ public/ --include="*.tsx" --include="*.ts" --include="*.txt" | grep -v "\.test\.ts"`
+Expected: sin resultados.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add src/lib/pricing.ts src/lib/pricing.test.ts src/components/Pricing.tsx src/components/FAQ.tsx src/app/layout.tsx src/lib/seoSchemas.ts src/lib/agenciaSeoSchemas.ts public/llms.txt public/llms-full.txt
+git commit -m "fix: el precio publicado decia 299 cuando el plan unico es 699"
+```
+
+---
+
 ## Criterios de aceptación de la Fase 0
 
 - `grep -rn "5622042820\|5215512345678" src/ public/` no devuelve nada.
