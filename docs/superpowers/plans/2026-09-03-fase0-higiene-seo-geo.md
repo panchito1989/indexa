@@ -155,10 +155,31 @@ Expected: PASS, 3 tests
 
 Si falla porque `WHATSAPP_NUMBER` trae otro valor, es que tienes `NEXT_PUBLIC_WHATSAPP_NUMBER` exportada en tu shell. Quítala: vitest no carga `.env`, así que el único origen posible es el ambiente.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Quitar `--passWithNoTests`**
+
+Ya existe el primer test, así que la bandera deja de ser necesaria y pasa a ser un
+riesgo: si el glob de descubrimiento se rompe, CI seguiría pasando en verde.
+
+En `package.json`, cambiar:
+
+```json
+    "test": "vitest run --passWithNoTests",
+```
+
+por:
+
+```json
+    "test": "vitest run",
+```
+
+Run: `npm test`
+Expected: PASS, 3 tests. Si en vez de eso sale `No test files found` con exit 1,
+el glob de `vitest.config.ts` no está encontrando el archivo.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add src/lib/contact.ts src/lib/contact.test.ts
+git add src/lib/contact.ts src/lib/contact.test.ts package.json
 git commit -m "feat: constante unica de WhatsApp con constructor de enlaces"
 ```
 
