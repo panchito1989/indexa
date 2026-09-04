@@ -8,6 +8,16 @@
 
 **Tech Stack:** Next.js 16 (App Router, `generateStaticParams`), React 19, TypeScript 5, Tailwind 4, vitest 3, Firestore (Admin SDK), Google Ads API vía `src/lib/googleAdsClient.ts`.
 
+> **⚠️ Estado (2026-09-04):** la Task 1 ya corrió contra producción y dio **0 celdas
+> viables** (2 cuentas con Google Ads, 1 de 28 sitios con categoría/ciudad). Según el
+> spec §14, el "dato propio" pasa de benchmarks agregados a **casos de éxito con cifras
+> reales** exportadas del panel admin (CSV por campaña). Por tanto:
+> - **Task 1**: hecha (`scripts/benchmarks-viability.mjs`, commit en PR #41).
+> - **Task 2** (módulo de benchmarks) y las partes de **Tasks 3, 5 y 8** que dependen de
+>   celdas de benchmark quedan **suspendidas** y se reescriben alrededor de un módulo
+>   de casos de éxito en cuanto llegue el primer CSV. No ejecutar esas partes tal cual.
+> - **Tasks 4, 6 y 7** (schema, hubs, sitemap/llms.txt) siguen vigentes.
+
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 
 ---
