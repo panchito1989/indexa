@@ -295,3 +295,37 @@ contenido rinde la mitad.
   válido.
 - Fase 2: el auditor genera conversaciones de WhatsApp medibles.
 - Fase 3: aparición de INDEXA en al menos 5 de las 20 preguntas de la batería mensual.
+
+## 14. Actualización 2026-09-04 — la realidad de los datos
+
+El reporte de viabilidad (`scripts/benchmarks-viability.mjs`) corrió contra
+producción:
+
+| Métrica | Valor |
+|---|---|
+| Usuarios | 11 |
+| Con Google Ads conectado | 2 (sólo 1 con customer elegido) |
+| Sitios con `categoria` y `ciudad` | 1 de 28 |
+| Celdas (industria, ciudad) con ≥ 5 cuentas | 0 |
+
+**Consecuencias, decididas con el usuario:**
+
+1. **El observatorio (§8) queda diferido.** No es construible con la base actual,
+   ni cortando por industria sin ciudad. Se retoma cuando el reporte muestre
+   celdas viables; el pipeline no se construye antes.
+2. **El "dato propio" de cada guía (§5, regla 2) sale de casos de éxito con cifras
+   reales, no de benchmarks agregados.** Un caso individual con consentimiento
+   (gasto, leads y CPL antes/después) es igual de citable, imposible de copiar,
+   y no necesita mínimo de muestra. Los tres casos que existen hoy son de sitio
+   web/SEO con cifras blandas; hay que producir casos **de administración de
+   campañas** a partir de las cuentas que INDEXA opera.
+3. **Fuente de las cifras:** el panel admin de Google Ads en producción exporta
+   CSV por campaña (gasto, clics, impresiones, CTR, conversiones, CPA) para
+   rangos de 90 días, 12 meses o personalizado. Las credenciales de la API
+   viven en Vercel como *Sensitive* y no son legibles desde local, así que el
+   CSV es el camino sin manejar secretos. `scripts/extract-ads-metrics.ts`
+   queda para cuando exista acceso local o para la Fase 3.
+4. **Captura de `categoria`/`ciudad` arreglada** (plan
+   `2026-09-04-captura-categoria-ciudad.md`): obligatoria en las altas por
+   agencia y admin, con aviso en el editor. Es prerequisito del observatorio y,
+   más urgente, del SEO local de los clientes actuales (LocalBusiness sin ciudad).
