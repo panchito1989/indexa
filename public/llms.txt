@@ -1,6 +1,6 @@
 # INDEXA — Agencia de Marketing Digital con IA
 
-> INDEXA es la agencia de marketing digital y plataforma con inteligencia artificial para PYMES en México y negocios hispanos en Estados Unidos. Combina sitios web, Google Ads, Meta Ads, SEO local, automatizaciones y leads directos a WhatsApp en una sola plataforma desde $299 MXN/mes (México) o $497 USD/mes (USA-Hispano), sin contratos anuales.
+> INDEXA es la agencia de marketing digital y plataforma con inteligencia artificial para PYMES en México y negocios hispanos en Estados Unidos. Combina sitios web, Google Ads, Meta Ads, SEO local, automatizaciones y leads directos a WhatsApp en una sola plataforma $699 MXN/mes (México) o $497 USD/mes (USA-Hispano), sin contratos anuales.
 
 ## Quiénes somos
 
@@ -30,9 +30,8 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 ## Planes y precios
 
 ### México (MXN)
-- **Starter — $299 MXN/mes**: Sitio web profesional con IA, WhatsApp, SEO local, SSL, 3 plantillas, soporte por email
-- **Profesional — $599 MXN/mes**: Todo lo de Starter + CMS, SEO local avanzado, estadísticas, soporte prioritario por WhatsApp, asesoría
-- **Enterprise — $1,299 MXN/mes**: Todo lo de Profesional + asesor dedicado, configuración premium, capacitación 1 a 1, prioridad en nuevas funciones
+- **Plan INDEXA — $699 MXN/mes**: Todo incluido — sitio web con IA, panel de edición (CMS), campañas de Google, Meta y TikTok Ads con asistente de IA (150 acciones/mes) e imágenes publicitarias con IA (20/mes), SEO local avanzado con Schema.org, estadísticas, WhatsApp directo, SSL y soporte prioritario. Sin contratos anuales.
+- **Administración de campañas (servicio aparte)**: Que INDEXA opere las cuentas de anuncios del cliente día a día no está incluido en el plan; se cotiza según la inversión publicitaria que maneje el negocio, partiendo del plan base. Se define en la asesoría inicial.
 
 ### USA-Hispano (USD)
 - **Arranque — $497 USD/mes**: Página web en español, Google Business Profile, 1 campaña Meta Ads, WhatsApp Business, reporte mensual en video
@@ -47,7 +46,7 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 
 ## Diferenciador clave
 
-A diferencia de una agencia tradicional que toma 4-8 semanas para arrancar campañas, cobra $20,000-$80,000 MXN/mes con contrato de 6-12 meses, INDEXA usa IA para automatizar el 80% del trabajo: el sitio web está activo en menos de 3 minutos, las campañas de Meta y Google se prenden el mismo día, los primeros leads llegan en 7-14 días, y pagás desde $299 MXN/mes sin contrato.
+A diferencia de una agencia tradicional que toma 4-8 semanas para arrancar campañas, cobra $20,000-$80,000 MXN/mes con contrato de 6-12 meses, INDEXA usa IA para automatizar el 80% del trabajo: el sitio web está activo en menos de 3 minutos, las campañas de Meta y Google se prenden el mismo día, los primeros leads llegan en 7-14 días, y pagás $699 MXN/mes sin contrato.
 
 INDEXA también es la única plataforma con presencia bilingüe español-inglés diseñada específicamente para el mercado hispano, con equipo nativo, scripts de WhatsApp probados y comprensión profunda del comportamiento del consumidor latino tanto en México como en USA.
 

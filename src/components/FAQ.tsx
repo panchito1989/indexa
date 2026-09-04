@@ -37,7 +37,7 @@ const FAQS: FAQItemData[] = [
   {
     question: "¿Cuánto cuesta crear una página web profesional para un negocio en México en 2026?",
     answer:
-      "Con INDEXA, un sitio web profesional generado con inteligencia artificial cuesta desde $299 MXN/mes (plan Starter). Esto incluye diseño profesional, botón de WhatsApp, SEO básico y certificado SSL. En comparación, un desarrollador freelance cobra entre $5,000 y $15,000 MXN por un sitio similar sin mantenimiento ni SEO incluido. El plan Profesional a $599 MXN/mes agrega panel CMS, SEO avanzado con Schema.org y estadísticas de visitas.",
+      "Con INDEXA, un sitio web profesional generado con inteligencia artificial cuesta $699 MXN/mes en el Plan INDEXA, que incluye todo: sitio web, panel de edición, campañas de Google, Facebook y TikTok Ads con asistente de IA, SEO local con Schema.org, estadísticas, botón de WhatsApp y SSL. En comparación, un desarrollador freelance cobra entre $5,000 y $15,000 MXN por un sitio similar sin mantenimiento ni SEO incluido.",
   },
   {
     question: "¿Qué es Schema.org y por qué lo necesita mi negocio local?",

@@ -10,6 +10,8 @@
  * es para las landing pages de Indexa (PYMEs como audiencia, México como mercado).
  */
 
+import { planOfferMx } from "./pricing";
+
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 export const INDEXA_SITE_URL = rawSiteUrl.startsWith("http")
   ? rawSiteUrl
@@ -20,15 +22,6 @@ const indexaProvider = {
   name: "INDEXA",
   url: INDEXA_SITE_URL,
   logo: `${INDEXA_SITE_URL}/logo.png`,
-} as const;
-
-const indexaAggregateOffer = {
-  "@type": "AggregateOffer",
-  lowPrice: "299",
-  highPrice: "1299",
-  priceCurrency: "MXN",
-  offerCount: "3",
-  priceValidUntil: "2026-12-31",
 } as const;
 
 /**
@@ -58,7 +51,7 @@ export function buildCityServiceSchema(opts: {
       "@type": "BusinessAudience",
       audienceType: `Pequeñas y medianas empresas en ${opts.cityName}`,
     },
-    offers: indexaAggregateOffer,
+    offers: planOfferMx,
     url: `${INDEXA_SITE_URL}${opts.pagePath}`,
   };
 }
@@ -88,7 +81,7 @@ export function buildPlatformServiceSchema(opts: {
       "@type": "BusinessAudience",
       audienceType: opts.audienceType ?? "Pequeñas y medianas empresas en México",
     },
-    offers: indexaAggregateOffer,
+    offers: planOfferMx,
     url: `${INDEXA_SITE_URL}${opts.pagePath}`,
     inLanguage: "es-MX",
   };
@@ -148,7 +141,7 @@ export function buildIndustryServiceSchema(opts: {
       "@type": "BusinessAudience",
       audienceType: opts.audienceType,
     },
-    offers: indexaAggregateOffer,
+    offers: planOfferMx,
     url: `${INDEXA_SITE_URL}${opts.pagePath}`,
   };
 }
