@@ -43,6 +43,15 @@ campañas** (done-for-you).
 | Capacidad | Alta: contenido + construcción de herramientas nuevas |
 | Enfoque | Los tres frentes (contenido, auditor, observatorio) ejecutados en fases |
 | WhatsApp | `5610669353` reemplaza a `5622042820` en **todo** el sitio, centralizado |
+| Precio de la plataforma | Plan único **$699 MXN/mes**, todo incluido (sitio + campañas con IA que el cliente opera). Publicado y en schema. |
+| Precio de la administración | **Sin precio fijo publicado.** Se cotiza según la inversión publicitaria del cliente y se define en la asesoría inicial. Se publica el *modelo de cobro*, no la cifra. |
+| Piso publicado | El $699 del plan funciona como ancla. Redacción acordada: *"La plataforma son $699/mes. Que nosotros operemos tus campañas se cotiza según tu inversión, partiendo de ahí."* |
+
+**La distinción comercial que ordena todo el mensaje:** el plan de $699 da las
+herramientas y la IA para que el cliente lo haga **solo**. Que INDEXA opere la
+cuenta día a día es un servicio **aparte**. El cluster de contenido debe dejar
+esa frontera explícita — si no, el prospecto asume que por $699 alguien se lo
+maneja, y la asesoría empieza con una expectativa rota.
 
 ## 4. Arquitectura de contenido
 
