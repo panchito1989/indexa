@@ -534,7 +534,7 @@ export default function ClientesPage() {
               </button>
               <button
                 onClick={handleCreateSite}
-                disabled={creating || !sitioNombre.trim()}
+                disabled={creating || !sitioNombre.trim() || !sitioCategoria.trim() || !sitioCiudad.trim()}
                 className="inline-flex items-center gap-2 rounded-xl bg-indexa-blue px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indexa-blue/90 disabled:opacity-50"
               >
                 {creating ? (
