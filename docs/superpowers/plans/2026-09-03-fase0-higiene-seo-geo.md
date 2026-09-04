@@ -644,6 +644,157 @@ git commit -m "feat: boton de WhatsApp en toda ruta publica desde el layout raiz
 
 ---
 
+## Task 5b: No pisar el botón de los sitios de clientes
+
+**Files:**
+- Rename: `src/lib/publicRoutes.ts` → `src/lib/whatsappFloatRoutes.ts`
+- Rename: `src/lib/publicRoutes.test.ts` → `src/lib/whatsappFloatRoutes.test.ts`
+- Modify: `src/components/WhatsAppFloat.tsx`
+
+**El bug:** `/sitio/[slug]` son los sitios web generados para los clientes. Ya montan
+su propio botón de WhatsApp — `src/app/sitio/[slug]/WhatsAppButton.tsx` — en la misma
+posición exacta (`fixed bottom-6 right-6 z-50`), con el número **del cliente**, que
+además cuenta clics en Firestore (`clicsWhatsApp`) y dispara la conversión de Google Ads
+vía `indexaReportLead()`.
+
+Tras la Task 5, el flotante de INDEXA se monta encima: dos botones superpuestos, y el
+número de INDEXA sobre el sitio del cliente. Un visitante del cliente que toque el
+botón equivocado le escribe a INDEXA en vez de al negocio, sin registrar la conversión.
+
+**El nombre también quedó mal:** `isPublicRoute` afirma algo que ya no es cierto —
+`/sitio/x` **es** una ruta pública, simplemente no debe mostrar el flotante de INDEXA.
+El predicado responde otra pregunta, y su nombre debe decirlo.
+
+- [ ] **Step 1: Renombrar los archivos conservando el historial**
+
+```bash
+git mv src/lib/publicRoutes.ts src/lib/whatsappFloatRoutes.ts
+git mv src/lib/publicRoutes.test.ts src/lib/whatsappFloatRoutes.test.ts
+```
+
+- [ ] **Step 2: Escribir el test que falla**
+
+Reemplazar el contenido completo de `src/lib/whatsappFloatRoutes.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { showsWhatsAppFloat } from "./whatsappFloatRoutes";
+
+describe("showsWhatsAppFloat", () => {
+  it("acepta la home", () => {
+    expect(showsWhatsAppFloat("/")).toBe(true);
+  });
+
+  it("acepta las guias", () => {
+    expect(showsWhatsAppFloat("/guia/seo-local-mexico")).toBe(true);
+  });
+
+  it("acepta /administracion-de-campanas aunque empiece con /admin", () => {
+    expect(showsWhatsAppFloat("/administracion-de-campanas")).toBe(true);
+    expect(showsWhatsAppFloat("/administracion-de-campanas-usa")).toBe(true);
+  });
+
+  it("rechaza el panel de admin y sus subrutas", () => {
+    expect(showsWhatsAppFloat("/admin")).toBe(false);
+    expect(showsWhatsAppFloat("/admin/dashboard")).toBe(false);
+  });
+
+  it("rechaza agency y dashboard", () => {
+    expect(showsWhatsAppFloat("/agency/dashboard")).toBe(false);
+    expect(showsWhatsAppFloat("/dashboard")).toBe(false);
+  });
+
+  it("rechaza login y registro", () => {
+    expect(showsWhatsAppFloat("/login")).toBe(false);
+    expect(showsWhatsAppFloat("/registro")).toBe(false);
+  });
+
+  it("rechaza los sitios de clientes, que traen su propio boton", () => {
+    expect(showsWhatsAppFloat("/sitio/taller-ruiz")).toBe(false);
+    expect(showsWhatsAppFloat("/sitio")).toBe(false);
+  });
+});
+```
+
+- [ ] **Step 3: Correr el test para verificar que falla**
+
+Run: `npx vitest run src/lib/whatsappFloatRoutes.test.ts`
+Expected: FAIL — no existe el export `showsWhatsAppFloat`.
+
+- [ ] **Step 4: Escribir la implementación**
+
+Reemplazar el contenido completo de `src/lib/whatsappFloatRoutes.ts`:
+
+```ts
+/**
+ * ¿Se muestra el botón flotante de WhatsApp de INDEXA en esta ruta?
+ *
+ * Se oculta en dos casos distintos:
+ *   1. Paneles internos y pantallas de autenticación, donde no pinta nada.
+ *   2. `/sitio/*` — los sitios generados para clientes, que montan su propio
+ *      botón con el número DEL CLIENTE y su propio conteo de conversiones.
+ *      Superponer el de INDEXA le robaría los leads al cliente.
+ *
+ * La comparación exige coincidencia exacta o un "/" después del prefijo. Sin
+ * eso, "/administracion-de-campanas" quedaría oculta por empezar con "/admin".
+ */
+const HIDDEN_PREFIXES = [
+  "/admin",
+  "/agency",
+  "/dashboard",
+  "/login",
+  "/registro",
+  "/sitio",
+];
+
+export function showsWhatsAppFloat(pathname: string): boolean {
+  return !HIDDEN_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
+}
+```
+
+- [ ] **Step 5: Actualizar el consumidor**
+
+En `src/components/WhatsAppFloat.tsx`, cambiar el import y la llamada:
+
+```tsx
+import { showsWhatsAppFloat } from "@/lib/whatsappFloatRoutes";
+```
+
+y el guard queda:
+
+```tsx
+  if (!pathname || !showsWhatsAppFloat(pathname)) return null;
+```
+
+- [ ] **Step 6: Correr el test para verificar que pasa**
+
+Run: `npx vitest run`
+Expected: PASS, 14 tests en 4 archivos.
+
+- [ ] **Step 7: Verificar que no quedan referencias al nombre viejo**
+
+Run: `grep -rn "publicRoutes\|isPublicRoute" src/`
+Expected: sin resultados.
+
+- [ ] **Step 8: Verificar tipos y build**
+
+Run: `npx tsc --noEmit`
+Expected: exit 0, sin salida.
+
+Run: `npm run build`
+Expected: build exitoso.
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add src/lib/whatsappFloatRoutes.ts src/lib/whatsappFloatRoutes.test.ts src/components/WhatsAppFloat.tsx
+git commit -m "fix: no montar el flotante de INDEXA sobre los sitios de clientes"
+```
+
+---
+
 ## Task 6: Crawlers de IA faltantes en robots.txt
 
 **Files:**
