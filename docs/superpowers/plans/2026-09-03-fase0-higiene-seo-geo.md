@@ -304,16 +304,178 @@ por:
         )}
 ```
 
-- [ ] **Step 7: Verificar que no queda ningún número suelto**
+- [ ] **Step 7: Medir cuánto falta**
 
-Run: `grep -rn "5622042820\|5215512345678" src/ public/`
-Expected: sin resultados en `src/`. En `public/llms.txt` todavía aparece el número viejo formateado como `+52 55 5622 0428`; eso se corrige en la Task 6.
+Run: `grep -rn "5622042820\|5215512345678" src/ --include="*.tsx" --include="*.ts" | grep -v "\.test\.ts"`
+
+Expected: **22 coincidencias en 15 archivos** fuera de los tres migrados aquí. No es un error:
+el número está regado por `src/app/` y se limpia en la Task 3b. Registrar la salida y seguir.
 
 - [ ] **Step 8: Commit**
 
 ```bash
 git add src/lib/emailTemplates.ts src/lib/emailTemplates.test.ts src/components/ContactForm.tsx src/components/WhatsAppFloat.tsx
 git commit -m "fix: unificar el numero de WhatsApp en los tres consumidores"
+```
+
+---
+
+## Task 3b: Migrar los 15 archivos restantes de `src/app/`
+
+**Files:**
+- Modify (default falso `5215512345678`): `src/app/api/contact/route.ts:153`, `src/app/api/contact-b2b/route.ts:154`, `src/app/dashboard/ayuda/page.tsx:49`, `src/app/mantenimiento/page.tsx:8`, `src/app/demo/[slug]/page.tsx:318`
+- Modify (enlaces `wa.me/525622042820` hardcodeados): `src/app/agencias/page.tsx:414`, `src/app/api/cancel-survey/route.ts:47`, `src/app/dashboard/trial-expirado/page.tsx:137`, `src/app/guia/preguntas-frecuentes/page.tsx:331`, `src/app/usa/page.tsx:294,489,570`, `src/app/construccion-usa/page.tsx:176,346`, `src/app/landscaping-usa/page.tsx:177,360`, `src/app/limpieza-usa/page.tsx:176,350`, `src/app/mecanicos-usa/page.tsx:178,358`, `src/app/plomeros-usa/page.tsx:176,345`
+- Test: `src/lib/contactUsage.test.ts`
+
+La Task 3 sólo cubría `src/lib` y `src/components`. El barrido completo encontró 22
+usos más en `src/app/`. Cinco de ellos repiten el default falso `5215512345678`, que
+es el mismo bug de los correos: `/api/contact` y `/api/contact-b2b` mandan al cliente
+a un número inexistente si la env var no está puesta.
+
+**Regla de edición:** los enlaces hardcodeados traen el mensaje ya percent-encoded en
+el query string. **No decodificar ni reescribir esos mensajes** — sustituir únicamente
+el número, dejando el `?text=...` intacto. Reescribirlos a mano cambiaría silenciosamente
+el texto que sale hacia los clientes.
+
+- [ ] **Step 1: Escribir el test de regresión que falla**
+
+Crear `src/lib/contactUsage.test.ts`:
+
+```ts
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
+
+/** Números que quedaron obsoletos y no deben reaparecer en el código. */
+const FORBIDDEN = ["5622042820", "5215512345678"];
+
+const SRC = path.resolve(__dirname, "..");
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir).flatMap((entry) => {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) return sourceFiles(full);
+    if (!/\.tsx?$/.test(entry) || entry.endsWith(".test.ts")) return [];
+    return [full];
+  });
+}
+
+describe("uso del numero de contacto", () => {
+  it("ningun archivo fuente contiene un numero de WhatsApp obsoleto", () => {
+    const offenders = sourceFiles(SRC).filter((file) => {
+      const content = readFileSync(file, "utf8");
+      return FORBIDDEN.some((number) => content.includes(number));
+    });
+
+    expect(offenders.map((f) => path.relative(SRC, f))).toEqual([]);
+  });
+});
+```
+
+- [ ] **Step 2: Correr el test para verificar que falla**
+
+Run: `npx vitest run src/lib/contactUsage.test.ts`
+Expected: FAIL, listando los 15 archivos infractores.
+
+- [ ] **Step 3: Migrar los 5 defaults falsos**
+
+En cada uno de estos archivos, reemplazar el literal `"5215512345678"` por la constante
+compartida.
+
+`src/app/api/contact/route.ts:153` y `src/app/api/contact-b2b/route.ts:154`, que hoy dicen:
+
+```ts
+    const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+```
+
+pasan a usar el import (agregar `import { WHATSAPP_NUMBER } from "@/lib/contact";` arriba)
+y la línea queda:
+
+```ts
+    const waNumber = WHATSAPP_NUMBER;
+```
+
+`src/app/dashboard/ayuda/page.tsx:49`:
+
+```ts
+const SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+```
+
+pasa a:
+
+```ts
+import { WHATSAPP_NUMBER } from "@/lib/contact";
+
+const SUPPORT_WHATSAPP = WHATSAPP_NUMBER;
+```
+
+`src/app/mantenimiento/page.tsx:8`:
+
+```ts
+const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
+```
+
+pasa a un re-export directo del módulo compartido — eliminar la constante local y agregar:
+
+```ts
+import { WHATSAPP_NUMBER } from "@/lib/contact";
+```
+
+(el resto del archivo ya usa el identificador `WHATSAPP_NUMBER`, así que no hay más cambios).
+
+`src/app/demo/[slug]/page.tsx:318` — dentro del `href`, reemplazar
+`${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678"}` por `${WHATSAPP_NUMBER}`
+y agregar el import.
+
+- [ ] **Step 4: Migrar los enlaces hardcodeados**
+
+En los 10 archivos restantes, cada ocurrencia de la cadena literal:
+
+```
+https://wa.me/525622042820
+```
+
+se convierte en una plantilla que interpola la constante, **conservando el resto de la
+URL exactamente como está**. Ejemplo real, `src/app/plomeros-usa/page.tsx:176`:
+
+Antes:
+
+```tsx
+                  href="https://wa.me/525622042820?text=Hola%2C%20soy%20plomero%20y%20quiero%20m%C3%A1s%20clientes"
+```
+
+Después:
+
+```tsx
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20soy%20plomero%20y%20quiero%20m%C3%A1s%20clientes`}
+```
+
+Agregar `import { WHATSAPP_NUMBER } from "@/lib/contact";` en cada archivo que lo necesite.
+
+Caso especial `src/app/api/cancel-survey/route.ts:47`: el enlace vive dentro de un string
+de HTML para correo, no en JSX. Ahí la sustitución es dentro del template literal existente:
+`https://wa.me/${WHATSAPP_NUMBER}`.
+
+Caso especial `src/app/usa/page.tsx:489`: el enlace no trae `?text=`, sólo el número.
+
+- [ ] **Step 5: Correr el test para verificar que pasa**
+
+Run: `npx vitest run src/lib/contactUsage.test.ts`
+Expected: PASS, 1 test.
+
+- [ ] **Step 6: Verificar tipos y build**
+
+Run: `npx tsc --noEmit`
+Expected: exit 0, sin salida.
+
+Run: `npm run lint`
+Expected: sin errores nuevos.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add src/lib/contactUsage.test.ts src/app/
+git commit -m "fix: migrar los 15 archivos restantes al numero unico de WhatsApp"
 ```
 
 ---
