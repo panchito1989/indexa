@@ -24,6 +24,18 @@
 >   `buscarCaso`; `casosAds.test.ts` también exige `tasaContacto ≈ contactos/clics`; en
 >   `guiaSchemas.ts` los `"@type"` de nivel superior llevan `as const` (exigencia de `strict`
 >   para que `.find()` estreche el tipo; sin efecto en el JSON emitido).
+> - **Ejecutado (2026-09-04, tarde):** Tasks 5, 6 y 7 commiteadas (`c4bed16`, `4aaa3a5`,
+>   `f6c44f9`). Ajustes de revisión: `src/lib/jsonLd.ts` (`jsonLdHtml()` escapa `<>&` al
+>   inyectar JSON-LD — un `</script>` en una FAQ rompía la página) y `src/lib/datoPropio.ts`
+>   (`renderDatoPropio` fuera de la página, con una sola pasada regex: `replace()` sólo
+>   sustituía la primera aparición) en `243c88f`; `guiaSchemas.ts` con Organization por `@id`
+>   e `image` (`15f82c3`). **Hallazgos al verificar en el navegador:** el middleware hacía
+>   `startsWith("/admin")` y mandaba `/administracion-de-campanas` al login del panel →
+>   `bajoPrefijo()` en `src/lib/rutas.ts`, usado por el middleware y el flotante (`b0f955d`);
+>   la imagen OG del sitio se llamaba `og-image.png.png` → renombrada (`d2b…` ver git log).
+>   Ambos hubs verificados en `next dev`: cargan, frontera de precio verbatim, cifras del caso
+>   desde el módulo, flotante visible. Pendiente menor en los hubs: el `<title>` duplica
+>   "| INDEXA" (la plantilla raíz ya lo agrega) y conviene usar `jsonLdHtml()`.
 
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 
