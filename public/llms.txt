@@ -58,6 +58,10 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/agencia-google-ads](https://indexaia.com/agencia-google-ads): Especialización en Google Ads — Search, Maps, Display, YouTube, Performance Max
 - [/agencia-de-seo](https://indexaia.com/agencia-de-seo): SEO técnico, SEO local, posicionamiento en Google Maps con proceso de 6 fases
 
+### Administración de campañas publicitarias
+- [/administracion-de-campanas](https://indexaia.com/administracion-de-campanas): Servicio done-for-you en México — INDEXA opera Google Ads, Meta Ads y TikTok Ads del cliente. Se cotiza según la inversión publicitaria.
+- [/administracion-de-campanas-usa](https://indexaia.com/administracion-de-campanas-usa): El mismo servicio para negocios hispanos en Estados Unidos, en español, con precios en USD.
+
 ### Servicios detallados
 - [/servicios/sitios-web-ia](https://indexaia.com/servicios/sitios-web-ia): Páginas web generadas con IA
 - [/servicios/marketing-automatizado](https://indexaia.com/servicios/marketing-automatizado): Marketing automatizado
