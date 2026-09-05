@@ -7,6 +7,7 @@ import { renderDatoPropio } from "@/lib/datoPropio";
 import { buscarGuia, guiasAds } from "@/lib/guiasAdsData";
 import { buildGuiaGraph } from "@/lib/guiaSchemas";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { mesLegible } from "@/lib/fechas";
 
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
@@ -66,7 +67,7 @@ export default async function GuiaAdsPage({ params }: PageProps) {
         <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">{guia.h1}</h1>
 
         <p className="mt-3 text-sm text-gray-500">
-          Actualizado: {guia.actualizado}
+          Actualizado: {mesLegible(guia.actualizado)}
         </p>
 
         {/* Respuesta directa — el bloque que un modelo debe poder citar solo. */}
