@@ -2,17 +2,42 @@
 
 **Estado:** borrador para validación del usuario antes de publicar
 **Anonimizado:** sí (consentimiento dado 2026-09-04; no se publica nombre ni customer ID)
-**Fuente:** exportación nativa de Google Ads del 2026-09-04, rango 2026-08-01 → 2026-08-31
-comparado con 2026-07-23 → 2026-07-31. Archivos en el scratchpad de la sesión, no en el repo.
+**Fuente:** dos exportaciones nativas de Google Ads del 2026-09-04 (tarjetas de descripción
+general), que juntas cubren **2026-07-23 → 2026-09-04**. Archivos en el scratchpad de la
+sesión, no en el repo.
 **Definición de conversión en esta cuenta:** clic al botón de WhatsApp o llamada telefónica.
 La mayoría son clics a WhatsApp. **Se publica como "contactos", nunca como "clientes" ni "ventas".**
-**Relación:** INDEXA administra esta cuenta desde hace más de un año.
+**Relación:** INDEXA trabaja con este cliente desde hace más de un año. **La cuenta de Google
+Ads, en cambio, es nueva: su primer día con datos es el 23 de julio de 2026.** Google Ads no
+permite comparar contra periodos anteriores porque no existen. Por eso el caso no es
+"antes y después de INDEXA": es **"de cero a 97 contactos al mes, en el segundo mes"**.
 
 ---
 
-## Cifras (agosto 2026, 31 días)
+## El arranque, semana a semana
 
-| Métrica | Agosto 2026 | Ventana de comparación (23–31 jul, 9 días) |
+| Semana | Fechas | Clics | Contactos | Clics → contacto | Costo por contacto ≈ |
+|---|---|---|---|---|---|
+| 1 | 23–29 jul | 81 | 4 | **5%** | $268 |
+| 2 | 30 jul – 5 ago | 127 | **44** | **35%** | **$96** |
+| 3 | 6–12 ago | 30 | 15 | 50% | $201 |
+| 4 | 13–19 ago | 116 | 45 | 39% | $199 |
+| 5 | 20–26 ago | 0 | 0 | — | — |
+| 6 | 27 ago – 2 sep | 11 | 4 | 36% | $355 |
+| 7 | 3–4 sep (2 días) | 88 | 32 | 36% | $195 |
+
+El costo por contacto semanal es aproximado (se deriva de los días con contacto, así que
+**subestima** el gasto real, nunca lo infla). Los totales exactos por rango vienen del
+archivo de campañas, abajo.
+
+**La semana 5 no tiene ni una impresión.** La cuenta estuvo apagada del 20 al 26 de agosto.
+Pendiente de explicación del usuario (presupuesto, revisión de Google, pausa deliberada).
+Se publique o no la causa, la tabla no se recorta: un caso que esconde la semana en cero
+es justo el tipo de dato maquillado que este cluster no puede permitirse.
+
+## Cifras (agosto 2026, 31 días, totales exactos)
+
+| Métrica | Agosto 2026 | Primeros 9 días (23–31 jul) |
 |---|---|---|
 | Inversión | $15,414 MXN | $3,778 MXN |
 | Contactos (WhatsApp + llamadas) | **97** | 11 |
@@ -20,13 +45,16 @@ La mayoría son clics a WhatsApp. **Se publica como "contactos", nunca como "cli
 | Clics | 249 | 105 |
 | Clics que terminan en contacto | **39%** | 10.5% |
 
-Por campaña:
+Por campaña (agosto):
 
 | Campaña | Inversión | Contactos | Costo por contacto |
 |---|---|---|---|
 | Clientes potenciales (principal) | $14,822 | 72 | $206 (venía de $343) |
 | Televisores | $592 | 25 | **$24** |
-| Puebla / Cuernavaca (expansión) | $0 | 0 | sin actividad |
+| Puebla / Cuernavaca | $0 | 0 | arrancaron en septiembre |
+
+Septiembre, primeros 4 días: Puebla $2,922 → 11 contactos ($266); Cuernavaca $822 → 1.
+El jueves 3 de septiembre, solo, trajo 32 contactos.
 
 Lo que muestra el resto de la exportación:
 
@@ -35,30 +63,32 @@ Lo que muestra el resto de la exportación:
 - **Mejor día:** lunes 17 de agosto, 29 contactos. Los lunes concentran el volumen (968 impresiones vs. 6 los miércoles): la gente descubre el aparato descompuesto el fin de semana y busca el lunes.
 - **Audiencia:** 35 a 64 años suma el 71% de las impresiones.
 - **Términos que convierten:** "técnico de refrigeradores", "lavadoras tecnico", "reparación de pantallas a domicilio", "reparacion pantallas hisense".
-- **Estructura:** los grupos de anuncios por tipo de servicio (técnicos, refrigeradores, lavadoras, televisores) pasaron de 0 contactos en la ventana de comparación a 26 / 11 / 9 / 25 en agosto. La segmentación por servicio es lo que se ve moverse en los datos.
+- **Estructura:** los grupos de anuncios por tipo de servicio (técnicos, refrigeradores, lavadoras, televisores) pasaron de 0 contactos en la primera ventana a 26 / 11 / 9 / 25 en agosto.
 
 ## Qué se puede afirmar y qué no
 
 **Sí:**
-- "En agosto de 2026, un centro de servicio de electrodomésticos en CDMX/Edomex que administramos recibió 97 contactos por WhatsApp y llamada con $15,414 MXN de inversión: $159 por contacto."
-- "Su campaña principal bajó el costo por contacto de $343 a $206."
-- "El 39% de quienes hicieron clic en el anuncio terminaron escribiendo o llamando."
+- "Una cuenta nueva de Google Ads para un centro de servicio de electrodomésticos en CDMX/Edomex pasó de 4 contactos en su primera semana a 44 en la segunda; la tasa de clics que terminan en contacto subió de 5% a 35%."
+- "En su segundo mes recibió 97 contactos por WhatsApp y llamada con $15,414 MXN: $159 por contacto."
+- "Su campaña principal bajó el costo por contacto de $343 a $206; la de televisores genera contactos a $24."
 - "Tiene un tercio de la cuota de impresiones de su mercado, por encima de los fabricantes."
 
-**No (todavía):**
+**No:**
 - Nada sobre ventas ni ingresos: un contacto no es una venta.
-- Nada sobre "antes de INDEXA": la ventana de comparación son 9 días de finales de julio, no el periodo previo a la administración. Para eso falta la exportación de 90 días antes / 90 días después de tomar la cuenta.
+- Nada sobre "antes de INDEXA" ni "un año después": la cuenta tiene seis semanas.
 - Nada sobre "todos nuestros clientes": es una cuenta.
+- Nada que omita la semana 5 en cero.
 
 ## Pendiente para cerrar el caso
 
-1. Confirmar el relato operativo: ¿la segmentación por tipo de servicio y la campaña de Televisores fueron cambios de agosto, o ya existían? Los datos sugieren lo primero (0 → contactos), pero el usuario lo sabe.
-2. Exportación de antes/después real: rango personalizado con los 90 días posteriores a tomar la cuenta contra los 90 anteriores (si la cuenta existía antes), o primeros 3 meses contra últimos 3 meses (si INDEXA la creó).
-3. Repetir la misma exportación para las otras 6 cuentas administradas: son la materia prima de los casos por industria y, con 7 cuentas de más de un año, del observatorio por industria (§8 del spec) que hoy está diferido.
+1. **¿Qué pasó del 20 al 26 de agosto?** Cero impresiones durante siete días.
+2. **Confirmar la fecha de creación de la cuenta** (¿23 de julio de 2026?) y si existió una cuenta anterior del mismo cliente cuyos datos sirvan como "antes" real.
+3. Confirmar el relato operativo: ¿la segmentación por tipo de servicio y la campaña de Televisores fueron cambios de agosto, o ya existían desde el arranque?
+4. Repetir la misma exportación para las otras 6 cuentas administradas.
 
 ## Dónde se usa
 
-- Guía `por-que-mi-campana-de-google-ads-no-vende`: el dato de 39% de clics → contacto y la segmentación por servicio.
+- Guía `por-que-mi-campana-de-google-ads-no-vende`: semana 1 → semana 2 (5% → 35%) y la segmentación por servicio.
 - Guía `cuanto-gastar-en-google-ads-negocio-local`: $15,414 → 97 contactos, $159 cada uno, como referencia de un negocio de servicio local.
 - Guía `que-es-roas-cpl-cpc-explicado-simple`: costo por contacto real ($159, $206, $24) para explicar el CPL con cifras de verdad.
-- Hub `/administracion-de-campanas`: la cuota de impresiones frente a fabricantes.
+- Hub `/administracion-de-campanas`: la cuota de impresiones frente a fabricantes y el arranque desde cero.
