@@ -1,0 +1,38 @@
+{
+  "casos": [
+    {
+      "slug": "centro-servicio-electrodomesticos-cdmx",
+      "mercado": "mx",
+      "industria": "Centro de servicio de electrodomésticos y pantallas",
+      "ciudad": "CDMX y Estado de México",
+      "anonimo": true,
+      "relacionDesde": "2025",
+      "fuente": "Exportación de Google Ads, 2026-09-04",
+      "definicionConversion": "Clic al botón de WhatsApp o llamada telefónica desde el anuncio",
+      "periodo": { "desde": "2026-08-01", "hasta": "2026-08-31" },
+      "comparacion": { "desde": "2026-07-23", "hasta": "2026-07-31" },
+      "metricas": {
+        "inversion": 15414,
+        "contactos": 97,
+        "costoPorContacto": 159,
+        "clics": 249,
+        "tasaContacto": 39.0,
+        "cuotaImpresiones": 33.75
+      },
+      "metricasComparacion": {
+        "inversion": 3778,
+        "contactos": 11,
+        "costoPorContacto": 343,
+        "clics": 105,
+        "tasaContacto": 10.5
+      },
+      "destacados": [
+        "La campaña principal bajó el costo por contacto de $343 a $206 MXN.",
+        "La campaña de televisores genera contactos a $24 MXN.",
+        "El 86% de la inversión llega desde móvil.",
+        "33.75% de cuota de impresiones, por encima de los fabricantes presentes en la subasta.",
+        "Los lunes concentran el volumen: el aparato se descompone el fin de semana y se busca el lunes."
+      ]
+    }
+  ]
+}
