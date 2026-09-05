@@ -37,7 +37,14 @@
 >   desde el módulo, flotante visible. Cerrado en `81e13cc` + `aff07a8`: `<title>` sin sufijo
 >   duplicado, `jsonLdHtml()` en ambos hubs, `lastModified` honesto en el sitemap (fecha fija
 >   para los hubs, `actualizado` para las guías) y la línea USA de `llms.txt` sin ambigüedad
->   de precio. Falta la Task 8 (guías semilla), a la espera de la validación del caso.
+>   de precio. **Task 8 parcial (`58f8b30`, `539b3e6`):** tres guías semilla publicadas
+>   (presupuesto, decisión, glosario), cada cifra rastreada al JSON del caso; la revisión de
+>   contenido detectó una atribución causal no confirmada ("bajó por el trabajo semanal…") y se
+>   reescribió como hecho fechado sin causa. La guía 1 (diagnóstico) sigue pendiente de las
+>   respuestas del usuario. Hubs afinados (`116d528`): títulos ≤64 chars renderizados,
+>   descripciones ≤160, `Organization` rica por `@id`, sin jerga, emojis `aria-hidden`.
+>   Fecha visible legible (`88995a7`). Verificado en `next dev`: hubs y guías renderizan con
+>   su JSON-LD completo.
 
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 

@@ -366,3 +366,14 @@ de un año; la cuenta de Google Ads, seis semanas. Por tanto:
   que el usuario explique la causa. No se recortan semanas en cero.
 - La comparación "año contra año" queda para las cuentas administradas que sí tengan
   historial; hay que preguntarlo por cuenta antes de pedir la exportación.
+
+### 14.3 Decisión abierta (2026-09-04): la frontera de precio en USA
+
+La revisión de calidad del hub USA detectó que `/usa` vende planes en USD ("Crecimiento"
+$997, "Dominio Local" $1,997) que **incluyen optimización semanal por especialista, asesor
+dedicado y llamadas de estrategia** — es decir, administración humana a precio fijo. Eso
+contradice la frontera del §3 ("sin precio fijo, se cotiza") tal como la enuncia el hub
+`/administracion-de-campanas-usa`, que enlaza a `/usa`. El hub ya no describe esos planes
+como puro autoservicio, pero la contradicción vive en `/usa`. **Requiere decisión del
+usuario:** o los planes USA se presentan como paquetes cerrados de administración (y el hub
+USA los cita como tales), o `/usa` deja de incluir administración humana en tiers fijos.
