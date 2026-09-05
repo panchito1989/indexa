@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { whatsappUrl } from "@/lib/contact";
 import { guiasAds } from "@/lib/guiasAdsData";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 const PAGE_PATH = "/administracion-de-campanas-usa";
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
@@ -184,7 +185,7 @@ export default function AdministracionDeCampanasUsaPage() {
     ],
   };
 
-  const jsonLd = JSON.stringify(graph).replace(/</g, "\\u003c");
+  const jsonLd = jsonLdHtml(graph);
 
   return (
     <>

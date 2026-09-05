@@ -6,6 +6,7 @@ import { whatsappUrl } from "@/lib/contact";
 import { planOfferMx } from "@/lib/pricing";
 import { guiasAds } from "@/lib/guiasAdsData";
 import { buscarCaso, formatoMXN } from "@/lib/casosAds";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 const PAGE_PATH = "/administracion-de-campanas";
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
@@ -175,7 +176,7 @@ export default function AdministracionDeCampanasPage() {
     ],
   };
 
-  const jsonLd = JSON.stringify(graph).replace(/</g, "\\u003c");
+  const jsonLd = jsonLdHtml(graph);
 
   return (
     <>
