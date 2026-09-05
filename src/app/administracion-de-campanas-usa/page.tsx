@@ -5,15 +5,16 @@ import Footer from "@/components/Footer";
 import { whatsappUrl } from "@/lib/contact";
 import { guiasAds } from "@/lib/guiasAdsData";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { indexaOrganization } from "@/lib/agenciaSeoSchemas";
 
 const PAGE_PATH = "/administracion-de-campanas-usa";
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Manejo de Anuncios de Google, Meta y TikTok Ads para Negocios Hispanos en USA",
+  title: "Manejo de Anuncios Google/Meta/TikTok en Español (USA)",
   description:
-    "INDEXA maneja tus anuncios de Google, Meta y TikTok Ads en Estados Unidos: estructura, presupuesto, creativos, medición de contactos y reporte mensual en español. La plataforma tiene planes en USD; que nuestro equipo opere tu cuenta se cotiza según tu inversión.",
+    "INDEXA maneja anuncios de Google, Meta y TikTok Ads para negocios hispanos en USA: presupuesto, creativos y reportes. Administrarlos se cotiza, sin tarifa fija.",
   keywords: [
     "manejo de anuncios para negocios hispanos usa",
     "quien administra mis campañas de google ads en usa",
@@ -119,12 +120,7 @@ export default function AdministracionDeCampanasUsaPage() {
   const graph = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization" as const,
-        "@id": organizationId,
-        name: "INDEXA",
-        url: SITE_URL,
-      },
+      indexaOrganization,
       {
         "@type": "Service" as const,
         "@id": `${pageUrl}#service`,
@@ -209,7 +205,7 @@ export default function AdministracionDeCampanasUsaPage() {
 
           <div className="relative mx-auto max-w-5xl px-4 pt-28 pb-20 sm:px-6 text-center lg:pt-32">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm">
-              <span>🇺🇸</span>
+              <span aria-hidden="true">🇺🇸</span>
               Manejo de anuncios · Google, Meta y TikTok Ads
             </div>
 
@@ -252,12 +248,13 @@ export default function AdministracionDeCampanasUsaPage() {
             <p className="text-sm font-bold uppercase tracking-wider text-indexa-orange">Cómo se cobra esto</p>
             <h2 className="mt-3 text-3xl font-extrabold sm:text-4xl">¿Cuánto cuesta que INDEXA maneje mis anuncios?</h2>
             <p className="mt-6 text-lg leading-relaxed text-white/80">
-              Aquí también separamos las dos cosas, para que sepas exactamente qué estás pagando.
+              INDEXA cobra dos cosas por separado: la plataforma (planes en dólares) y, si lo pides, que nuestro
+              equipo opere tu cuenta (sin tarifa fija).
             </p>
             <div className="mt-6 rounded-2xl border border-indexa-orange/30 bg-indexa-orange/10 p-6 sm:p-8">
               <p className="text-lg leading-relaxed text-white sm:text-xl">
-                La <strong>plataforma</strong> de INDEXA tiene planes en dólares, pensados para que tú mismo actives
-                y ajustes tus campañas con ayuda de IA — puedes ver todos los planes en{" "}
+                La <strong>plataforma</strong> de INDEXA tiene planes en dólares, con herramientas e IA para tus
+                campañas — puedes ver todos los planes en{" "}
                 <Link href="/usa" className="underline decoration-indexa-orange/60 underline-offset-4 hover:text-indexa-orange">
                   nuestra página para USA
                 </Link>
@@ -280,7 +277,7 @@ export default function AdministracionDeCampanasUsaPage() {
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {queIncluye.map((item) => (
                 <div key={item.titulo} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                  <div className="mb-4 text-3xl">{item.emoji}</div>
+                  <div className="mb-4 text-3xl"><span aria-hidden="true">{item.emoji}</span></div>
                   <h3 className="text-lg font-bold">{item.titulo}</h3>
                   <p className="mt-2 text-sm text-white/65">{item.desc}</p>
                 </div>
@@ -297,7 +294,7 @@ export default function AdministracionDeCampanasUsaPage() {
             <ul className="mt-8 space-y-4">
               {paraQuienEs.map((punto) => (
                 <li key={punto} className="flex items-start gap-3 text-white/85">
-                  <span className="mt-1 text-indexa-orange">✓</span>
+                  <span className="mt-1 text-indexa-orange" aria-hidden="true">✓</span>
                   <span className="text-lg leading-relaxed">{punto}</span>
                 </li>
               ))}
@@ -348,8 +345,8 @@ export default function AdministracionDeCampanasUsaPage() {
               </ul>
             ) : (
               <p className="mt-6 text-lg text-white/60">
-                Estamos publicando las primeras guías de este cluster para dueños de negocio hispanos en USA —
-                presupuesto en dólares, ROAS y cómo leer tu propia cuenta. Vuelve pronto.
+                Estamos publicando las primeras guías para dueños de negocio hispanos en USA — presupuesto en
+                dólares, ROAS y cómo leer tu propia cuenta. Vuelve pronto.
               </p>
             )}
           </div>
@@ -370,7 +367,10 @@ export default function AdministracionDeCampanasUsaPage() {
                 >
                   <summary className="flex cursor-pointer items-start justify-between gap-4 text-base font-bold text-white">
                     {q.pregunta}
-                    <span className="ml-2 mt-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/20 text-sm transition-transform group-open:rotate-45">
+                    <span
+                      className="ml-2 mt-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/20 text-sm transition-transform group-open:rotate-45"
+                      aria-hidden="true"
+                    >
                       +
                     </span>
                   </summary>

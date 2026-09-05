@@ -7,6 +7,7 @@ import { planOfferMx } from "@/lib/pricing";
 import { guiasAds } from "@/lib/guiasAdsData";
 import { buscarCaso, formatoMXN } from "@/lib/casosAds";
 import { jsonLdHtml } from "@/lib/jsonLd";
+import { indexaOrganization } from "@/lib/agenciaSeoSchemas";
 
 const PAGE_PATH = "/administracion-de-campanas";
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
@@ -15,7 +16,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   title: "Administración de Campañas de Google, Meta y TikTok Ads",
   description:
-    "INDEXA opera tus campañas de Google, Meta y TikTok Ads: estructura, presupuesto, creativos, medición de contactos y reporte mensual. La plataforma son $699 MXN/mes; que nosotros administremos tu cuenta se cotiza según tu inversión, partiendo de ahí.",
+    "INDEXA opera campañas de Google, Meta y TikTok Ads para PYMES en México: presupuesto, creativos y reportes. Administrar tu cuenta se cotiza, sin tarifa fija.",
   keywords: [
     "administracion de campañas de google ads",
     "administrar google ads meta ads y tiktok ads",
@@ -127,12 +128,7 @@ export default function AdministracionDeCampanasPage() {
   const graph = {
     "@context": "https://schema.org",
     "@graph": [
-      {
-        "@type": "Organization" as const,
-        "@id": organizationId,
-        name: "INDEXA",
-        url: SITE_URL,
-      },
+      indexaOrganization,
       {
         "@type": "Service" as const,
         "@id": `${pageUrl}#service`,
@@ -199,7 +195,7 @@ export default function AdministracionDeCampanasPage() {
 
           <div className="relative mx-auto max-w-5xl px-4 pt-28 pb-20 sm:px-6 text-center lg:pt-32">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-white/70 backdrop-blur-sm">
-              <span>📣</span>
+              <span aria-hidden="true">📣</span>
               Administración de campañas · Google, Meta y TikTok Ads
             </div>
 
@@ -244,7 +240,8 @@ export default function AdministracionDeCampanasPage() {
               ¿Cuánto cuesta que INDEXA administre mis campañas?
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-white/80">
-              Aquí conviene ser claros sobre qué pagas y por qué, porque son dos cosas distintas.
+              INDEXA cobra dos cosas por separado: la plataforma ($699 MXN/mes) y, si lo pides, que nosotros
+              operemos tu cuenta (sin tarifa fija).
             </p>
             <div className="mt-6 rounded-2xl border border-indexa-orange/30 bg-indexa-orange/10 p-6 sm:p-8">
               <p className="text-xl font-bold leading-relaxed text-white sm:text-2xl">
@@ -274,7 +271,7 @@ export default function AdministracionDeCampanasPage() {
             <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {queIncluye.map((item) => (
                 <div key={item.titulo} className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                  <div className="mb-4 text-3xl">{item.emoji}</div>
+                  <div className="mb-4 text-3xl"><span aria-hidden="true">{item.emoji}</span></div>
                   <h3 className="text-lg font-bold">{item.titulo}</h3>
                   <p className="mt-2 text-sm text-white/65">{item.desc}</p>
                 </div>
@@ -291,7 +288,7 @@ export default function AdministracionDeCampanasPage() {
             <ul className="mt-8 space-y-4">
               {paraQuienEs.map((punto) => (
                 <li key={punto} className="flex items-start gap-3 text-white/85">
-                  <span className="mt-1 text-indexa-orange">✓</span>
+                  <span className="mt-1 text-indexa-orange" aria-hidden="true">✓</span>
                   <span className="text-lg leading-relaxed">{punto}</span>
                 </li>
               ))}
@@ -343,7 +340,7 @@ export default function AdministracionDeCampanasPage() {
               </ul>
             ) : (
               <p className="mt-6 text-lg text-white/60">
-                Estamos publicando las primeras guías de este cluster — presupuesto, ROAS y cómo leer tu propia
+                Estamos publicando las primeras guías — presupuesto, ROAS y cómo leer tu propia
                 cuenta. Vuelve pronto.
               </p>
             )}
@@ -367,7 +364,10 @@ export default function AdministracionDeCampanasPage() {
                 >
                   <summary className="flex cursor-pointer items-start justify-between gap-4 text-base font-bold text-white">
                     {q.pregunta}
-                    <span className="ml-2 mt-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/20 text-sm transition-transform group-open:rotate-45">
+                    <span
+                      className="ml-2 mt-1 inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full border border-white/20 text-sm transition-transform group-open:rotate-45"
+                      aria-hidden="true"
+                    >
                       +
                     </span>
                   </summary>
