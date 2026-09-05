@@ -13,10 +13,10 @@
 > spec §14, el "dato propio" pasa de benchmarks agregados a **casos de éxito con cifras
 > reales** exportadas del panel admin (CSV por campaña). Por tanto:
 > - **Task 1**: hecha (`scripts/benchmarks-viability.mjs`, commit en PR #41).
-> - **Task 2** (módulo de benchmarks) y las partes de **Tasks 3, 5 y 8** que dependen de
->   celdas de benchmark quedan **suspendidas** y se reescriben alrededor de un módulo
->   de casos de éxito en cuanto llegue el primer CSV. No ejecutar esas partes tal cual.
-> - **Tasks 4, 6 y 7** (schema, hubs, sitemap/llms.txt) siguen vigentes.
+> - **Task 2** fue **reescrita**: módulo de casos de éxito (`src/lib/casosAds.ts`) en vez
+>   de benchmarks. Las Tasks 3, 5 y 8 ya apuntan a casos. Ver spec §14 y §14.1.
+> - El observatorio (benchmarks agregados) queda para un plan posterior, cuando existan las
+>   exportaciones de las 7 cuentas administradas.
 
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 
@@ -35,10 +35,9 @@ Si resulta que sólo hay 3 talleres en Monterrey, esa guía no puede llevar su d
 | Archivo | Responsabilidad |
 |---|---|
 | `scripts/benchmarks-viability.mjs` (nuevo) | Reporte de viabilidad: cuántas cuentas hay por celda y cuáles cruzan el mínimo. No escribe nada. |
-| `scripts/build-benchmarks.mjs` (nuevo) | Extrae y agrega métricas reales; escribe `src/data/benchmarks.json`. Se corre a mano cada trimestre. |
-| `src/data/benchmarks.json` (generado) | Salida de la agregación: celdas que cruzan el mínimo, con CPL/CPC/CTR y tamaño de muestra. |
-| `src/lib/benchmarks.ts` (nuevo) | Lectura tipada de `benchmarks.json` + helpers de consulta y formato. |
-| `src/lib/benchmarks.test.ts` (nuevo) | Contrato del módulo, incluido el corte de privacidad. |
+| `src/data/casos-ads.json` (nuevo) | Casos de éxito anonimizados con cifras reales de las cuentas administradas, capturados a mano desde la exportación de Google Ads. |
+| `src/lib/casosAds.ts` (nuevo) | Lectura tipada de `casos-ads.json`, búsqueda por slug, formato de pesos. |
+| `src/lib/casosAds.test.ts` (nuevo) | Contrato: todo caso es anónimo, sus cifras son consistentes y no trae datos identificables. |
 | `src/lib/guiasAdsData.ts` (nuevo) | Registro de las guías del cluster: slug, metadatos SEO, respuesta directa, secciones, FAQ, dato propio. |
 | `src/lib/guiasAdsData.test.ts` (nuevo) | Invariantes del registro: slugs únicos, campos obligatorios, sin choque con las guías estáticas. |
 | `src/lib/guiaSchemas.ts` (nuevo) | Constructores de JSON-LD (`Article`, `FAQPage`, `BreadcrumbList`) para una guía. |
@@ -193,259 +192,195 @@ git commit -m "feat: reporte de viabilidad de benchmarks por industria y ciudad"
 
 ---
 
-## Task 2: Módulo de benchmarks
+## Task 2: Módulo de casos de éxito
 
 **Files:**
-- Create: `scripts/build-benchmarks.mjs`
-- Create: `src/lib/benchmarks.ts`
-- Test: `src/lib/benchmarks.test.ts`
-- Create: `src/data/benchmarks.json`
+- Create: `src/data/casos-ads.json`
+- Create: `src/lib/casosAds.ts`
+- Test: `src/lib/casosAds.test.ts`
 
-**Depende del resultado de la Task 1.** Si el corte quedó por industria en vez de por `(industria, ciudad)`, el campo `ciudad` de `BenchmarkCelda` se vuelve opcional y el script agrega sin ella; todo lo demás no cambia.
+Reemplaza al módulo de benchmarks (spec §14). Un caso es **una cuenta real, anonimizada**,
+con cifras tomadas de la exportación nativa de Google Ads. No hay mínimo de muestra
+porque no es una estadística agregada: es una historia individual con consentimiento.
+
+**Reglas que el test hace cumplir:**
+- `anonimo: true` siempre, y ningún campo `nombre`, `customerId` ni `dominio`.
+- Las conversiones se llaman **`contactos`** (clic a WhatsApp o llamada), nunca ventas.
+- `costoPorContacto` debe coincidir con `inversion / contactos` (±2%): si alguien edita
+  una cifra a mano y no la otra, el test lo atrapa.
+- `definicionConversion` obligatoria: es lo que evita publicar "97 clientes".
 
 - [ ] **Step 1: Escribir el test que falla**
 
-Crear `src/lib/benchmarks.test.ts`:
+Crear `src/lib/casosAds.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { MIN_CUENTAS, buscarBenchmark, celdas, formatoMXN } from "./benchmarks";
+import { buscarCaso, casos, formatoMXN } from "./casosAds";
 
-describe("benchmarks", () => {
-  it("ninguna celda publicada baja del minimo de cuentas", () => {
-    const flojas = celdas().filter((c) => c.cuentas < MIN_CUENTAS);
-    expect(flojas.map((c) => `${c.industria}/${c.ciudad ?? "nacional"}`)).toEqual([]);
+const PROHIBIDOS = ["nombre", "customerId", "customer", "dominio", "telefono", "email"];
+
+describe("casos de exito de ads", () => {
+  it("hay al menos un caso", () => {
+    expect(casos().length).toBeGreaterThan(0);
   });
 
-  it("toda celda trae fecha de corte y metricas positivas", () => {
-    for (const c of celdas()) {
-      expect(c.corte).toMatch(/^\d{4}-\d{2}$/);
-      expect(c.cpl).toBeGreaterThan(0);
-      expect(c.cpc).toBeGreaterThan(0);
+  it("todo caso es anonimo y no trae datos identificables", () => {
+    for (const c of casos()) {
+      expect(c.anonimo).toBe(true);
+      for (const campo of PROHIBIDOS) {
+        expect(Object.keys(c)).not.toContain(campo);
+      }
     }
   });
 
-  it("busca por industria y ciudad, normalizando acentos y mayusculas", () => {
-    const todas = celdas();
-    if (todas.length === 0) return; // sin datos aún, el contrato se valida igual
-
-    const primera = todas[0];
-    const hallada = buscarBenchmark(
-      primera.industria.toUpperCase(),
-      primera.ciudad ? `${primera.ciudad.toUpperCase()}` : undefined
-    );
-    expect(hallada?.industria).toBe(primera.industria);
+  it("las cifras son consistentes entre si", () => {
+    for (const c of casos()) {
+      const esperado = c.metricas.inversion / c.metricas.contactos;
+      const desvio = Math.abs(c.metricas.costoPorContacto - esperado) / esperado;
+      expect(desvio).toBeLessThan(0.02);
+      expect(c.metricas.contactos).toBeGreaterThan(0);
+      expect(c.metricas.clics).toBeGreaterThanOrEqual(c.metricas.contactos);
+    }
   });
 
-  it("devuelve null cuando no hay dato, en vez de inventarlo", () => {
-    expect(buscarBenchmark("industria-que-no-existe", "ciudad-que-no-existe")).toBeNull();
+  it("declara que es una conversion y en que periodo", () => {
+    for (const c of casos()) {
+      expect(c.definicionConversion.length).toBeGreaterThan(10);
+      expect(c.periodo.desde).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(c.periodo.hasta).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(c.periodo.desde < c.periodo.hasta).toBe(true);
+    }
+  });
+
+  it("busca por slug y devuelve null si no existe", () => {
+    const primero = casos()[0];
+    expect(buscarCaso(primero.slug)?.slug).toBe(primero.slug);
+    expect(buscarCaso("no-existe")).toBeNull();
   });
 
   it("formatea pesos sin decimales", () => {
-    expect(formatoMXN(118)).toBe("$118 MXN");
-    expect(formatoMXN(1180.4)).toBe("$1,180 MXN");
+    expect(formatoMXN(159)).toBe("$159 MXN");
+    expect(formatoMXN(15414.3)).toBe("$15,414 MXN");
   });
 });
 ```
 
 - [ ] **Step 2: Correr el test para verificar que falla**
 
-Run: `npx vitest run src/lib/benchmarks.test.ts`
-Expected: FAIL — no existe `./benchmarks`.
+Run: `npx vitest run src/lib/casosAds.test.ts`
+Expected: FAIL — no existe `./casosAds`.
 
-- [ ] **Step 3: Crear el archivo de datos vacío**
+- [ ] **Step 3: Crear el archivo de datos con el primer caso**
 
-Crear `src/data/benchmarks.json` con la forma final, sin celdas todavía:
+Crear `src/data/casos-ads.json` (cifras del borrador
+`docs/superpowers/casos/2026-09-04-centro-servicio-electrodomesticos-cdmx.md`):
 
 ```json
 {
-  "corte": "2026-09",
-  "minCuentas": 5,
-  "metodologia": "Promedio y mediana de las cuentas de Google Ads administradas por INDEXA en el trimestre indicado. Sólo se publican celdas con al menos 5 cuentas. Datos agregados: ninguna cuenta individual es identificable.",
-  "celdas": []
+  "casos": [
+    {
+      "slug": "centro-servicio-electrodomesticos-cdmx",
+      "mercado": "mx",
+      "industria": "Centro de servicio de electrodomésticos y pantallas",
+      "ciudad": "CDMX y Estado de México",
+      "anonimo": true,
+      "relacionDesde": "2025",
+      "fuente": "Exportación de Google Ads, 2026-09-04",
+      "definicionConversion": "Clic al botón de WhatsApp o llamada telefónica desde el anuncio",
+      "periodo": { "desde": "2026-08-01", "hasta": "2026-08-31" },
+      "comparacion": { "desde": "2026-07-23", "hasta": "2026-07-31" },
+      "metricas": {
+        "inversion": 15414,
+        "contactos": 97,
+        "costoPorContacto": 159,
+        "clics": 249,
+        "tasaContacto": 39.0,
+        "cuotaImpresiones": 33.75
+      },
+      "metricasComparacion": {
+        "inversion": 3778,
+        "contactos": 11,
+        "costoPorContacto": 343,
+        "clics": 105,
+        "tasaContacto": 10.5
+      },
+      "destacados": [
+        "La campaña principal bajó el costo por contacto de $343 a $206 MXN.",
+        "La campaña de televisores genera contactos a $24 MXN.",
+        "El 86% de la inversión llega desde móvil.",
+        "33.75% de cuota de impresiones, por encima de los fabricantes presentes en la subasta.",
+        "Los lunes concentran el volumen: el aparato se descompone el fin de semana y se busca el lunes."
+      ]
+    }
+  ]
 }
 ```
 
 - [ ] **Step 4: Escribir el módulo**
 
-Crear `src/lib/benchmarks.ts`:
+Crear `src/lib/casosAds.ts`:
 
 ```ts
-import datos from "@/data/benchmarks.json";
+import datos from "@/data/casos-ads.json";
 
-/** Mínimo de cuentas por celda para publicar el dato (spec §8.2). */
-export const MIN_CUENTAS = 5;
+export interface CasoMetricas {
+  /** MXN, sin decimales. */
+  inversion: number;
+  /** Clics a WhatsApp + llamadas. NUNCA "clientes" ni "ventas". */
+  contactos: number;
+  /** inversion / contactos, redondeado. El test exige consistencia. */
+  costoPorContacto: number;
+  clics: number;
+  /** contactos / clics × 100. */
+  tasaContacto: number;
+  /** Porcentaje de cuota de impresiones, si la exportación lo trae. */
+  cuotaImpresiones?: number;
+}
 
-export interface BenchmarkCelda {
+export interface CasoAds {
+  slug: string;
+  mercado: "mx" | "usa";
   industria: string;
-  /** Ausente cuando el agregado es nacional por industria. */
-  ciudad?: string;
-  /** Cuentas en la muestra. Nunca menor a MIN_CUENTAS. */
-  cuentas: number;
-  /** Costo por lead promedio, MXN. */
-  cpl: number;
-  /** Costo por clic promedio, MXN. */
-  cpc: number;
-  /** Click-through rate, porcentaje (2.4 = 2.4%). */
-  ctr: number;
-  /** Corte del dato, "YYYY-MM". */
-  corte: string;
+  ciudad: string;
+  /** Siempre true: se publica sin nombre ni identificadores. */
+  anonimo: true;
+  relacionDesde: string;
+  fuente: string;
+  definicionConversion: string;
+  periodo: { desde: string; hasta: string };
+  comparacion?: { desde: string; hasta: string };
+  metricas: CasoMetricas;
+  metricasComparacion?: CasoMetricas;
+  destacados: string[];
 }
 
-interface ArchivoBenchmarks {
-  corte: string;
-  minCuentas: number;
-  metodologia: string;
-  celdas: BenchmarkCelda[];
+const archivo = datos as { casos: CasoAds[] };
+
+export function casos(): CasoAds[] {
+  return archivo.casos;
 }
 
-const archivo = datos as ArchivoBenchmarks;
-
-export const metodologia = archivo.metodologia;
-export const corteGlobal = archivo.corte;
-
-export function celdas(): BenchmarkCelda[] {
-  return archivo.celdas;
+export function buscarCaso(slug: string): CasoAds | null {
+  return archivo.casos.find((c) => c.slug === slug) ?? null;
 }
 
-function normaliza(valor: string): string {
-  return valor
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "");
-}
-
-/**
- * Busca el benchmark de una industria (y opcionalmente una ciudad).
- *
- * Devuelve `null` si no hay dato: las guías deben degradar el texto, nunca
- * inventar una cifra. Un dato falso en una página que los modelos citan es
- * peor que no tener dato.
- */
-export function buscarBenchmark(
-  industria: string,
-  ciudad?: string
-): BenchmarkCelda | null {
-  const i = normaliza(industria);
-  const c = ciudad ? normaliza(ciudad) : undefined;
-
-  return (
-    archivo.celdas.find(
-      (celda) =>
-        normaliza(celda.industria) === i &&
-        (c === undefined
-          ? celda.ciudad === undefined
-          : celda.ciudad !== undefined && normaliza(celda.ciudad) === c)
-    ) ?? null
-  );
-}
-
-/** "$118 MXN" — sin decimales, con separador de miles. */
+/** "$159 MXN" — sin decimales, con separador de miles. */
 export function formatoMXN(monto: number): string {
   return `$${Math.round(monto).toLocaleString("en-US")} MXN`;
 }
 ```
 
-Nota: `resolveJsonModule` ya está activo en el `tsconfig.json` de Next; si el import de JSON falla, verificarlo antes de cambiar el diseño.
-
 - [ ] **Step 5: Correr el test para verificar que pasa**
 
-Run: `npx vitest run src/lib/benchmarks.test.ts`
-Expected: PASS, 5 tests (con `celdas: []` los tres primeros pasan por vacuidad — es correcto: el contrato queda fijado antes de que existan datos).
+Run: `npx vitest run src/lib/casosAds.test.ts`
+Expected: PASS, 6 tests.
 
-- [ ] **Step 6: Escribir el script de construcción**
-
-Crear `scripts/build-benchmarks.mjs`. Reutiliza el cruce de la Task 1 y añade la consulta de métricas:
-
-```js
-/**
- * Construye src/data/benchmarks.json desde las cuentas administradas.
- *
- * Uso: node scripts/build-benchmarks.mjs
- * Se corre A MANO cada trimestre. No es un cron: publicar datos agregados de
- * clientes merece una revisión humana antes de salir.
- */
-import "dotenv/config";
-import { writeFileSync } from "node:fs";
-import path from "node:path";
-import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
-
-const MIN_CUENTAS = 5;
-const SALIDA = path.resolve("src/data/benchmarks.json");
-
-function db() {
-  if (!getApps().length) {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!raw) throw new Error("Falta FIREBASE_SERVICE_ACCOUNT_KEY");
-    initializeApp({ credential: cert(JSON.parse(raw)) });
-  }
-  return getFirestore();
-}
-
-function normaliza(valor) {
-  return (valor || "").toString().trim().toLowerCase()
-    .normalize("NFD").replace(/[̀-ͯ]/g, "");
-}
-
-function promedio(valores) {
-  return valores.reduce((a, b) => a + b, 0) / valores.length;
-}
-
-async function main() {
-  const firestore = db();
-
-  // Métricas por cuenta:
-  //   import { getGoogleAdsContext, getReporting } from "../src/lib/googleAdsClient.js";
-  //   const { accessToken, customerId, loginCustomerId } = await getGoogleAdsContext(uid);
-  //   const filas = await getReporting(customerId, { accessToken, loginCustomerId }, "LAST_90_DAYS");
-  //
-  // getReporting devuelve una fila por campaña y fecha, con:
-  //   metrics.costMicros, metrics.clicks, metrics.impressions, metrics.conversions
-  //
-  // ⚠️ costMicros viene en MICROS: hay que dividir entre 1_000_000 para
-  // obtener pesos. Olvidarlo produce cifras un millón de veces mayores, que
-  // es exactamente el tipo de dato falso que este cluster no puede publicar.
-  //
-  // Agregación por celda, sumando primero y dividiendo después (ponderado,
-  // para que una cuenta chica no distorsione el promedio):
-  //   costo   = suma(costMicros) / 1_000_000
-  //   cpl     = costo / suma(conversions)
-  //   cpc     = costo / suma(clicks)
-  //   ctr     = suma(clicks) / suma(impressions) * 100
-  //
-  // Descartar cuentas con conversions === 0 del cálculo de CPL (dividirían
-  // entre cero) pero contarlas en `cuentas` sólo si aportan a cpc/ctr; si una
-  // celda se queda con menos de MIN_CUENTAS con conversiones, no publica CPL.
-
-  const celdas = []; // ← poblar con la agregación descrita arriba
-
-  const salida = {
-    corte: new Date().toISOString().slice(0, 7),
-    minCuentas: MIN_CUENTAS,
-    metodologia:
-      "Promedio ponderado de las cuentas de Google Ads administradas por INDEXA en los últimos 90 días. Sólo se publican celdas con al menos 5 cuentas. Datos agregados: ninguna cuenta individual es identificable.",
-    celdas: celdas.filter((c) => c.cuentas >= MIN_CUENTAS),
-  };
-
-  writeFileSync(SALIDA, JSON.stringify(salida, null, 2) + "\n", "utf8");
-  console.log(`Escritas ${salida.celdas.length} celdas en ${SALIDA}`);
-}
-
-main().catch((err) => {
-  console.error("Falló la construcción:", err.message);
-  process.exit(1);
-});
-```
-
-**Al implementar este script, completa la agregación** siguiendo el comentario, usando `getReporting` de `src/lib/googleAdsClient.ts` y `getGoogleAdsContext(uid)` para autenticar por usuario. Si la forma real de `getReporting` no encaja con lo descrito, repórtalo antes de improvisar otra fuente de métricas.
-
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```bash
-git add scripts/build-benchmarks.mjs src/lib/benchmarks.ts src/lib/benchmarks.test.ts src/data/benchmarks.json
-git commit -m "feat: modulo de benchmarks con corte de privacidad de 5 cuentas"
+git add src/data/casos-ads.json src/lib/casosAds.ts src/lib/casosAds.test.ts
+git commit -m "feat: modulo de casos de exito anonimizados con cifras reales"
 ```
 
 ---
@@ -506,9 +441,10 @@ describe("guiasAds", () => {
     }
   });
 
-  it("toda guia declara de que celda de benchmark sale su dato propio", () => {
+  it("toda guia declara que caso respalda su dato propio", () => {
     for (const g of guiasAds) {
-      expect(g.datoPropio.industria.length).toBeGreaterThan(0);
+      expect(g.datoPropio.caso.length).toBeGreaterThan(0);
+      expect(g.datoPropio.plantilla).toMatch(/\{(inversion|contactos|costoPorContacto|tasaContacto)\}/);
     }
   });
 
@@ -559,14 +495,12 @@ export interface GuiaFAQ {
 }
 
 export interface GuiaDatoPropio {
-  /** Industria de la celda de benchmark que respalda la guía. */
-  industria: string;
-  /** Ciudad, si el corte es por ciudad. */
-  ciudad?: string;
+  /** Slug del caso en `src/data/casos-ads.json` que respalda la guía. */
+  caso: string;
   /**
-   * Frase que envuelve la cifra. `{cpl}`, `{cpc}`, `{ctr}` y `{cuentas}` se
-   * sustituyen con el benchmark. Si no hay dato para la celda, la página
-   * omite el bloque entero en vez de inventar una cifra.
+   * Frase que envuelve las cifras. Placeholders: `{inversion}`, `{contactos}`,
+   * `{costoPorContacto}`, `{tasaContacto}`, `{industria}`, `{ciudad}`.
+   * Si el caso no existe, la página omite el bloque entero: nunca inventa.
    */
   plantilla: string;
 }
@@ -650,7 +584,7 @@ const guia: GuiaAds = {
     { pregunta: "¿Pausar la campaña ayuda?", respuesta: "..." },
     { pregunta: "¿Conviene subir el presupuesto?", respuesta: "..." },
   ],
-  datoPropio: { industria: "taller mecanico", plantilla: "..." },
+  datoPropio: { caso: "centro-servicio-electrodomesticos-cdmx", plantilla: "{contactos} contactos" },
   hermanas: [],
   casoExito: null,
   actualizado: "2026-09",
@@ -772,7 +706,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { buscarBenchmark, formatoMXN, metodologia } from "@/lib/benchmarks";
+import { buscarCaso, formatoMXN } from "@/lib/casosAds";
 import { buscarGuia, guiasAds } from "@/lib/guiasAdsData";
 import { buildGuiaGraph } from "@/lib/guiaSchemas";
 
@@ -806,16 +740,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-/** Sustituye {cpl}/{cpc}/{ctr}/{cuentas} con el benchmark de la celda. */
-function renderDatoPropio(guia: NonNullable<ReturnType<typeof buscarGuia>>): string | null {
-  const celda = buscarBenchmark(guia.datoPropio.industria, guia.datoPropio.ciudad);
-  if (!celda) return null; // sin dato, no se inventa nada: se omite el bloque
+/** Sustituye los placeholders con las cifras del caso. Sin caso, no hay bloque. */
+function renderDatoPropio(guia: NonNullable<ReturnType<typeof buscarGuia>>): { texto: string; nota: string } | null {
+  const caso = buscarCaso(guia.datoPropio.caso);
+  if (!caso) return null; // nunca se inventa una cifra
 
-  return guia.datoPropio.plantilla
-    .replace("{cpl}", formatoMXN(celda.cpl))
-    .replace("{cpc}", formatoMXN(celda.cpc))
-    .replace("{ctr}", `${celda.ctr.toFixed(1)}%`)
-    .replace("{cuentas}", String(celda.cuentas));
+  const m = caso.metricas;
+  const texto = guia.datoPropio.plantilla
+    .replace("{inversion}", formatoMXN(m.inversion))
+    .replace("{contactos}", String(m.contactos))
+    .replace("{costoPorContacto}", formatoMXN(m.costoPorContacto))
+    .replace("{tasaContacto}", `${m.tasaContacto.toFixed(0)}%`)
+    .replace("{industria}", caso.industria.toLowerCase())
+    .replace("{ciudad}", caso.ciudad);
+
+  const nota = `Cuenta real administrada por INDEXA, anonimizada. Periodo ${caso.periodo.desde} a ${caso.periodo.hasta}. Contacto = ${caso.definicionConversion.toLowerCase()}. Fuente: ${caso.fuente}.`;
+  return { texto, nota };
 }
 
 export default async function GuiaAdsPage({ params }: PageProps) {
@@ -856,8 +796,8 @@ export default async function GuiaAdsPage({ params }: PageProps) {
 
         {dato && (
           <aside className="mt-6 rounded-xl border-l-4 border-indexa-orange bg-orange-50/60 p-5">
-            <p className="text-gray-800">{dato}</p>
-            <p className="mt-2 text-xs text-gray-500">{metodologia}</p>
+            <p className="text-gray-800">{dato.texto}</p>
+            <p className="mt-2 text-xs text-gray-500">{dato.nota}</p>
           </aside>
         )}
 
@@ -1080,16 +1020,16 @@ git commit -m "feat: sitemap y llms.txt derivan el cluster del registro"
 
 Cuatro guías MX, una por familia, que prueban el motor completo. Las 16 restantes van en el plan siguiente.
 
-**Antes de escribir, revisa el reporte de la Task 1** para saber qué celdas de benchmark tienen datos. Cada guía debe apuntar su `datoPropio` a una celda **que exista**. Si la celda que le toca no llegó al mínimo, díselo al controlador en vez de apuntar a otra industria para que "cuadre" — el dato tiene que ser el que corresponde al tema de la guía.
+**Cada guía apunta su `datoPropio` a un caso que exista en `src/data/casos-ads.json`.** Hoy hay uno (`centro-servicio-electrodomesticos-cdmx`). Si una guía necesita una cifra que ese caso no tiene, díselo al controlador en vez de forzar la plantilla — el dato tiene que corresponder al tema de la guía.
 
 Las cuatro, con su brief:
 
-| Slug | Familia | Pregunta que responde | Celda de benchmark |
+| Slug | Familia | Pregunta que responde | Cifra del caso que usa |
 |---|---|---|---|
-| `por-que-mi-campana-de-google-ads-no-vende` | diagnóstico | ¿Por qué gasto y no vendo? Las cuatro causas, cómo distinguirlas con números de la propia cuenta | La industria con más cuentas disponibles |
-| `cuanto-gastar-en-google-ads-negocio-local` | presupuesto | ¿Cuánto presupuesto necesito para que funcione? Piso realista por industria y qué esperar de cada rango | La misma industria, para poder citar CPL real |
-| `administrar-google-ads-yo-mismo-o-contratar` | decisión | ¿Me conviene aprender o que alguien me lo maneje? Costo real en horas vs. costo del servicio | Cualquiera con datos; el dato aquí es el CPL promedio administrado |
-| `que-es-roas-cpl-cpc-explicado-simple` | traducción | ¿Qué significan estas siglas? Cada una con la cifra real de referencia | La misma industria, para dar referencia concreta |
+| `por-que-mi-campana-de-google-ads-no-vende` | diagnóstico | ¿Por qué gasto y no vendo? Las cuatro causas, cómo distinguirlas con números de la propia cuenta | 39% de clics que terminan en contacto; segmentación por servicio |
+| `cuanto-gastar-en-google-ads-negocio-local` | presupuesto | ¿Cuánto presupuesto necesito para que funcione? Piso realista por industria y qué esperar de cada rango | $15,414 → 97 contactos, $159 cada uno |
+| `administrar-google-ads-yo-mismo-o-contratar` | decisión | ¿Me conviene aprender o que alguien me lo maneje? Costo real en horas vs. costo del servicio | Costo por contacto $343 → $206 tras la reestructura |
+| `que-es-roas-cpl-cpc-explicado-simple` | traducción | ¿Qué significan estas siglas? Cada una con la cifra real de referencia | $159 / $206 / $24 como CPL reales para explicar la sigla |
 
 **Requisitos por guía** (los verifica el test de la Task 3):
 
@@ -1099,15 +1039,15 @@ Las cuatro, con su brief:
 - `hermanas` apuntando a 2 de las otras tres.
 - `casoExito` con el ancla del caso de esa industria en `/casos-de-exito`, o `null` si no hay caso publicado. **Léela primero**: abre `src/app/casos-de-exito/page.tsx` y comprueba qué anclas existen de verdad; un ancla inventada produce un enlace roto.
 - `actualizado: "2026-09"`.
-- `datoPropio.plantilla` que use al menos un placeholder (`{cpl}`, `{cpc}`, `{ctr}`, `{cuentas}`) y mencione el tamaño de muestra.
+- `datoPropio.plantilla` que use al menos un placeholder (`{inversion}`, `{contactos}`, `{costoPorContacto}`, `{tasaContacto}`) y llame a las conversiones **contactos**.
 
 Ejemplo de `datoPropio` bien formado:
 
 ```ts
   datoPropio: {
-    industria: "taller mecanico",
+    caso: "centro-servicio-electrodomesticos-cdmx",
     plantilla:
-      "En las {cuentas} cuentas de talleres mecánicos que administramos, el costo por lead promedio es {cpl} y el clic promedio cuesta {cpc}. Una cuenta con las conversiones mal medidas no aparece en este promedio porque, literalmente, no sabe cuántos leads generó.",
+      "En agosto de 2026, un {industria} en {ciudad} que administramos invirtió {inversion} y recibió {contactos} contactos por WhatsApp y llamada: {costoPorContacto} por contacto, con {tasaContacto} de los clics terminando en un mensaje.",
   },
 ```
 
@@ -1140,8 +1080,8 @@ git commit -m "feat: cuatro guias semilla del cluster de administracion de campa
 ## Criterios de aceptación de la Fase 1
 
 - El reporte de viabilidad corre y dice cuántas celdas tienen datos suficientes.
-- `src/data/benchmarks.json` no contiene ninguna celda con menos de 5 cuentas.
-- Ninguna guía muestra una cifra inventada: sin benchmark, el bloque de dato propio se omite.
+- Todo caso en `src/data/casos-ads.json` es anónimo y sus cifras son consistentes (lo exige el test).
+- Ninguna guía muestra una cifra inventada: sin caso, el bloque de dato propio se omite.
 - Las 16 guías estáticas anteriores siguen sirviéndose igual que antes.
 - `/guia/[slug]` genera las 4 guías semilla como estáticas.
 - Los dos hubs existen, declaran la frontera de precio y no inventan cifra para el servicio administrado.
