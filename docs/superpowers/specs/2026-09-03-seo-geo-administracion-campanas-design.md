@@ -352,3 +352,17 @@ $15,414 MXN → 97 contactos, $159 por contacto, 39% de clics que terminan en co
 **Consecuencia para §8:** con 7 cuentas de más de un año, el observatorio **por industria**
 (sin ciudad) vuelve a ser posible una vez exportadas todas; el corte de 5 cuentas por
 celda se mantiene. Sigue diferido hasta tener las 7 exportaciones.
+
+### 14.2 Corrección (2026-09-04, noche): la cuenta del primer caso es nueva
+
+Google Ads no permite comparar la cuenta del primer caso contra periodos anteriores porque
+**su primer día con datos es el 23 de julio de 2026**. La relación con el cliente lleva más
+de un año; la cuenta de Google Ads, seis semanas. Por tanto:
+
+- El caso **no** puede contarse como "antes y después de INDEXA". Se cuenta como arranque
+  desde cero: semana 1, 4 contactos y 5% de clics que terminan en contacto; semana 2, 44
+  contactos y 35%; segundo mes, 97 contactos a $159.
+- La semana del 20 al 26 de agosto tiene **cero impresiones** y se publica tal cual hasta
+  que el usuario explique la causa. No se recortan semanas en cero.
+- La comparación "año contra año" queda para las cuentas administradas que sí tengan
+  historial; hay que preguntarlo por cuenta antes de pedir la exportación.
