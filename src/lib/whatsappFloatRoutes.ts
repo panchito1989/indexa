@@ -1,3 +1,5 @@
+import { bajoPrefijo } from "./rutas";
+
 /**
  * ¿Se muestra el botón flotante de WhatsApp de INDEXA en esta ruta?
  *
@@ -20,7 +22,5 @@ const HIDDEN_PREFIXES = [
 ];
 
 export function showsWhatsAppFloat(pathname: string): boolean {
-  return !HIDDEN_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-  );
+  return !HIDDEN_PREFIXES.some((prefix) => bajoPrefijo(pathname, prefix));
 }

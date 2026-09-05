@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { bajoPrefijo } from "@/lib/rutas";
 
 /**
  * Middleware:
@@ -85,7 +86,7 @@ export function middleware(request: NextRequest) {
 
   // ── 1. Maintenance Mode ────────────────────────────────────────────
   if (MAINTENANCE_MODE) {
-    const isBypassed = MAINTENANCE_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+    const isBypassed = MAINTENANCE_BYPASS_PREFIXES.some((p) => bajoPrefijo(pathname, p));
     const adminBypass = !!authCookie && roleCookie === "superadmin";
 
     if (!isBypassed && !adminBypass) {
@@ -100,7 +101,7 @@ export function middleware(request: NextRequest) {
     request.headers.get("Next-Router-State-Tree") !== null;
 
   // ── 2. Admin Auth Gate — superadmin only ───────────────────────────
-  if (pathname.startsWith("/admin")) {
+  if (bajoPrefijo(pathname, "/admin")) {
     if (PUBLIC_ADMIN_PATHS.some((p) => pathname === p)) {
       return NextResponse.next();
     }
@@ -134,7 +135,7 @@ export function middleware(request: NextRequest) {
   }
 
   // ── 3. Agency Auth Gate — agency (or superadmin) only ──────────────
-  if (pathname.startsWith("/agency")) {
+  if (bajoPrefijo(pathname, "/agency")) {
     if (!authCookie) {
       if (isRSC) return NextResponse.next();
       const loginUrl = new URL("/admin/login", request.url);
