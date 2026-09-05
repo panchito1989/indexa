@@ -10,7 +10,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Manejo de Anuncios de Google, Meta y TikTok Ads para Negocios Hispanos en USA | INDEXA",
+  title: "Manejo de Anuncios de Google, Meta y TikTok Ads para Negocios Hispanos en USA",
   description:
     "INDEXA maneja tus anuncios de Google, Meta y TikTok Ads en Estados Unidos: estructura, presupuesto, creativos, medición de contactos y reporte mensual en español. La plataforma tiene planes en USD; que nuestro equipo opere tu cuenta se cotiza según tu inversión.",
   keywords: [

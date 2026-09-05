@@ -60,7 +60,7 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 
 ### Administración de campañas publicitarias
 - [/administracion-de-campanas](https://indexaia.com/administracion-de-campanas): Servicio done-for-you en México — INDEXA opera Google Ads, Meta Ads y TikTok Ads del cliente. Se cotiza según la inversión publicitaria.
-- [/administracion-de-campanas-usa](https://indexaia.com/administracion-de-campanas-usa): El mismo servicio para negocios hispanos en Estados Unidos, en español, con precios en USD.
+- [/administracion-de-campanas-usa](https://indexaia.com/administracion-de-campanas-usa): El mismo servicio para negocios hispanos en Estados Unidos, en español. Tampoco tiene precio fijo: se cotiza según la inversión publicitaria. La plataforma, aparte, tiene planes en USD.
 
 ### Servicios detallados
 - [/servicios/sitios-web-ia](https://indexaia.com/servicios/sitios-web-ia): Páginas web generadas con IA

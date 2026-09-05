@@ -12,7 +12,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Administración de Campañas de Google, Meta y TikTok Ads | INDEXA",
+  title: "Administración de Campañas de Google, Meta y TikTok Ads",
   description:
     "INDEXA opera tus campañas de Google, Meta y TikTok Ads: estructura, presupuesto, creativos, medición de contactos y reporte mensual. La plataforma son $699 MXN/mes; que nosotros administremos tu cuenta se cotiza según tu inversión, partiendo de ahí.",
   keywords: [
