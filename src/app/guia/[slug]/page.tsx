@@ -3,9 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { buscarCaso, formatoMXN } from "@/lib/casosAds";
+import { renderDatoPropio } from "@/lib/datoPropio";
 import { buscarGuia, guiasAds } from "@/lib/guiasAdsData";
 import { buildGuiaGraph } from "@/lib/guiaSchemas";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
@@ -37,24 +38,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-/** Sustituye los placeholders con las cifras del caso. Sin caso, no hay bloque. */
-function renderDatoPropio(guia: NonNullable<ReturnType<typeof buscarGuia>>): { texto: string; nota: string } | null {
-  const caso = buscarCaso(guia.datoPropio.caso);
-  if (!caso) return null; // nunca se inventa una cifra
-
-  const m = caso.metricas;
-  const texto = guia.datoPropio.plantilla
-    .replace("{inversion}", formatoMXN(m.inversion))
-    .replace("{contactos}", String(m.contactos))
-    .replace("{costoPorContacto}", formatoMXN(m.costoPorContacto))
-    .replace("{tasaContacto}", `${m.tasaContacto.toFixed(0)}%`)
-    .replace("{industria}", caso.industria.toLowerCase())
-    .replace("{ciudad}", caso.ciudad);
-
-  const nota = `Cuenta real administrada por INDEXA, anonimizada. Periodo ${caso.periodo.desde} a ${caso.periodo.hasta}. Contacto = ${caso.definicionConversion.toLowerCase()}. Fuente: ${caso.fuente}.`;
-  return { texto, nota };
-}
-
 export default async function GuiaAdsPage({ params }: PageProps) {
   const { slug } = await params;
   const guia = buscarGuia(slug);
@@ -69,12 +52,12 @@ export default async function GuiaAdsPage({ params }: PageProps) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(buildGuiaGraph(guia, SITE_URL)) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(buildGuiaGraph(guia, SITE_URL)) }}
       />
       <Header />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-        <nav className="mb-6 text-sm text-gray-500">
+        <nav aria-label="Breadcrumb" className="mb-6 text-sm text-gray-500">
           <Link href="/guia" className="hover:text-indexa-orange">Guías</Link>
           <span className="mx-2">/</span>
           <span>{guia.h1}</span>
@@ -92,7 +75,10 @@ export default async function GuiaAdsPage({ params }: PageProps) {
         </p>
 
         {dato && (
-          <aside className="mt-6 rounded-xl border-l-4 border-indexa-orange bg-orange-50/60 p-5">
+          <aside
+            aria-label="Dato de una cuenta real administrada por INDEXA"
+            className="mt-6 rounded-xl border-l-4 border-indexa-orange bg-orange-50/60 p-5"
+          >
             <p className="text-gray-800">{dato.texto}</p>
             <p className="mt-2 text-xs text-gray-500">{dato.nota}</p>
           </aside>

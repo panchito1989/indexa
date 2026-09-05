@@ -9,7 +9,10 @@
 export interface GuiaSeccion {
   /** Encabezado. Debe ser la pregunta literal que responde (spec §5.3). */
   titulo: string;
-  /** Párrafos. Markdown mínimo: sólo **negritas** y saltos de línea. */
+  /**
+   * Párrafos en texto plano: la página los renderiza tal cual, sin markdown.
+   * Para destacar algo, sepáralo en su propia sección, lista o tabla.
+   */
   parrafos: string[];
   /** Lista numerada de pasos, opcional. */
   pasos?: string[];
