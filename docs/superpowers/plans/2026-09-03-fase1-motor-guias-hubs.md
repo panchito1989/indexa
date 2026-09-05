@@ -17,6 +17,13 @@
 >   de benchmarks. Las Tasks 3, 5 y 8 ya apuntan a casos. Ver spec §14 y §14.1.
 > - El observatorio (benchmarks agregados) queda para un plan posterior, cuando existan las
 >   exportaciones de las 7 cuentas administradas.
+> - **Ejecutado (2026-09-04):** Tasks 2, 3 y 4 commiteadas (`845b971`, `8d3763c`, `5e9d1ec`)
+>   con estos ajustes salidos de las revisiones: `validarGuia()` en el registro concentra las
+>   reglas del spec §5 y el test las prueba con fixtures buenos y malos (`b70c7ee`); un
+>   placeholder desconocido en `plantilla` falla el test; `buscarGuia` devuelve `null` como
+>   `buscarCaso`; `casosAds.test.ts` también exige `tasaContacto ≈ contactos/clics`; en
+>   `guiaSchemas.ts` los `"@type"` de nivel superior llevan `as const` (exigencia de `strict`
+>   para que `.find()` estreche el tipo; sin efecto en el JSON emitido).
 
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 
