@@ -1,60 +1,115 @@
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { guiasAds } from "./guiasAdsData";
+import {
+  buscarGuia,
+  guiasAds,
+  validarGuia,
+  type ContextoValidacion,
+  type GuiaAds,
+} from "./guiasAdsData";
 
 const GUIA_DIR = path.resolve(__dirname, "..", "app", "guia");
 
-describe("guiasAds", () => {
+function carpetasEstaticas(): Set<string> {
+  if (!existsSync(GUIA_DIR)) throw new Error(`No existe ${GUIA_DIR}: el test no puede verificar colisiones`);
+  return new Set(
+    readdirSync(GUIA_DIR).filter(
+      (e) => statSync(path.join(GUIA_DIR, e)).isDirectory() && !e.startsWith("[")
+    )
+  );
+}
+
+function contexto(guias: GuiaAds[]): ContextoValidacion {
+  return { slugs: new Set(guias.map((g) => g.slug)), estaticas: carpetasEstaticas() };
+}
+
+/** Una guía que cumple todas las reglas. Base para los fixtures malos. */
+const valida: GuiaAds = {
+  slug: "por-que-mi-campana-de-google-ads-no-vende",
+  mercado: "mx",
+  familia: "diagnostico",
+  seoTitle: "Por qué mi campaña de Google Ads no vende (y cómo saber la causa)",
+  seoDescription:
+    "Las cuatro causas reales por las que una campaña de Google Ads gasta sin generar contactos, cómo distinguirlas con datos de tu propia cuenta, y qué hacer con cada una.",
+  h1: "Por qué mi campaña de Google Ads no vende",
+  respuestaDirecta:
+    "Una campaña de Google Ads que gasta sin vender casi siempre falla por una de cuatro causas: las conversiones no están bien medidas, las palabras clave atraen a quien no compra, la página de destino no convierte, o el presupuesto se reparte entre demasiadas campañas. Se distinguen revisando cuatro números concretos de tu cuenta.",
+  secciones: [{ titulo: "¿Cómo sé cuál de las cuatro es mi caso?", parrafos: ["..."] }],
+  faq: [
+    { pregunta: "¿Cuánto tarda en dar resultados?", respuesta: "..." },
+    { pregunta: "¿Pausar la campaña ayuda?", respuesta: "..." },
+    { pregunta: "¿Conviene subir el presupuesto?", respuesta: "..." },
+  ],
+  datoPropio: {
+    caso: "centro-servicio-electrodomesticos-cdmx",
+    plantilla: "Un {industria} en {ciudad} recibió {contactos} contactos a {costoPorContacto} cada uno.",
+  },
+  hermanas: [],
+  casoExito: null,
+  actualizado: "2026-09",
+};
+
+describe("guiasAds (registro)", () => {
   it("no hay slugs repetidos", () => {
     const slugs = guiasAds.map((g) => g.slug);
     expect(slugs.length).toBe(new Set(slugs).size);
   });
 
-  it("ningun slug choca con una guia estatica existente", () => {
-    const estaticas = readdirSync(GUIA_DIR).filter((e) =>
-      statSync(path.join(GUIA_DIR, e)).isDirectory() && !e.startsWith("[")
-    );
-    const chocan = guiasAds.filter((g) => estaticas.includes(g.slug));
-    expect(chocan.map((g) => g.slug)).toEqual([]);
+  it("toda guia del registro es publicable", () => {
+    const ctx = contexto(guiasAds);
+    const fallas = guiasAds.flatMap((g) => validarGuia(g, ctx).map((f) => `${g.slug}: ${f}`));
+    expect(fallas).toEqual([]);
   });
 
-  it("toda guia trae los campos obligatorios", () => {
-    for (const g of guiasAds) {
-      expect(g.slug).toMatch(/^[a-z0-9-]+$/);
-      expect(g.seoTitle.length).toBeGreaterThan(20);
-      expect(g.seoDescription.length).toBeGreaterThan(80);
-      expect(g.h1.length).toBeGreaterThan(10);
-      expect(g.secciones.length).toBeGreaterThan(0);
-      expect(g.faq.length).toBeGreaterThanOrEqual(3);
-      expect(g.actualizado).toMatch(/^\d{4}-\d{2}$/);
-    }
+  it("buscarGuia devuelve null si no existe", () => {
+    expect(buscarGuia("no-existe")).toBeNull();
+  });
+});
+
+describe("validarGuia (las reglas del spec §5, probadas con fixtures)", () => {
+  const ctx = contexto([valida]);
+
+  it("acepta una guia que cumple todo", () => {
+    expect(validarGuia(valida, ctx)).toEqual([]);
   });
 
-  it("la respuesta directa es autocontenida y citable", () => {
-    for (const g of guiasAds) {
-      const palabras = g.respuestaDirecta.trim().split(/\s+/).length;
-      // Regla 1 del spec §5: 40-60 palabras, completa por sí sola.
-      expect(palabras).toBeGreaterThanOrEqual(35);
-      expect(palabras).toBeLessThanOrEqual(70);
-      expect(g.respuestaDirecta).not.toMatch(/en este art[íi]culo|a continuaci[óo]n|veremos/i);
-    }
+  it("rechaza un slug con mayusculas o espacios", () => {
+    expect(validarGuia({ ...valida, slug: "Mi Guia" }, ctx)).toContainEqual(expect.stringContaining("slug inválido"));
   });
 
-  it("toda guia declara que caso respalda su dato propio", () => {
-    for (const g of guiasAds) {
-      expect(g.datoPropio.caso.length).toBeGreaterThan(0);
-      expect(g.datoPropio.plantilla).toMatch(/\{(inversion|contactos|costoPorContacto|tasaContacto)\}/);
-    }
+  it("rechaza un slug que ya existe como guia estatica", () => {
+    const estatica = [...ctx.estaticas][0];
+    expect(validarGuia({ ...valida, slug: estatica }, ctx)).toContainEqual(expect.stringContaining("choca"));
   });
 
-  it("cada guia enlaza a su hub y a guias hermanas", () => {
-    const slugs = new Set(guiasAds.map((g) => g.slug));
-    for (const g of guiasAds) {
-      expect(["mx", "usa"]).toContain(g.mercado);
-      for (const hermana of g.hermanas) {
-        expect(slugs.has(hermana)).toBe(true);
-      }
-    }
+  it("rechaza una respuesta directa demasiado corta", () => {
+    const corta = { ...valida, respuestaDirecta: "Gasta sin vender porque mide mal." };
+    expect(validarGuia(corta, ctx)).toContainEqual(expect.stringContaining("palabras"));
+  });
+
+  it("rechaza una respuesta directa que abre con relleno", () => {
+    const relleno = { ...valida, respuestaDirecta: `En este artículo veremos ${valida.respuestaDirecta}` };
+    expect(validarGuia(relleno, ctx)).toContainEqual(expect.stringContaining("relleno"));
+  });
+
+  it("rechaza una plantilla sin ninguna cifra", () => {
+    const sinCifra = { ...valida, datoPropio: { ...valida.datoPropio, plantilla: "Un {industria} en {ciudad}." } };
+    expect(validarGuia(sinCifra, ctx)).toContainEqual(expect.stringContaining("sin ninguna cifra"));
+  });
+
+  it("rechaza un placeholder desconocido (se imprimiria literal)", () => {
+    const typo = { ...valida, datoPropio: { ...valida.datoPropio, plantilla: "{contactos} contactos a {costo} cada uno." } };
+    expect(validarGuia(typo, ctx)).toContainEqual("placeholder desconocido: {costo}");
+  });
+
+  it("rechaza hermanas que no existen o que apuntan a si misma", () => {
+    expect(validarGuia({ ...valida, hermanas: ["no-existe"] }, ctx)).toContainEqual(expect.stringContaining("hermana inexistente"));
+    expect(validarGuia({ ...valida, hermanas: [valida.slug] }, ctx)).toContainEqual("hermana apunta a sí misma");
+  });
+
+  it("rechaza menos de 3 preguntas frecuentes y fechas mal formadas", () => {
+    expect(validarGuia({ ...valida, faq: valida.faq.slice(0, 2) }, ctx)).toContainEqual(expect.stringContaining("faq"));
+    expect(validarGuia({ ...valida, actualizado: "septiembre 2026" }, ctx)).toContainEqual(expect.stringContaining("actualizado"));
   });
 });

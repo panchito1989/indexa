@@ -27,6 +27,18 @@ describe("casos de exito de ads", () => {
     }
   });
 
+  it("la tasa de contacto cuadra con contactos / clics", () => {
+    for (const c of casos()) {
+      const bloques = [c.metricas, ...(c.metricasComparacion ? [c.metricasComparacion] : [])];
+      for (const m of bloques) {
+        const esperado = (m.contactos / m.clics) * 100;
+        // La exportacion redondea a un decimal: el error real es <= 0.05. Con 0.1 de
+        // tolerancia, cambiar un solo clic sin recalcular la tasa ya hace fallar el test.
+        expect(Math.abs(m.tasaContacto - esperado)).toBeLessThan(0.1);
+      }
+    }
+  });
+
   it("declara que es una conversion y en que periodo", () => {
     for (const c of casos()) {
       expect(c.definicionConversion.length).toBeGreaterThan(10);
