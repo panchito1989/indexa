@@ -103,6 +103,9 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/guia/indexa-vs-wordpress-vs-wix-pymes-mexico](https://indexaia.com/guia/indexa-vs-wordpress-vs-wix-pymes-mexico): Comparativa WordPress vs Wix vs INDEXA
 - [/guia/factura-pagina-web-deducible-mexico](https://indexaia.com/guia/factura-pagina-web-deducible-mexico): Facturación CFDI deducible
 - [/guia/whatsapp-business-api-precio-mexico](https://indexaia.com/guia/whatsapp-business-api-precio-mexico): Precios WhatsApp Business API en México
+- [/guia/cuanto-gastar-en-google-ads-negocio-local](https://indexaia.com/guia/cuanto-gastar-en-google-ads-negocio-local): Cuánto presupuesto necesita un negocio local para que Google Ads funcione, con datos reales de una cuenta administrada
+- [/guia/administrar-google-ads-yo-mismo-o-contratar](https://indexaia.com/guia/administrar-google-ads-yo-mismo-o-contratar): Administrar Google Ads uno mismo o contratar el servicio: costo real en tiempo vs. costo de contratar
+- [/guia/que-es-roas-cpl-cpc-explicado-simple](https://indexaia.com/guia/que-es-roas-cpl-cpc-explicado-simple): Qué significan ROAS, CPL y CPC en Google Ads, explicado simple con cifras reales
 
 ## Optional
 
