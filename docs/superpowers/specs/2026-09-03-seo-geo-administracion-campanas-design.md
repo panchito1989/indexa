@@ -329,3 +329,26 @@ producción:
    `2026-09-04-captura-categoria-ciudad.md`): obligatoria en las altas por
    agencia y admin, con aviso en el editor. Es prerequisito del observatorio y,
    más urgente, del SEO local de los clientes actuales (LocalBusiness sin ciudad).
+
+### 14.1 Corrección (2026-09-04, tarde): la población medida era la equivocada
+
+El usuario administra **7 cuentas de Google Ads desde hace más de un año**. Viven en su
+MCC sin estar vinculadas a usuarios de la plataforma, así que el reporte de viabilidad
+—que cruza Firestore— no las ve. Los datos existen; están en Google Ads.
+
+**Fuente confirmada:** la exportación nativa de Google Ads (zip "Tarjetas de descripción
+general": campañas, serie diaria, términos de búsqueda, dispositivos, horarios, subasta),
+con rango personalizado y ventana de comparación. No requiere credenciales locales.
+
+**Definición de conversión en las cuentas del usuario:** clic al botón de WhatsApp o
+llamada. Se publica siempre como **"contactos"**, nunca como clientes ni ventas.
+**Publicación anónima** (consentimiento dado).
+
+**Primer caso extraído** (borrador en `docs/superpowers/casos/2026-09-04-centro-servicio-electrodomesticos-cdmx.md`):
+centro de servicio de electrodomésticos y pantallas, CDMX/Edomex, agosto 2026 —
+$15,414 MXN → 97 contactos, $159 por contacto, 39% de clics que terminan en contacto,
+33.75% de cuota de impresiones.
+
+**Consecuencia para §8:** con 7 cuentas de más de un año, el observatorio **por industria**
+(sin ciudad) vuelve a ser posible una vez exportadas todas; el corte de 5 cuentas por
+celda se mantiene. Sigue diferido hasta tener las 7 exportaciones.
