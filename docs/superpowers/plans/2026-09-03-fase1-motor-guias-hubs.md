@@ -34,8 +34,10 @@
 >   `bajoPrefijo()` en `src/lib/rutas.ts`, usado por el middleware y el flotante (`b0f955d`);
 >   la imagen OG del sitio se llamaba `og-image.png.png` → renombrada (`d2b…` ver git log).
 >   Ambos hubs verificados en `next dev`: cargan, frontera de precio verbatim, cifras del caso
->   desde el módulo, flotante visible. Pendiente menor en los hubs: el `<title>` duplica
->   "| INDEXA" (la plantilla raíz ya lo agrega) y conviene usar `jsonLdHtml()`.
+>   desde el módulo, flotante visible. Cerrado en `81e13cc` + `aff07a8`: `<title>` sin sufijo
+>   duplicado, `jsonLdHtml()` en ambos hubs, `lastModified` honesto en el sitemap (fecha fija
+>   para los hubs, `actualizado` para las guías) y la línea USA de `llms.txt` sin ambigüedad
+>   de precio. Falta la Task 8 (guías semilla), a la espera de la validación del caso.
 
 **Alcance:** Este plan cubre el **motor y los cimientos de datos** de la Fase 1 del spec `docs/superpowers/specs/2026-09-03-seo-geo-administracion-campanas-design.md`, más **4 guías semilla** que lo prueban de extremo a extremo. Las 16 guías restantes (8 MX + 8 USA) son producción de contenido y van en un plan aparte, una vez que la Task 1 diga qué datos existen realmente.
 
