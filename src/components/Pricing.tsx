@@ -1,9 +1,11 @@
+import { PLAN_MXN } from "@/lib/pricing";
+
 // PLAN ÚNICO — un solo precio con TODO incluido (decisión de negocio jun-2026:
 // los 3 planes daban las mismas funciones; el plan único a $699 con cupos de
 // IA garantiza margen positivo por cliente).
 const plan = {
   name: "Plan INDEXA",
-  price: "$699",
+  price: `$${PLAN_MXN.price}`,
   description: "Todo el ecosistema: sitio web + campañas con IA, sin sorpresas.",
   features: [
     "Sitio web profesional con IA",

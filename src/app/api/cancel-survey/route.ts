@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { FieldValue } from "firebase-admin/firestore";
 import { createRateLimiter } from "@/lib/rateLimit";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,7 +45,7 @@ function thanksPage(reasonLabel: string): string {
       Tu sitio queda guardado tal como lo dejaste — si algún día quieres volver,
       se reactiva el mismo día.
     </p>
-    <a href="https://wa.me/525622042820" style="display:inline-block; margin-top:24px; background:#FF6600; color:#fff; padding:12px 28px; border-radius:10px; text-decoration:none; font-weight:700;">
+    <a href="https://wa.me/${WHATSAPP_NUMBER}" style="display:inline-block; margin-top:24px; background:#FF6600; color:#fff; padding:12px 28px; border-radius:10px; text-decoration:none; font-weight:700;">
       Hablar con nosotros
     </a>
   </div>

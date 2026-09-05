@@ -21,23 +21,23 @@ const FAQS: FAQItemData[] = [
   {
     question: "¿Mi sitio aparece en Google automáticamente?",
     answer:
-      "Sí. Cada sitio creado con INDEXA incluye optimización SEO automática: meta-tags, Schema.org (JSON-LD), títulos optimizados y estructura pensada para posicionar en búsquedas locales. En el plan Profesional, además puedes configurar tu ciudad, categoría y coordenadas para dominar las búsquedas de tu zona.",
+      "Sí. Cada sitio creado con INDEXA incluye optimización SEO automática: meta-tags, Schema.org (JSON-LD), títulos optimizados y estructura pensada para posicionar en búsquedas locales. Además puedes configurar tu ciudad, categoría y coordenadas para dominar las búsquedas de tu zona.",
   },
   {
     question: "¿Puedo usar mi propio dominio?",
     answer:
-      "Sí, con el plan Profesional o Enterprise puedes conectar tu dominio personalizado (por ejemplo, www.tunegocio.com). Si aún no tienes uno, te ayudamos a registrarlo. Tu sitio siempre estará disponible también en tu URL de INDEXA.",
+      "Sí, puedes conectar tu dominio personalizado (por ejemplo, www.tunegocio.com). Si aún no tienes uno, te ayudamos a registrarlo. Tu sitio siempre estará disponible también en tu URL de INDEXA.",
   },
   {
     question: "¿Qué pasa si necesito ayuda o soporte?",
     answer:
-      "Todos los planes incluyen soporte. En Starter tienes soporte por email, en Profesional soporte prioritario, y en Enterprise un asesor dedicado. También puedes contactarnos directamente por WhatsApp en cualquier momento.",
+      "El Plan INDEXA incluye soporte prioritario por WhatsApp, además de soporte por email. Puedes contactarnos directamente en cualquier momento.",
   },
   // ── Long-tail SEO + Featured Snippets + Voice Search ──────────────
   {
     question: "¿Cuánto cuesta crear una página web profesional para un negocio en México en 2026?",
     answer:
-      "Con INDEXA, un sitio web profesional generado con inteligencia artificial cuesta desde $299 MXN/mes (plan Starter). Esto incluye diseño profesional, botón de WhatsApp, SEO básico y certificado SSL. En comparación, un desarrollador freelance cobra entre $5,000 y $15,000 MXN por un sitio similar sin mantenimiento ni SEO incluido. El plan Profesional a $599 MXN/mes agrega panel CMS, SEO avanzado con Schema.org y estadísticas de visitas.",
+      "Con INDEXA, un sitio web profesional generado con inteligencia artificial cuesta $699 MXN/mes en el Plan INDEXA, que incluye todo: sitio web, panel de edición, campañas de Google, Facebook y TikTok Ads con asistente de IA, SEO local con Schema.org, estadísticas, botón de WhatsApp y SSL. En comparación, un desarrollador freelance cobra entre $5,000 y $15,000 MXN por un sitio similar sin mantenimiento ni SEO incluido.",
   },
   {
     question: "¿Qué es Schema.org y por qué lo necesita mi negocio local?",

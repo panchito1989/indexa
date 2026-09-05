@@ -43,6 +43,8 @@ export default function AgencyDashboardPage() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [newCategoria, setNewCategoria] = useState("");
+  const [newCiudad, setNewCiudad] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -220,12 +222,13 @@ export default function AgencyDashboardPage() {
         body: JSON.stringify({
           businessName: newName.trim(), slug: generateSlug(newName),
           clientEmail: newEmail.trim(), clientPassword: newPassword, agencyId,
+          categoria: newCategoria.trim(), ciudad: newCiudad.trim(),
         }),
       });
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Error al crear demo.");
       setSuccess(`Cliente creado: ${newName.trim()} — ${newEmail.trim()} ya puede iniciar sesión.`);
-      setNewName(""); setNewEmail(""); setNewPassword("");
+      setNewName(""); setNewEmail(""); setNewPassword(""); setNewCategoria(""); setNewCiudad("");
       setShowForm(false);
       fetchSites();
     } catch (err: unknown) {
@@ -517,6 +520,18 @@ export default function AgencyDashboardPage() {
                 <label className="block text-sm font-semibold text-gray-600 mb-1">Contraseña temporal *</label>
                 <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Mínimo 6 caracteres"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">Categoría *</label>
+                <input type="text" required value={newCategoria} onChange={(e) => setNewCategoria(e.target.value)}
+                  placeholder="Categoría (ej. Taller mecánico, Dentista)"
+                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-1">Ciudad *</label>
+                <input type="text" required value={newCiudad} onChange={(e) => setNewCiudad(e.target.value)}
+                  placeholder="Ciudad (ej. Monterrey)"
                   className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20" />
               </div>
             </div>

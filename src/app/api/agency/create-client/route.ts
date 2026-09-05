@@ -13,6 +13,8 @@ interface CreateClientBody {
   slug: string;
   clientEmail: string;
   clientPassword: string;
+  categoria: string;
+  ciudad: string;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,10 +36,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body: CreateClientBody = await request.json();
-    const { businessName, slug, clientEmail, clientPassword } = body;
+    const { businessName, slug, clientEmail, clientPassword, categoria, ciudad } = body;
 
-    if (!businessName || !clientEmail || !clientPassword) {
-      return NextResponse.json({ success: false, message: "Faltan campos requeridos." }, { status: 400 });
+    if (!businessName || !clientEmail || !clientPassword || !categoria?.trim() || !ciudad?.trim()) {
+      return NextResponse.json({
+        success: false,
+        message: "Faltan campos obligatorios: nombre, email, contraseña, categoría y ciudad.",
+      }, { status: 400 });
     }
 
     if (clientPassword.length < 6) {
@@ -97,6 +102,8 @@ export async function POST(request: NextRequest) {
     const siteId = await addDocument("sitios", {
       nombre: businessName,
       slug: slug || businessName.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      categoria: categoria.trim(),
+      ciudad: ciudad.trim(),
       agencyId,
       statusPago: "demo",
       plantilla: "modern",

@@ -68,6 +68,8 @@ export default function ClientesPage() {
   const [sitioSlug, setSitioSlug] = useState("");
   const [sitioWhatsapp, setSitioWhatsapp] = useState("");
   const [sitioEmail, setSitioEmail] = useState("");
+  const [sitioCategoria, setSitioCategoria] = useState("");
+  const [sitioCiudad, setSitioCiudad] = useState("");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
@@ -176,13 +178,15 @@ export default function ClientesPage() {
     setSitioSlug(generateSlug(client.displayName || "nuevo-sitio"));
     setSitioWhatsapp("");
     setSitioEmail(client.email || "");
+    setSitioCategoria("");
+    setSitioCiudad("");
     setError("");
     setShowModal(true);
   };
 
   // ── Create site & link to client ─────────────────────────────────
   const handleCreateSite = useCallback(async () => {
-    if (!db || !modalClient || !sitioNombre.trim()) return;
+    if (!db || !modalClient || !sitioNombre.trim() || !sitioCategoria.trim() || !sitioCiudad.trim()) return;
 
     setCreating(true);
     setError("");
@@ -194,6 +198,8 @@ export default function ClientesPage() {
       const sitioRef = doc(collection(db, "sitios"));
       await setDoc(sitioRef, {
         nombre: sitioNombre.trim(),
+        categoria: sitioCategoria.trim(),
+        ciudad: sitioCiudad.trim(),
         slug,
         descripcion: "",
         eslogan: "",
@@ -234,7 +240,7 @@ export default function ClientesPage() {
     } finally {
       setCreating(false);
     }
-  }, [modalClient, sitioNombre, sitioSlug, sitioWhatsapp, sitioEmail]);
+  }, [modalClient, sitioNombre, sitioSlug, sitioWhatsapp, sitioEmail, sitioCategoria, sitioCiudad]);
 
   // ── Unlink site from client ──────────────────────────────────────
   const handleUnlink = useCallback(async (client: ClientUser) => {
@@ -459,6 +465,35 @@ export default function ClientesPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="block text-xs font-semibold text-indexa-gray-dark">
+                    Categoría *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={sitioCategoria}
+                    onChange={(e) => setSitioCategoria(e.target.value)}
+                    placeholder="Categoría del negocio"
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-indexa-gray-dark placeholder:text-gray-400 outline-none focus:border-indexa-blue focus:ring-2 focus:ring-indexa-blue/20"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-indexa-gray-dark">
+                    Ciudad *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={sitioCiudad}
+                    onChange={(e) => setSitioCiudad(e.target.value)}
+                    placeholder="Ciudad"
+                    className="mt-1 w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-indexa-gray-dark placeholder:text-gray-400 outline-none focus:border-indexa-blue focus:ring-2 focus:ring-indexa-blue/20"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-semibold text-indexa-gray-dark">
                     WhatsApp
                   </label>
                   <input
@@ -499,7 +534,7 @@ export default function ClientesPage() {
               </button>
               <button
                 onClick={handleCreateSite}
-                disabled={creating || !sitioNombre.trim()}
+                disabled={creating || !sitioNombre.trim() || !sitioCategoria.trim() || !sitioCiudad.trim()}
                 className="inline-flex items-center gap-2 rounded-xl bg-indexa-blue px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-indexa-blue/90 disabled:opacity-50"
               >
                 {creating ? (

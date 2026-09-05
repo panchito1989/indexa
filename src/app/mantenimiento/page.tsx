@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Mantenimiento Programado — INDEXA",
   description: "Estamos realizando mejoras en INDEXA. Volveremos en unos minutos.",
 };
 
-const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
 const WHATSAPP_MESSAGE = encodeURIComponent(
   "Hola, necesito soporte urgente. El sitio de INDEXA está en mantenimiento."
 );

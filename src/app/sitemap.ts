@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listCollectionFields } from "@/lib/firestoreRest";
+import { guiasAds } from "@/lib/guiasAdsData";
 import { servicios } from "@/lib/serviciosData";
 
 const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
@@ -196,6 +197,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.95,
+    })),
+    // Hubs de administración de campañas — destino comercial del cluster
+    { url: `${SITE_URL}/administracion-de-campanas`, lastModified: new Date("2026-09-04"), changeFrequency: "weekly" as const, priority: 1.0 },
+    { url: `${SITE_URL}/administracion-de-campanas-usa`, lastModified: new Date("2026-09-04"), changeFrequency: "weekly" as const, priority: 1.0 },
+    // Cluster de guías de ads — derivadas del registro, nunca a mano
+    ...guiasAds.map((g) => ({
+      url: `${SITE_URL}/guia/${g.slug}`,
+      // La fecha visible en la guía, no la del build: es lo que un crawler debe leer.
+      lastModified: new Date(`${g.actualizado}-01`),
+      changeFrequency: "monthly" as const,
+      priority: 0.85,
     })),
   ];
 

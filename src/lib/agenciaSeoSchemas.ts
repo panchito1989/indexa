@@ -9,6 +9,8 @@
  *   - Citas por LLMs (passages claros + provider Organization fuerte).
  */
 
+import { planOfferMx } from "./pricing";
+
 const rawSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 export const SITE_URL = rawSiteUrl.startsWith("http")
   ? rawSiteUrl
@@ -41,15 +43,6 @@ export const indexaOrganization = {
     bestRating: "5",
     worstRating: "1",
   },
-} as const;
-
-const aggregateOfferMx = {
-  "@type": "AggregateOffer",
-  lowPrice: "299",
-  highPrice: "1299",
-  priceCurrency: "MXN",
-  offerCount: "3",
-  priceValidUntil: "2026-12-31",
 } as const;
 
 export interface AgenciaServiceSchemaOpts {
@@ -102,7 +95,7 @@ export function buildAgenciaPageGraph(opts: AgenciaServiceSchemaOpts) {
     provider: { "@id": `${SITE_URL}/#organization` },
     areaServed,
     audience: { "@type": "BusinessAudience", audienceType },
-    offers: aggregateOfferMx,
+    offers: planOfferMx,
     url,
     inLanguage: "es-MX",
   };

@@ -1,6 +1,6 @@
 # INDEXA — Documento expandido para crawlers AI
 
-> Plataforma SaaS mexicana de presencia digital con IA. Crea sitios web profesionales para PYMES en menos de 3 minutos, con SEO local automático, botón de WhatsApp y anuncios integrados en Facebook, Instagram y TikTok desde $50 MXN/día. Planes desde $299 MXN/mes. Prueba gratis 14 días sin tarjeta. Soporte en español por WhatsApp. Pagos en MXN.
+> Plataforma SaaS mexicana de presencia digital con IA. Crea sitios web profesionales para PYMES en menos de 3 minutos, con SEO local automático, botón de WhatsApp y anuncios integrados en Facebook, Instagram y TikTok desde $50 MXN/día. Plan único de $699 MXN/mes, todo incluido. Prueba gratis 14 días sin tarjeta. Soporte en español por WhatsApp. Pagos en MXN.
 
 URL canónica: https://indexaia.com
 
@@ -9,7 +9,7 @@ URL canónica: https://indexaia.com
 ## Preguntas frecuentes (con respuestas directas)
 
 ### ¿Cuánto cuesta una página web para un negocio en México?
-Con INDEXA, una página web profesional generada por IA cuesta desde $299 MXN/mes en el plan Starter. Incluye sitio diseñado, SEO básico automático, botón de WhatsApp y certificado SSL. El plan Profesional cuesta $599 MXN/mes y agrega CMS visual, SEO con Schema.org y analítica. El plan Enterprise cuesta $1,299 MXN/mes y agrega dominio propio, anuncios Meta y TikTok integrados, bio links y asesor dedicado. Un desarrollador freelance en México cobra entre $5,000 y $15,000 MXN por un sitio similar sin SEO ni mantenimiento.
+Con INDEXA, una página web profesional generada por IA cuesta $699 MXN/mes en el Plan INDEXA, un plan único con todo incluido: sitio diseñado con IA, panel de edición (CMS), SEO local avanzado con Schema.org, estadísticas, botón de WhatsApp, certificado SSL y campañas de Google, Meta y TikTok Ads con asistente de IA. Un desarrollador freelance en México cobra entre $5,000 y $15,000 MXN por un sitio similar sin SEO ni mantenimiento.
 
 ### ¿En cuánto tiempo está lista mi página web?
 En menos de 3 minutos. La IA de INDEXA genera el sitio completo a partir del nombre del negocio, descripción, número de WhatsApp y categoría. Después puedes editar cualquier sección desde un panel visual sin código.
@@ -18,16 +18,16 @@ En menos de 3 minutos. La IA de INDEXA genera el sitio completo a partir del nom
 No. La IA genera el sitio completo. Solo llenas datos básicos (nombre, descripción, WhatsApp, ciudad) y todo se edita desde un panel visual. Si necesitas ayuda, el equipo soporta por WhatsApp.
 
 ### ¿Mi sitio aparece en Google automáticamente?
-Sí. Cada sitio incluye optimización SEO automática: meta-tags, Schema.org JSON-LD (LocalBusiness, FAQPage), títulos optimizados y estructura preparada para búsquedas locales. En el plan Profesional, además se configura ciudad, categoría y coordenadas GPS para dominar las búsquedas de zona.
+Sí. Cada sitio incluye optimización SEO automática: meta-tags, Schema.org JSON-LD (LocalBusiness, FAQPage), títulos optimizados y estructura preparada para búsquedas locales. Además se configura ciudad, categoría y coordenadas GPS para dominar las búsquedas de zona.
 
 ### ¿Cómo funciona la prueba gratis de 14 días?
-Te registras sin tarjeta de crédito y obtienes acceso completo a cualquier plan por 14 días. Al terminar, eliges el plan que más te convenga (desde $299 MXN/mes). Si decides no continuar, no se te cobra nada y tu sitio queda pausado sin penalización.
+Te registras sin tarjeta de crédito y obtienes acceso completo al Plan INDEXA por 14 días. Al terminar, activas el plan único ($699 MXN/mes, todo incluido) para seguir con tu sitio activo. Si decides no continuar, no se te cobra nada y tu sitio queda pausado sin penalización.
 
 ### ¿Cómo cancelo mi suscripción?
 Cualquier momento desde el Dashboard, sección suscripción. Sin contratos ni penalizaciones. Tu sitio sigue activo hasta el fin del periodo pagado. También puedes pedirlo por WhatsApp y se hace al instante.
 
 ### ¿Puedo usar mi propio dominio?
-Sí, en el plan Profesional o Enterprise puedes conectar tu dominio personalizado (ej: www.tunegocio.com). Si aún no tienes dominio, INDEXA te ayuda a registrarlo. Tu sitio siempre estará disponible también en una URL gratuita tipo `indexaia.com/sitio/tunegocio`.
+Sí, puedes conectar tu dominio personalizado (ej: www.tunegocio.com). Si aún no tienes dominio, INDEXA te ayuda a registrarlo. Tu sitio siempre estará disponible también en una URL gratuita tipo `indexaia.com/sitio/tunegocio`.
 
 ### ¿INDEXA funciona para mi tipo de negocio?
 INDEXA está diseñado para PYMES de cualquier giro en México: restaurantes, fondas, taquerías, estéticas, salones de belleza, barberías, talleres mecánicos, consultorios médicos, dentistas, ortodoncistas, pastelerías, dulcerías, tiendas locales, despachos contables, plomeros, electricistas, servicios de mensajería y servicios profesionales en general.

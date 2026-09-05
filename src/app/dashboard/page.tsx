@@ -17,6 +17,7 @@ import {
 import { db, storage } from "@/lib/firebaseConfig";
 import { useAuth } from "@/lib/AuthContext";
 import { buildSearchIndex } from "@/lib/searchUtils";
+import { faltaSeoLocal } from "@/lib/sitioSeoLocal";
 import type { SitioData, UserProfile, TemplateId, Oferta, BioLink, BioStats } from "@/types/lead";
 import {
   Eye,
@@ -1066,6 +1067,19 @@ export default function ClientDashboardPage() {
                     className={`mt-2 ${inputClass}`}
                   />
                 </div>
+
+                {faltaSeoLocal(sitio) && (
+                  <div
+                    role="status"
+                    className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+                  >
+                    <p className="font-semibold">Tu sitio aún no aparece en búsquedas de tu ciudad</p>
+                    <p className="mt-1">
+                      Falta llenar la categoría del negocio y la ciudad. Sin esos dos datos,
+                      Google no sabe dónde mostrarte. Se llenan aquí abajo y toma un minuto.
+                    </p>
+                  </div>
+                )}
 
                 {/* SEO Local fields */}
                 <div className="border-t border-gray-100 pt-6">

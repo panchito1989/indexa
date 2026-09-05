@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import type { LeadFormData, LeadFormErrors, ContactApiResponse } from "@/types/lead";
 import { useRecaptcha } from "@/lib/useRecaptcha";
+import { whatsappUrl } from "@/lib/contact";
 
 export default function ContactForm() {
   const [formData, setFormData] = useState<LeadFormData>({
@@ -91,7 +92,7 @@ export default function ContactForm() {
         `📧 *Email:* ${formData.email.trim()}`,
         formData.mensaje.trim() ? `💬 *Contexto:* ${formData.mensaje.trim()}` : "",
       ].filter(Boolean).join("\n");
-      window.open(`https://wa.me/525622042820?text=${encodeURIComponent(waMsg)}`, "_blank");
+      window.open(whatsappUrl(waMsg), "_blank");
 
       setFormData({ contactName: "", businessName: "", phone: "", email: "", mensaje: "" });
     } catch {

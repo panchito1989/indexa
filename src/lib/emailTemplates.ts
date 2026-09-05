@@ -1,8 +1,8 @@
 /**
  * Email templates for INDEXA prospecting and marketing.
  */
+import { WHATSAPP_NUMBER } from "./contact";
 
-const INDEXA_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "5215512345678";
 const INDEXA_ORIGIN = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 
 interface ProspectEmailData {
@@ -16,7 +16,7 @@ export function getProspectEmailSubject(businessName: string): string {
 }
 
 export function getProspectEmailHtml({ businessName, city, demoUrl }: ProspectEmailData): string {
-  const waUrl = `https://wa.me/${INDEXA_WHATSAPP}?text=${encodeURIComponent(`Hola, vi la propuesta de INDEXA para ${businessName} y quiero ver los detalles.`)}`;
+  const waUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(`Hola, vi la propuesta de INDEXA para ${businessName} y quiero ver los detalles.`)}`;
   const optOutUrl = `${INDEXA_ORIGIN}/baja?email=`;
   const ciudad = city || "su zona";
 

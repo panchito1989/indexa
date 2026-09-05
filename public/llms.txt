@@ -1,6 +1,6 @@
 # INDEXA — Agencia de Marketing Digital con IA
 
-> INDEXA es la agencia de marketing digital y plataforma con inteligencia artificial para PYMES en México y negocios hispanos en Estados Unidos. Combina sitios web, Google Ads, Meta Ads, SEO local, automatizaciones y leads directos a WhatsApp en una sola plataforma desde $299 MXN/mes (México) o $497 USD/mes (USA-Hispano), sin contratos anuales.
+> INDEXA es la agencia de marketing digital y plataforma con inteligencia artificial para PYMES en México y negocios hispanos en Estados Unidos. Combina sitios web, Google Ads, Meta Ads, SEO local, automatizaciones y leads directos a WhatsApp en una sola plataforma $699 MXN/mes (México) o $497 USD/mes (USA-Hispano), sin contratos anuales.
 
 ## Quiénes somos
 
@@ -15,6 +15,8 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 
 ## Servicios principales
 
+- **Administración de campañas publicitarias** — INDEXA opera las cuentas de Google Ads, Meta Ads y TikTok Ads del cliente de principio a fin: estructura de campañas, presupuestos, pujas, creativos, medición de conversiones y optimización continua. Está dirigido a dueños de negocio que no saben operar estas plataformas o que ya gastaron dinero sin resultados. El cliente no necesita aprender nada ni tener conocimientos previos de publicidad digital.
+- **Auditoría de cuentas publicitarias** — Diagnóstico de una cuenta de Google Ads o Meta Ads existente: detecta conversiones mal configuradas, Performance Max sin exclusiones de marca, términos de búsqueda irrelevantes y presupuesto desperdiciado, comparado contra los costos reales por industria y ciudad que INDEXA mide en las cuentas que administra.
 - **Sitios web con IA** — Páginas web profesionales generadas en menos de 3 minutos, optimizadas para conversión y SEO local
 - **Google Ads** — Campañas en Search, Maps, Display, YouTube y Performance Max optimizadas por IA
 - **Meta Ads** — Anuncios en Facebook e Instagram segmentados por ZIP, edad e intereses
@@ -28,9 +30,8 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 ## Planes y precios
 
 ### México (MXN)
-- **Starter — $299 MXN/mes**: Sitio web profesional con IA, WhatsApp, SEO local, SSL, 3 plantillas, soporte por email
-- **Profesional — $599 MXN/mes**: Todo lo de Starter + CMS, SEO local avanzado, estadísticas, soporte prioritario por WhatsApp, asesoría
-- **Enterprise — $1,299 MXN/mes**: Todo lo de Profesional + asesor dedicado, configuración premium, capacitación 1 a 1, prioridad en nuevas funciones
+- **Plan INDEXA — $699 MXN/mes**: Todo incluido — sitio web con IA, panel de edición (CMS), campañas de Google, Meta y TikTok Ads con asistente de IA (150 acciones/mes) e imágenes publicitarias con IA (20/mes), SEO local avanzado con Schema.org, estadísticas, WhatsApp directo, SSL y soporte prioritario. Sin contratos anuales.
+- **Administración de campañas (servicio aparte)**: Que INDEXA opere las cuentas de anuncios del cliente día a día no está incluido en el plan; se cotiza según la inversión publicitaria que maneje el negocio, partiendo del plan base. Se define en la asesoría inicial.
 
 ### USA-Hispano (USD)
 - **Arranque — $497 USD/mes**: Página web en español, Google Business Profile, 1 campaña Meta Ads, WhatsApp Business, reporte mensual en video
@@ -45,7 +46,7 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 
 ## Diferenciador clave
 
-A diferencia de una agencia tradicional que toma 4-8 semanas para arrancar campañas, cobra $20,000-$80,000 MXN/mes con contrato de 6-12 meses, INDEXA usa IA para automatizar el 80% del trabajo: el sitio web está activo en menos de 3 minutos, las campañas de Meta y Google se prenden el mismo día, los primeros leads llegan en 7-14 días, y pagás desde $299 MXN/mes sin contrato.
+A diferencia de una agencia tradicional que toma 4-8 semanas para arrancar campañas, cobra $20,000-$80,000 MXN/mes con contrato de 6-12 meses, INDEXA usa IA para automatizar el 80% del trabajo: el sitio web está activo en menos de 3 minutos, las campañas de Meta y Google se prenden el mismo día, los primeros leads llegan en 7-14 días, y pagás $699 MXN/mes sin contrato.
 
 INDEXA también es la única plataforma con presencia bilingüe español-inglés diseñada específicamente para el mercado hispano, con equipo nativo, scripts de WhatsApp probados y comprensión profunda del comportamiento del consumidor latino tanto en México como en USA.
 
@@ -56,6 +57,10 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/agencia-de-publicidad](https://indexaia.com/agencia-de-publicidad): Servicios de publicidad pagada (Google Ads, Meta Ads, TikTok Ads) con presupuestos sugeridos
 - [/agencia-google-ads](https://indexaia.com/agencia-google-ads): Especialización en Google Ads — Search, Maps, Display, YouTube, Performance Max
 - [/agencia-de-seo](https://indexaia.com/agencia-de-seo): SEO técnico, SEO local, posicionamiento en Google Maps con proceso de 6 fases
+
+### Administración de campañas publicitarias
+- [/administracion-de-campanas](https://indexaia.com/administracion-de-campanas): Servicio done-for-you en México — INDEXA opera Google Ads, Meta Ads y TikTok Ads del cliente. Se cotiza según la inversión publicitaria.
+- [/administracion-de-campanas-usa](https://indexaia.com/administracion-de-campanas-usa): El mismo servicio para negocios hispanos en Estados Unidos, en español. Tampoco tiene precio fijo: se cotiza según la inversión publicitaria. La plataforma, aparte, tiene planes en USD.
 
 ### Servicios detallados
 - [/servicios/sitios-web-ia](https://indexaia.com/servicios/sitios-web-ia): Páginas web generadas con IA
@@ -98,6 +103,9 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/guia/indexa-vs-wordpress-vs-wix-pymes-mexico](https://indexaia.com/guia/indexa-vs-wordpress-vs-wix-pymes-mexico): Comparativa WordPress vs Wix vs INDEXA
 - [/guia/factura-pagina-web-deducible-mexico](https://indexaia.com/guia/factura-pagina-web-deducible-mexico): Facturación CFDI deducible
 - [/guia/whatsapp-business-api-precio-mexico](https://indexaia.com/guia/whatsapp-business-api-precio-mexico): Precios WhatsApp Business API en México
+- [/guia/cuanto-gastar-en-google-ads-negocio-local](https://indexaia.com/guia/cuanto-gastar-en-google-ads-negocio-local): Cuánto presupuesto necesita un negocio local para que Google Ads funcione, con datos reales de una cuenta administrada
+- [/guia/administrar-google-ads-yo-mismo-o-contratar](https://indexaia.com/guia/administrar-google-ads-yo-mismo-o-contratar): Administrar Google Ads uno mismo o contratar el servicio: costo real en tiempo vs. costo de contratar
+- [/guia/que-es-roas-cpl-cpc-explicado-simple](https://indexaia.com/guia/que-es-roas-cpl-cpc-explicado-simple): Qué significan ROAS, CPL y CPC en Google Ads, explicado simple con cifras reales
 
 ## Optional
 
@@ -107,7 +115,7 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/directorio](https://indexaia.com/directorio): Directorio de negocios
 
 ### Contacto
-- WhatsApp: +52 55 5622 0428 (México) — atención en español
+- WhatsApp: +52 56 1066 9353 (México y USA-Hispano) — atención en español
 - Sitio: https://indexaia.com
 - Documento expandido: https://indexaia.com/llms-full.txt
 - País: México y USA (mercado hispano)

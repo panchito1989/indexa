@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas";
+import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Más clientes para tu negocio hispano en USA — INDEXA",
@@ -291,7 +291,7 @@ export default function UsaPage() {
 
             <div className="mt-9 flex flex-col items-center gap-4 sm:flex-row">
               <a
-                href="https://wa.me/525622042820?text=Hola%2C%20vi%20Indexa%20y%20quiero%20m%C3%A1s%20clientes%20para%20mi%20negocio"
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20vi%20Indexa%20y%20quiero%20m%C3%A1s%20clientes%20para%20mi%20negocio`}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-2xl shadow-emerald-500/25 transition-all hover:-translate-y-0.5 hover:shadow-emerald-500/50"
@@ -486,7 +486,7 @@ export default function UsaPage() {
                     ))}
                   </ul>
                   <a
-                    href="https://wa.me/525622042820"
+                    href={`https://wa.me/${WHATSAPP_NUMBER}`}
                     target="_blank"
                     rel="noreferrer"
                     className={`mt-7 block rounded-xl px-5 py-3 text-center text-sm font-bold transition-all ${
@@ -567,7 +567,7 @@ export default function UsaPage() {
                 Llamada de 15 min por WhatsApp.
               </p>
               <a
-                href="https://wa.me/525622042820?text=Hola%2C%20quiero%20una%20auditor%C3%ADa%20gratis%20para%20mi%20negocio"
+                href={`https://wa.me/${WHATSAPP_NUMBER}?text=Hola%2C%20quiero%20una%20auditor%C3%ADa%20gratis%20para%20mi%20negocio`}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-7 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-8 py-4 text-base font-bold text-white shadow-2xl shadow-emerald-500/25 transition-all hover:-translate-y-0.5"
@@ -579,7 +579,6 @@ export default function UsaPage() {
         </section>
       </main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }

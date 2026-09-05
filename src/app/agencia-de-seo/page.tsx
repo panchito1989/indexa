@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import WhatsAppFloat from "@/components/WhatsAppFloat";
 import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 
 const PAGE_PATH = "/agencia-de-seo";
@@ -251,7 +250,6 @@ export default function AgenciaSeoPage() {
         </section>
       </main>
       <Footer />
-      <WhatsAppFloat />
     </>
   );
 }

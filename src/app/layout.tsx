@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { planOfferMx } from "@/lib/pricing";
 
 // NOTA: el `export const dynamic = "force-dynamic"` global se removió porque
 // rompía SSG/ISR para AI crawlers (GPTBot, ClaudeBot, PerplexityBot priorizan
@@ -100,13 +102,7 @@ const softwareAppJsonLd = {
   url: SITE_URL,
   description:
     "Plataforma con IA que crea sitios web profesionales para PYMES en minutos, con SEO local automático y WhatsApp integrado.",
-  offers: {
-    "@type": "AggregateOffer",
-    lowPrice: "299",
-    highPrice: "1299",
-    priceCurrency: "MXN",
-    offerCount: "3",
-  },
+  offers: planOfferMx,
   aggregateRating: {
     "@type": "AggregateRating",
     ratingValue: "4.9",
@@ -159,6 +155,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased`}>
         {children}
+        <WhatsAppFloat />
       </body>
     </html>
   );
