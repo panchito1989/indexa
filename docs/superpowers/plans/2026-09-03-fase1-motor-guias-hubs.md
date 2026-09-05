@@ -1,10 +1,10 @@
-# Fase 1 — Motor de guías, benchmarks y hubs Implementation Plan
+# Fase 1 — Motor de guías, casos y hubs Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Construir el motor que sirve el cluster de contenido de administración de campañas — benchmarks propios extraídos de las cuentas reales, un registro de guías dirigido por datos, la ruta dinámica que las renderiza con schema, y los dos hubs comerciales.
+**Goal:** Construir el motor que sirve el cluster de contenido de administración de campañas — casos de éxito anonimizados con cifras reales de las cuentas administradas, un registro de guías dirigido por datos, la ruta dinámica que las renderiza con schema, y los dos hubs comerciales.
 
-**Architecture:** Un script de agregación produce benchmarks por `(industria, ciudad)` desde las cuentas de Google Ads conectadas, con un corte de privacidad de mínimo 5 cuentas por celda. Esos benchmarks alimentan un módulo tipado que las guías consumen. Las guías viven en un registro (`src/lib/guiasAdsData.ts`) y se renderizan desde `/guia/[slug]`, siguiendo el patrón que el proyecto ya usa en `/servicios/[slug]`. El sitemap y `llms.txt` se generan desde el registro, no a mano.
+**Architecture:** Los casos de éxito viven en `src/data/casos-ads.json` (capturados a mano desde la exportación nativa de Google Ads, siempre anónimos, con la definición de conversión explícita) y se leen desde un módulo tipado que las guías consumen; el test del módulo impide cifras inconsistentes o identificables. Las guías viven en un registro (`src/lib/guiasAdsData.ts`) y se renderizan desde `/guia/[slug]`, siguiendo el patrón que el proyecto ya usa en `/servicios/[slug]`. El sitemap y `llms.txt` se generan desde el registro, no a mano.
 
 **Tech Stack:** Next.js 16 (App Router, `generateStaticParams`), React 19, TypeScript 5, Tailwind 4, vitest 3, Firestore (Admin SDK), Google Ads API vía `src/lib/googleAdsClient.ts`.
 
