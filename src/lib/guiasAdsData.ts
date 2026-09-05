@@ -88,7 +88,7 @@ export const guiasAds: GuiaAds[] = [
       "Cuánto presupuesto necesita un negocio de servicio local para que Google Ads funcione en México: qué esperar al arrancar una cuenta nueva y qué esperar cuando ya está optimizada, con datos reales de una cuenta que administramos.",
     h1: "¿Cuánto presupuesto necesitas para que Google Ads funcione en un negocio local?",
     respuestaDirecta:
-      "No hay una cifra fija: el piso depende del costo por clic en tu industria y ciudad. Como referencia real, un negocio de servicio local que administramos invirtió $15,414 MXN en un mes y recibió 97 contactos por WhatsApp y llamada, a $159 cada uno, tras arrancar con una inversión menor y un costo por contacto más alto.",
+      "No hay una cifra fija: el piso depende del costo por clic en tu industria y ciudad. Como referencia real, un negocio de servicio local que administramos invirtió $15,414 MXN en un mes y recibió 97 contactos por WhatsApp y llamada, a $159 cada uno, tras arrancar con $3,778 MXN y 11 contactos a $343 cada uno en sus primeros nueve días.",
     secciones: [
       {
         titulo: "¿Qué pasa si mi presupuesto es demasiado bajo?",
@@ -124,7 +124,7 @@ export const guiasAds: GuiaAds[] = [
       {
         titulo: "¿Subir el presupuesto de golpe mejora los resultados?",
         parrafos: [
-          "Subir el presupuesto de un día para otro no reproduce el efecto de una inversión sostenida: el sistema vuelve a ajustar pujas y audiencias, y durante ese ajuste el costo por contacto puede subir antes de bajar. La cuenta real de esta guía bajó su costo por contacto general de $343 a $159 sosteniendo y ordenando la inversión mes a mes, no multiplicándola de un salto.",
+          "Subir el presupuesto de un día para otro no reproduce el efecto de invertir de forma constante: el sistema vuelve a ajustar pujas y audiencias, y durante ese ajuste el costo por contacto puede subir antes de bajar. En la cuenta real de esta guía, el costo por contacto general pasó de $343 en sus primeros nueve días a $159 en su primer mes completo, con una inversión mensual mayor y sostenida; los dos periodos no son del mismo tamaño, así que la comparación es orientativa.",
         ],
       },
     ],
@@ -142,7 +142,7 @@ export const guiasAds: GuiaAds[] = [
       {
         pregunta: "¿Cuánto tarda una cuenta nueva en volverse eficiente?",
         respuesta:
-          "No hay un plazo fijo. En la cuenta real de esta guía, el costo por contacto bajó de $343 a $159 entre el arranque y el primer mes completo con inversión sostenida. El ritmo exacto depende de cuántas conversiones acumule tu cuenta cada semana.",
+          "No hay un plazo fijo. En la cuenta real de esta guía, el costo por contacto pasó de $343 en sus primeros nueve días a $159 en su primer mes completo. El ritmo exacto depende de cuántas conversiones acumule tu cuenta cada semana.",
       },
       {
         pregunta: "¿Debo comparar mi presupuesto contra el de otros negocios de mi giro?",
@@ -168,7 +168,7 @@ export const guiasAds: GuiaAds[] = [
       "Qué exige administrar Google Ads bien, cuánto cambia el costo por contacto cuando alguien revisa la cuenta cada semana, y cuándo conviene contratar el servicio en vez de aprenderlo tú mismo, con un caso real.",
     h1: "¿Me conviene administrar Google Ads yo mismo o contratar a alguien que lo haga?",
     respuestaDirecta:
-      "Depende de cuánto vale tu tiempo y qué tan rápido necesitas resultados. Administrar Google Ads bien exige revisar la cuenta cada semana, probar segmentaciones y ajustar pujas con datos, no por intuición. En una cuenta real que administramos, la campaña principal bajó su costo por contacto de $343 a $206 con ese trabajo semanal sostenido.",
+      "Depende de cuánto vale tu tiempo y qué tan rápido necesitas resultados. Administrar Google Ads bien exige revisar la cuenta cada semana, probar segmentaciones y ajustar pujas con datos, no por intuición. En una cuenta real que administramos, la campaña principal pasó de $343 a $206 por contacto entre sus primeros nueve días de julio y agosto de 2026.",
     secciones: [
       {
         titulo: "¿Cuánto tiempo toma administrar Google Ads bien?",
@@ -183,23 +183,23 @@ export const guiasAds: GuiaAds[] = [
         ],
       },
       {
-        titulo: "¿Cuánto cambia el costo por contacto cuando alguien la administra de forma constante?",
+        titulo: "¿Cuánto cambió el costo por contacto en una cuenta real entre su arranque y su primer mes?",
         parrafos: [
           "En una cuenta real que administramos —un centro de servicio de electrodomésticos y pantallas en CDMX y Estado de México, con datos anonimizados de agosto de 2026—, el costo por contacto no fue el mismo en las distintas campañas ni a lo largo del tiempo:",
         ],
         tabla: {
           encabezados: ["Ventana", "Costo por contacto"],
           filas: [
-            ["Cuenta completa, 23–31 de julio de 2026", "$343 MXN"],
-            ["Campaña principal, agosto de 2026", "$206 MXN"],
-            ["Campaña de televisores, agosto de 2026", "$24 MXN"],
+            ["Primeros 9 días (23–31 jul), cuenta completa", "$343 MXN"],
+            ["Agosto, campaña principal", "$206 MXN"],
+            ["Agosto, campaña de televisores", "$24 MXN"],
           ],
         },
       },
       {
         titulo: "¿Cuándo conviene contratar en vez de aprenderlo yo mismo?",
         parrafos: [
-          "La plataforma de INDEXA cuesta $699 MXN al mes e incluye las herramientas y la IA para que administres tú mismo tus campañas de Google, Meta y TikTok Ads. Que nosotros operemos la cuenta día a día —revisando pujas, segmentación y presupuesto cada semana, como en el caso de arriba— es un servicio aparte, que se cotiza según la inversión publicitaria del negocio, no con una tarifa fija.",
+          "La plataforma de INDEXA cuesta $699 MXN al mes e incluye las herramientas y la IA para que administres tú mismo tus campañas de Google, Meta y TikTok Ads. Que nosotros operemos la cuenta día a día —revisando pujas, segmentación y presupuesto cada semana— es un servicio aparte, que se cotiza según la inversión publicitaria del negocio, no con una tarifa fija.",
         ],
         pasos: [
           "Cuánto tiempo a la semana puedes dedicarle de forma constante, no solo el primer mes.",
@@ -227,13 +227,13 @@ export const guiasAds: GuiaAds[] = [
       {
         pregunta: "¿Qué gano si contrato el servicio en vez de aprenderlo?",
         respuesta:
-          "Principalmente tiempo: alguien más revisa la cuenta cada semana con la disciplina que exige bajar el costo por contacto, como ocurrió en la cuenta de este caso, mientras tú te enfocas en atender los contactos que ya llegan.",
+          "Principalmente tiempo: alguien más revisa la cuenta cada semana con la disciplina que exige bajar el costo por contacto, mientras tú te enfocas en atender los contactos que ya llegan.",
       },
     ],
     datoPropio: {
       caso: "centro-servicio-electrodomesticos-cdmx",
       plantilla:
-        "En agosto de 2026, un {industria} en {ciudad} que administramos generó {contactos} contactos por WhatsApp y llamada invirtiendo {inversion}: {costoPorContacto} por contacto, con el trabajo semanal de revisar pujas, segmentación y presupuesto ya incluido.",
+        "En agosto de 2026, un {industria} en {ciudad} que administramos recibió {contactos} contactos por WhatsApp y llamada con {inversion} invertidos: {costoPorContacto} por contacto en su primer mes completo.",
     },
     hermanas: ["cuanto-gastar-en-google-ads-negocio-local", "que-es-roas-cpl-cpc-explicado-simple"],
     casoExito: null,
@@ -248,7 +248,7 @@ export const guiasAds: GuiaAds[] = [
       "Qué significan ROAS, CPL, CPC y las demás siglas de Google Ads, explicadas en español simple con cifras reales de costo por contacto de una cuenta que administramos: $159, $206 y $24.",
     h1: "¿Qué significan ROAS, CPL y CPC en Google Ads?",
     respuestaDirecta:
-      "CPC es lo que cuesta cada clic. CPL, o costo por contacto, es lo que cuesta cada conversión: un formulario, llamada o mensaje de WhatsApp. ROAS compara el ingreso por ventas contra lo invertido en anuncios. En una cuenta real de servicio local que administramos, el CPL promedio fue $159, con una campaña en $206 y otra en $24.",
+      "CPC es lo que cuesta cada clic. CPL, o costo por contacto, es lo que cuesta cada conversión: un formulario, llamada o mensaje de WhatsApp. ROAS compara el ingreso por ventas contra lo invertido en anuncios. En una cuenta real de servicio local que administramos, el CPL promedio fue $159, con la campaña principal en $206 y la de televisores en $24.",
     secciones: [
       {
         titulo: "¿Qué es el CPC (costo por clic)?",
