@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
@@ -156,6 +157,17 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         {children}
         <WhatsAppFloat />
+        {/*
+          Vercel Web Analytics por script directo (mismo origen, pasa la CSP).
+          Se evita el paquete @vercel/analytics porque sus peer deps opcionales
+          (Svelte/Vite 8) chocan con vitest y romperían el npm ci del deploy.
+          Sólo en producción: en dev y previews el script no existe (404).
+          Sin esto no hay forma de saber si un clic viene de Google, ChatGPT
+          o Perplexity. Requiere habilitar Analytics en el panel de Vercel.
+        */}
+        {process.env.VERCEL_ENV === "production" && (
+          <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />
+        )}
       </body>
     </html>
   );
