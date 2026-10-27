@@ -3,6 +3,8 @@ import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import WhatsAppFloat from "@/components/WhatsAppFloat";
+import { WHATSAPP_NUMBER, whatsappUrl } from "@/lib/contact";
+import { jsonLdHtml } from "@/lib/jsonLd";
 import { planOfferMx } from "@/lib/pricing";
 
 // NOTA: el `export const dynamic = "force-dynamic"` global se removió porque
@@ -71,62 +73,88 @@ export const metadata: Metadata = {
   },
 };
 
-// ── JSON-LD Organization + SoftwareApplication ─────────────────────
-const organizationJsonLd = {
+// ── JSON-LD de sitio: Organization + WebSite + SoftwareApplication ────
+// Un solo @graph con entidades enlazadas por @id. `#organization` es la
+// misma entidad que citan guías, hubs y páginas de servicio (`guiaSchemas`,
+// `seoSchemas`), así Google y los modelos de IA resuelven una sola entidad.
+//
+// Sin `aggregateRating`: no hay reseñas verificables que lo respalden y las
+// valoraciones autoservidas sin fuente son motivo de acción manual. La prueba
+// social del sitio es el caso real de `casos-ads.json`.
+//
+// El WebPage de la home (speakable) vive en `src/app/page.tsx`: aquí se
+// repetía, con la URL de la home, en todas las páginas.
+const ORGANIZATION_ID = `${SITE_URL}/#organization`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+
+const siteJsonLd = {
   "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "INDEXA",
-  url: SITE_URL,
-  logo: `${SITE_URL}/logo.png`,
-  description:
-    "Plataforma de presencia digital con inteligencia artificial para PYMES en México. Sitios web profesionales, SEO local automático y marketing digital.",
-  foundingDate: "2024",
-  areaServed: { "@type": "Country", name: "México" },
-  sameAs: [
-    "https://www.facebook.com/indexamx",
-    "https://www.instagram.com/indexamx",
-    "https://www.tiktok.com/@indexamx",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": ORGANIZATION_ID,
+      name: "INDEXA",
+      // Variantes con las que se busca la marca (dominio indexaia.com).
+      alternateName: ["Indexa IA", "indexaia"],
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/logo.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${SITE_URL}/og-image.png`,
+      description:
+        "Plataforma de presencia digital con inteligencia artificial para PYMES en México y negocios hispanos en Estados Unidos: sitios web profesionales, SEO local y administración de campañas en Google Ads, Meta Ads y TikTok Ads.",
+      foundingDate: "2024",
+      areaServed: [
+        { "@type": "Country", name: "México" },
+        { "@type": "Country", name: "Estados Unidos" },
+      ],
+      knowsLanguage: ["es-MX", "es-US"],
+      knowsAbout: [
+        "Google Ads",
+        "Meta Ads",
+        "TikTok Ads",
+        "SEO local",
+        "Páginas web para PYMES",
+        "WhatsApp Business",
+      ],
+      sameAs: [
+        "https://www.facebook.com/indexamx",
+        "https://www.instagram.com/indexamx",
+        "https://www.tiktok.com/@indexamx",
+      ],
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        telephone: `+${WHATSAPP_NUMBER}`,
+        url: whatsappUrl("Hola, quiero información sobre INDEXA"),
+        availableLanguage: ["es"],
+        areaServed: ["MX", "US"],
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": WEBSITE_ID,
+      url: SITE_URL,
+      name: "INDEXA",
+      inLanguage: "es-MX",
+      publisher: { "@id": ORGANIZATION_ID },
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": `${SITE_URL}/#app`,
+      name: "INDEXA",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      url: SITE_URL,
+      description:
+        "Plataforma con IA que crea sitios web profesionales para PYMES en minutos, con SEO local automático y WhatsApp integrado.",
+      offers: planOfferMx,
+      publisher: { "@id": ORGANIZATION_ID },
+    },
   ],
-  contactPoint: {
-    "@type": "ContactPoint",
-    contactType: "customer service",
-    availableLanguage: "Spanish",
-  },
-};
-
-const softwareAppJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "INDEXA",
-  applicationCategory: "BusinessApplication",
-  operatingSystem: "Web",
-  url: SITE_URL,
-  description:
-    "Plataforma con IA que crea sitios web profesionales para PYMES en minutos, con SEO local automático y WhatsApp integrado.",
-  offers: planOfferMx,
-  aggregateRating: {
-    "@type": "AggregateRating",
-    ratingValue: "4.9",
-    reviewCount: "500",
-    bestRating: "5",
-    worstRating: "1",
-  },
-};
-
-const speakableJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebPage",
-  name: "INDEXA — Presencia Digital para tu Negocio",
-  speakable: {
-    "@type": "SpeakableSpecification",
-    cssSelector: [
-      "h1",
-      ".hero-description",
-      "#faq h2",
-      "#faq [data-faq-answer]",
-    ],
-  },
-  url: SITE_URL,
 };
 
 export default function RootLayout({
@@ -143,15 +171,7 @@ export default function RootLayout({
         <meta name="language" content="es-MX" />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(siteJsonLd) }}
         />
       </head>
       <body className={`${inter.variable} antialiased`}>

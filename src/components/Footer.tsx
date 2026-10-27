@@ -47,16 +47,13 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-white/30">Ciudades</h4>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white/30">Cobertura</h4>
             <ul className="mt-4 space-y-2.5">
-              <li><a href="/pagina-web-cdmx" className="text-sm text-white/50 hover:text-white transition-colors">CDMX</a></li>
-              <li><a href="/pagina-web-guadalajara" className="text-sm text-white/50 hover:text-white transition-colors">Guadalajara</a></li>
-              <li><a href="/pagina-web-monterrey" className="text-sm text-white/50 hover:text-white transition-colors">Monterrey</a></li>
-              <li><a href="/pagina-web-puebla" className="text-sm text-white/50 hover:text-white transition-colors">Puebla</a></li>
-              <li><a href="/pagina-web-queretaro" className="text-sm text-white/50 hover:text-white transition-colors">Querétaro</a></li>
-              <li><a href="/pagina-web-tijuana" className="text-sm text-white/50 hover:text-white transition-colors">Tijuana</a></li>
-              <li><a href="/pagina-web-merida" className="text-sm text-white/50 hover:text-white transition-colors">Mérida</a></li>
-              <li><a href="/pagina-web-leon" className="text-sm text-white/50 hover:text-white transition-colors">León</a></li>
+              <li><a href="/pagina-web-cdmx" className="text-sm text-white/50 hover:text-white transition-colors">CDMX y Estado de México</a></li>
+              <li><a href="/servicios/sitios-web-ia" className="text-sm text-white/50 hover:text-white transition-colors">Toda la República</a></li>
+              <li><a href="/usa" className="text-sm text-white/50 hover:text-white transition-colors">Hispanos en USA</a></li>
+              <li><a href="/administracion-de-campanas" className="text-sm text-white/50 hover:text-white transition-colors">Administración de campañas</a></li>
+              <li><a href="/casos-de-exito" className="text-sm text-white/50 hover:text-white transition-colors">Casos reales</a></li>
             </ul>
           </div>
 

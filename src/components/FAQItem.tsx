@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useId, useState } from "react";
+import { motion } from "framer-motion";
 
 export interface FAQItemData {
   question: string;
@@ -13,8 +13,16 @@ interface FAQItemProps extends FAQItemData {
   className?: string;
 }
 
+/**
+ * Acordeón de FAQ. La respuesta se renderiza SIEMPRE en el HTML (colapsada
+ * con altura 0), no sólo al abrir: Googlebot y los crawlers de IA que no
+ * ejecutan JavaScript (GPTBot, ClaudeBot, PerplexityBot) sólo veían las
+ * preguntas, y el selector speakable `#faq [data-faq-answer]` no encontraba
+ * nada. Google acepta contenido colapsado siempre que esté en el DOM.
+ */
 export default function FAQItem({ question, answer, className = "" }: FAQItemProps) {
   const [open, setOpen] = useState(false);
+  const panelId = useId();
 
   return (
     <div className={`border-b border-white/10 last:border-b-0 ${className}`}>
@@ -22,6 +30,7 @@ export default function FAQItem({ question, answer, className = "" }: FAQItemPro
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-4 py-5 text-left transition-colors hover:text-indexa-orange"
         aria-expanded={open}
+        aria-controls={panelId}
       >
         <span className="text-base font-semibold text-white sm:text-lg">
           {question}
@@ -48,22 +57,21 @@ export default function FAQItem({ question, answer, className = "" }: FAQItemPro
         </motion.span>
       </button>
 
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            key="content"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="overflow-hidden"
-          >
-            <p className="pb-5 text-sm leading-relaxed text-white/65 sm:text-base">
-              {answer}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* `initial={false}`: en el servidor se renderiza ya con los valores de
+          `animate` (altura 0 si está cerrada), sin parpadeo al hidratar. */}
+      <motion.div
+        id={panelId}
+        role="region"
+        aria-hidden={!open}
+        initial={false}
+        animate={{ height: open ? "auto" : 0, opacity: open ? 1 : 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="overflow-hidden"
+      >
+        <p data-faq-answer className="pb-5 text-sm leading-relaxed text-white/65 sm:text-base">
+          {answer}
+        </p>
+      </motion.div>
     </div>
   );
 }

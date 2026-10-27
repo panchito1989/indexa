@@ -2,93 +2,83 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { casos, formatoMXN, type CasoAds, type CasoMetricas } from "@/lib/casosAds";
+import { whatsappUrl } from "@/lib/contact";
+import { mesLegible } from "@/lib/fechas";
+import { jsonLdHtml } from "@/lib/jsonLd";
+
+const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
+const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
+const PAGE_URL = `${SITE_URL}/casos-de-exito`;
+
+/*
+ * Antes esta página tenía tres "casos" con nombres, ciudades y resultados
+ * inventados ("15+ mensajes", "3x cotizaciones"). Hoy sólo publica lo que hay
+ * en `casos-ads.json`: casos anónimos con cifras de la exportación de la
+ * cuenta, periodo, fuente y la definición exacta de lo que se mide. Si el
+ * registro crece, la página crece sola.
+ */
 
 export const metadata: Metadata = {
-  title: "Casos de Éxito — Negocios que Crecieron con INDEXA",
+  // Sin marca: el layout aplica la plantilla "%s | INDEXA".
+  title: "Casos reales: cifras de cuentas de Google Ads que administramos",
   description:
-    "Descubre cómo PYMES en México aumentaron su visibilidad en Google y sus ventas por WhatsApp usando la plataforma de presencia digital con IA de INDEXA.",
+    "Resultados reales de cuentas publicitarias administradas por INDEXA: inversión, contactos por WhatsApp y llamada, costo por contacto y cuota de impresiones. Casos anónimos con periodo y fuente.",
   alternates: { canonical: "/casos-de-exito" },
-};
-
-const casos = [
-  {
-    nombre: "Tlapalería Cuauhtémoc",
-    ciudad: "Chalco, Estado de México",
-    categoria: "Vidriería y Tlapalería",
-    problema:
-      "Sin presencia digital. Sus clientes potenciales buscaban \"vidriería en Chalco\" en Google y encontraban solo a la competencia.",
-    solucion:
-      "Sitio web profesional generado con IA en 3 minutos. SEO local con Schema.org LocalBusiness, coordenadas GPS y categoría optimizada.",
-    resultados: [
-      "Aparición en resultados de Google para búsquedas locales en menos de 2 semanas",
-      "15+ mensajes por WhatsApp de clientes nuevos en el primer mes",
-      "Primer resultado orgánico para \"tlapalería Chalco\"",
-    ],
-    plan: "INDEXA",
-    slug: "tlapaleria-cuauhtemoc",
-  },
-  {
-    nombre: "Estética Glamour",
-    ciudad: "Iztapalapa, CDMX",
-    categoria: "Salón de Belleza",
-    problema:
-      "Dependía únicamente de redes sociales para atraer clientas. Sin sitio web, perdía credibilidad frente a competidores con presencia digital profesional.",
-    solucion:
-      "Sitio web con galería de trabajos, lista de servicios con precios y botón de WhatsApp para agendar citas. Bio link para Instagram y TikTok.",
-    resultados: [
-      "35% más citas agendadas por WhatsApp desde el sitio web",
-      "Bio link generó 200+ clics en el primer mes desde Instagram",
-      "Posicionamiento en Google para \"estética en Iztapalapa\"",
-    ],
-    plan: "INDEXA",
-    slug: "estetica-glamour",
-  },
-  {
-    nombre: "Despacho Contable Ramírez",
-    ciudad: "Puebla, Puebla",
-    categoria: "Servicios Contables",
-    problema:
-      "Tenía un sitio web anticuado hecho en WordPress que tardaba 8 segundos en cargar y no aparecía en búsquedas locales.",
-    solucion:
-      "Migración a INDEXA con sitio optimizado: carga en menos de 2 segundos, Schema.org con servicios específicos (declaraciones, nómina, auditorías) y SEO local para Puebla.",
-    resultados: [
-      "Tiempo de carga reducido de 8s a 1.5s",
-      "3x más solicitudes de cotización por WhatsApp",
-      "Aparición en Google Maps para \"contador en Puebla\"",
-    ],
-    plan: "INDEXA",
-    slug: "despacho-contable-ramirez",
-  },
-];
-
-// JSON-LD for case studies
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  name: "Casos de Éxito — INDEXA",
-  description:
-    "Historias de PYMES en México que mejoraron su presencia digital y ventas con INDEXA.",
-  url: "https://indexaia.com/casos-de-exito",
-  mainEntity: {
-    "@type": "ItemList",
-    itemListElement: casos.map((caso, i) => ({
-      "@type": "ListItem",
-      position: i + 1,
-      name: caso.nombre,
-      description: caso.solucion,
-    })),
+  openGraph: {
+    title: "Casos reales — INDEXA",
+    description:
+      "Cifras reales de cuentas de Google Ads administradas por INDEXA, publicadas con periodo, fuente y definición de contacto.",
+    url: PAGE_URL,
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
 };
+
+function periodoLegible(c: CasoAds): string {
+  const desde = mesLegible(c.periodo.desde.slice(0, 7));
+  const hasta = mesLegible(c.periodo.hasta.slice(0, 7));
+  return desde === hasta ? desde : `${desde} a ${hasta}`;
+}
+
+function filasComparacion(actual: CasoMetricas, previo: CasoMetricas) {
+  return [
+    { k: "Inversión", a: formatoMXN(previo.inversion), b: formatoMXN(actual.inversion) },
+    { k: "Clics", a: String(previo.clics), b: String(actual.clics) },
+    { k: "Contactos", a: String(previo.contactos), b: String(actual.contactos) },
+    { k: "Costo por contacto", a: formatoMXN(previo.costoPorContacto), b: formatoMXN(actual.costoPorContacto) },
+    { k: "Clics que contactan", a: `${previo.tasaContacto.toFixed(1)}%`, b: `${actual.tasaContacto.toFixed(1)}%` },
+  ];
+}
 
 export default function CasosDeExito() {
+  const lista = casos();
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "@id": PAGE_URL,
+    url: PAGE_URL,
+    name: "Casos reales — INDEXA",
+    description: metadata.description,
+    inLanguage: "es-MX",
+    isPartOf: { "@id": `${SITE_URL}/#website` },
+    about: { "@id": `${SITE_URL}/#organization` },
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: lista.map((c, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: `${c.industria} en ${c.ciudad}`,
+        description: `${c.metricas.contactos} contactos (${c.definicionConversion.toLowerCase()}) con ${formatoMXN(c.metricas.inversion)} invertidos en ${periodoLegible(c)}; ${formatoMXN(c.metricas.costoPorContacto)} por contacto. Fuente: ${c.fuente}.`,
+      })),
+    },
+  };
+
   return (
     <>
       <Header />
       <main className="bg-white">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }} />
 
         {/* Hero */}
         <section className="relative overflow-hidden bg-[#050816] pt-32 pb-20">
@@ -96,108 +86,170 @@ export default function CasosDeExito() {
           <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-indexa-orange/15 blur-[100px]" />
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
             <span className="inline-block rounded-full bg-indexa-orange/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-indexa-orange">
-              Casos de Éxito
+              Casos reales
             </span>
             <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-              Negocios reales,{" "}
+              Cifras reales de cuentas{" "}
               <span className="bg-gradient-to-r from-indexa-orange to-amber-300 bg-clip-text text-transparent">
-                resultados reales
+                que administramos
               </span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-white/60">
-              Descubre cómo PYMES en México aumentaron su visibilidad en Google y
-              sus ventas por WhatsApp con la plataforma de presencia digital con IA
-              de INDEXA.
+              Sin testimonios inventados ni promedios. Cada caso sale de la exportación de la
+              cuenta publicitaria, con su periodo, su fuente y la definición exacta de lo que
+              medimos. Los nombres se omiten a petición de los clientes.
             </p>
           </div>
         </section>
 
-        {/* Cases */}
+        {/* Casos */}
         <section className="mx-auto max-w-5xl px-4 py-20 sm:px-6">
           <div className="space-y-16">
-            {casos.map((caso, i) => (
-              <article
-                key={i}
-                className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm sm:p-10"
-              >
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl font-extrabold text-indexa-gray-dark">
-                    {caso.nombre}
-                  </h2>
-                  <span className="rounded-full bg-indexa-orange/10 px-3 py-1 text-xs font-bold text-indexa-orange">
-                    Plan {caso.plan}
-                  </span>
-                </div>
-                <p className="mt-1 text-sm text-gray-500">
-                  {caso.categoria} — {caso.ciudad}
-                </p>
+            {lista.map((c) => {
+              const m = c.metricas;
+              const periodo = periodoLegible(c);
+              const metricas = [
+                { valor: String(m.contactos), etiqueta: "contactos en el periodo" },
+                { valor: formatoMXN(m.costoPorContacto), etiqueta: "por contacto" },
+                { valor: formatoMXN(m.inversion), etiqueta: "invertidos" },
+                { valor: `${m.tasaContacto.toFixed(0)}%`, etiqueta: "de los clics contactan" },
+                ...(m.cuotaImpresiones !== undefined
+                  ? [{ valor: `${m.cuotaImpresiones}%`, etiqueta: "cuota de impresiones" }]
+                  : []),
+              ];
+              return (
+                <article
+                  key={c.slug}
+                  id={c.slug}
+                  className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm sm:p-10"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="text-2xl font-extrabold text-indexa-gray-dark">
+                      {c.industria}
+                    </h2>
+                    <span className="rounded-full bg-indexa-orange/10 px-3 py-1 text-xs font-bold text-indexa-orange">
+                      {c.ciudad}
+                    </span>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600">
+                      Cuenta administrada desde {c.relacionDesde}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-gray-500">
+                    {c.mercado === "mx" ? "Google Ads · México" : "Google Ads · USA"} · Cifras de {periodo}
+                  </p>
 
-                <div className="mt-8 grid gap-8 md:grid-cols-3">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-red-500">
-                      Problema
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                      {caso.problema}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-indexa-blue">
-                      Solución INDEXA
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                      {caso.solucion}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-green-600">
-                      Resultados
-                    </h3>
-                    <ul className="mt-2 space-y-2">
-                      {caso.resultados.map((r, j) => (
-                        <li
-                          key={j}
-                          className="flex items-start gap-2 text-sm text-gray-600"
-                        >
-                          <svg
-                            className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth={3}
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="m4.5 12.75 6 6 9-13.5"
-                            />
-                          </svg>
-                          {r}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </article>
-            ))}
+                  <dl className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
+                    {metricas.map((x) => (
+                      <div key={x.etiqueta} className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-center">
+                        <dd className="text-2xl font-extrabold text-indexa-gray-dark">{x.valor}</dd>
+                        <dt className="mt-1 text-xs font-medium text-gray-500">{x.etiqueta}</dt>
+                      </div>
+                    ))}
+                  </dl>
+
+                  {c.comparacion && c.metricasComparacion && (
+                    <div className="mt-8">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-indexa-blue">
+                        Arranque de la cuenta vs. primer mes completo
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-600">
+                        El primer periodo cubre sólo {c.comparacion.desde} a {c.comparacion.hasta},
+                        los primeros días de la cuenta, así que no es un &quot;antes y después&quot;:
+                        es el arranque frente al primer mes completo ({c.periodo.desde} a {c.periodo.hasta}).
+                      </p>
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full text-left text-sm">
+                          <thead>
+                            <tr className="border-b border-gray-200 text-xs uppercase tracking-wider text-gray-500">
+                              <th className="py-2 pr-4 font-semibold">Métrica</th>
+                              <th className="py-2 pr-4 font-semibold">Arranque</th>
+                              <th className="py-2 font-semibold">Mes completo</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filasComparacion(m, c.metricasComparacion).map((f) => (
+                              <tr key={f.k} className="border-b border-gray-100">
+                                <td className="py-2 pr-4 font-medium text-indexa-gray-dark">{f.k}</td>
+                                <td className="py-2 pr-4 text-gray-600">{f.a}</td>
+                                <td className="py-2 font-semibold text-indexa-gray-dark">{f.b}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {c.destacados.length > 0 && (
+                    <div className="mt-8">
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-green-600">
+                        Lo que se observa en la cuenta
+                      </h3>
+                      <ul className="mt-3 space-y-2">
+                        {c.destacados.map((d) => (
+                          <li key={d} className="flex items-start gap-2 text-sm text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-500">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                            </svg>
+                            {d}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <p className="mt-8 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs leading-relaxed text-gray-500">
+                    <span className="font-semibold text-gray-700">Cómo se mide:</span> un contacto es{" "}
+                    {c.definicionConversion.toLowerCase()}; no es una venta cerrada. Periodo {c.periodo.desde} a{" "}
+                    {c.periodo.hasta}. Fuente: {c.fuente}. Caso publicado sin nombre ni identificadores a petición del cliente.
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+
+          {/* Cómo leer estas cifras */}
+          <div className="mt-20 rounded-2xl border border-indexa-orange/20 bg-indexa-orange/5 p-8 sm:p-10">
+            <h2 className="text-2xl font-extrabold text-indexa-gray-dark">Cómo leer estas cifras</h2>
+            <ul className="mt-4 space-y-3 text-sm leading-relaxed text-gray-700 sm:text-base">
+              <li>
+                <span className="font-semibold">Contacto no es cliente.</span> Contamos clics al botón de WhatsApp y
+                llamadas desde el anuncio, que es lo que la cuenta registra. Cuántos se convierten en venta depende
+                de cómo atienda cada negocio.
+              </li>
+              <li>
+                <span className="font-semibold">Un mes no es una tendencia.</span> Publicamos periodos completos y
+                la fuente exacta; los resultados de otro giro, otra ciudad u otro presupuesto serán distintos.
+              </li>
+              <li>
+                <span className="font-semibold">No hay precio fijo para administrar campañas.</span> La plataforma
+                cuesta $699 MXN/mes; que nosotros operemos tus campañas se cotiza según tu inversión publicitaria.
+              </li>
+            </ul>
           </div>
 
           {/* CTA */}
-          <div className="mt-20 text-center">
+          <div className="mt-16 text-center">
             <h2 className="text-2xl font-extrabold text-indexa-gray-dark">
-              ¿Listo para ser el próximo caso de éxito?
+              ¿Quieres saber qué cifras son razonables para tu negocio?
             </h2>
             <p className="mt-3 text-gray-500">
-              Crea tu sitio web profesional con IA en menos de 3 minutos.
+              Te decimos con qué presupuesto tiene sentido empezar y qué costo por contacto es realista en tu giro.
             </p>
-            <Link
-              href="/registro"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indexa-orange to-orange-500 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indexa-orange/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
-            >
-              Prueba 14 días gratis
-            </Link>
-            <p className="mt-3 text-xs text-gray-400">Sin tarjeta de crédito · Cancela cuando quieras</p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href={whatsappUrl("Hola, vi los casos reales en indexaia.com y quiero una cotización para que administren mis campañas")}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indexa-orange to-orange-500 px-8 py-4 text-base font-bold text-white shadow-lg shadow-indexa-orange/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+              >
+                Cotizar por WhatsApp
+              </a>
+              <Link
+                href="/administracion-de-campanas"
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-8 py-4 text-base font-bold text-indexa-gray-dark transition-all hover:border-indexa-orange/40"
+              >
+                Cómo administramos campañas
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -205,26 +257,32 @@ export default function CasosDeExito() {
         <section className="border-t border-gray-100 bg-gray-50 py-16">
           <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
             <h3 className="text-lg font-bold text-indexa-gray-dark">
-              Aprende más sobre presencia digital para tu negocio
+              Guías con estos mismos datos
             </h3>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               <Link
-                href="/guia/presencia-digital-pymes"
+                href="/guia/cuanto-gastar-en-google-ads-negocio-local"
                 className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-indexa-gray-dark shadow-sm hover:shadow-md transition-all"
               >
-                Guía: Presencia Digital para PYMES
+                Cuánto gastar en Google Ads
               </Link>
               <Link
-                href="/guia/seo-local-mexico"
+                href="/guia/que-es-roas-cpl-cpc-explicado-simple"
                 className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-indexa-gray-dark shadow-sm hover:shadow-md transition-all"
               >
-                Guía: SEO Local en México
+                ROAS, CPL y CPC explicados
               </Link>
               <Link
-                href="/guia/marketing-digital-pymes"
+                href="/guia/administrar-google-ads-yo-mismo-o-contratar"
                 className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-indexa-gray-dark shadow-sm hover:shadow-md transition-all"
               >
-                Guía: Marketing Digital para PYMES
+                ¿Administrar yo mismo o contratar?
+              </Link>
+              <Link
+                href="/pagina-web-cdmx"
+                className="rounded-lg border border-gray-200 bg-white px-5 py-3 text-sm font-medium text-indexa-gray-dark shadow-sm hover:shadow-md transition-all"
+              >
+                Página web para negocios en CDMX
               </Link>
             </div>
           </div>

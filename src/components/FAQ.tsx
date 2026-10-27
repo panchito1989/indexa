@@ -1,6 +1,7 @@
 "use client";
 
 import FAQItem, { type FAQItemData } from "./FAQItem";
+import { jsonLdHtml } from "@/lib/jsonLd";
 
 const FAQS: FAQItemData[] = [
   {
@@ -85,7 +86,7 @@ export default function FAQ() {
       {/* JSON-LD FAQPage Schema */}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(jsonLd) }}
       />
 
       {/* Background accent */}

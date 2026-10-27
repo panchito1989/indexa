@@ -41,6 +41,13 @@ export function buscarCaso(slug: string): CasoAds | null {
   return archivo.casos.find((c) => c.slug === slug) ?? null;
 }
 
+/**
+ * Caso que se muestra en la home, en el hero y en la landing de CDMX.
+ * El test comprueba que exista en el registro: si se renombra el slug en el
+ * JSON sin actualizar esto, la home se quedaría sin prueba social en silencio.
+ */
+export const CASO_DESTACADO = "centro-servicio-electrodomesticos-cdmx";
+
 /** "$159 MXN" — sin decimales, con separador de miles. */
 export function formatoMXN(monto: number): string {
   return `$${Math.round(monto).toLocaleString("en-US")} MXN`;

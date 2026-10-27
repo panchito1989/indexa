@@ -5,11 +5,9 @@ interface CityContentEnricherProps {
 }
 
 /**
- * Renders 5 unique content blocks per city to differentiate landings
- * and stop them being treated as near-duplicate "thin content" by Google.
- *
- * Adds ~700-900 unique words per page covering: local context, top zones,
- * top industries, testimonial and city-specific FAQ.
+ * Bloques de contenido local de la landing de ciudad: contexto, zonas, giros
+ * y FAQ específica. El testimonio "compuesto ficticio" que había aquí se
+ * eliminó: la prueba social de la landing es el caso real (`ResultadosReales`).
  */
 export default function CityContentEnricher({ data }: CityContentEnricherProps) {
   return (
@@ -26,7 +24,7 @@ export default function CityContentEnricher({ data }: CityContentEnricherProps) 
             </h2>
           </div>
 
-          <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          <div className="mt-10 grid gap-6 sm:grid-cols-2">
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indexa-orange/5 to-amber-50 p-6">
               <p className="text-xs font-bold uppercase tracking-wider text-indexa-orange">Población</p>
               <p className="mt-2 text-xl font-extrabold text-indexa-gray-dark">{data.poblacion}</p>
@@ -34,10 +32,6 @@ export default function CityContentEnricher({ data }: CityContentEnricherProps) 
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-indexa-blue/5 to-cyan-50 p-6">
               <p className="text-xs font-bold uppercase tracking-wider text-indexa-blue">Mercado PYME</p>
               <p className="mt-2 text-xl font-extrabold text-indexa-gray-dark">{data.pymesEstimadas}</p>
-            </div>
-            <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-emerald-500/5 to-emerald-50 p-6">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">Demanda online</p>
-              <p className="mt-2 text-xl font-extrabold text-indexa-gray-dark">{data.busquedasMensuales}</p>
             </div>
           </div>
 
@@ -54,7 +48,7 @@ export default function CityContentEnricher({ data }: CityContentEnricherProps) 
             Zonas de {data.nombreCorto} donde tu sitio te trae clientes
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-center text-base text-gray-600">
-            Cada negocio rankea por proximidad. Estas son las zonas donde más clientes INDEXA atienden búsquedas locales hoy:
+            Cada negocio rankea por proximidad. Estas son las zonas con mayor densidad comercial de la ciudad:
           </p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -106,41 +100,6 @@ export default function CityContentEnricher({ data }: CityContentEnricherProps) 
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Testimonial block */}
-      <section className="bg-indexa-gray-light/50 py-16 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
-          <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-lg sm:p-10">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              className="absolute right-6 top-6 h-12 w-12 text-indexa-orange/15"
-            >
-              <path d="M14 17h3l2-4V7h-6v6h3zM6 17h3l2-4V7H5v6h3z" />
-            </svg>
-            <div className="relative">
-              <p className="text-xl font-medium leading-relaxed text-indexa-gray-dark sm:text-2xl">
-                &ldquo;{data.testimonio.resultado}&rdquo;
-              </p>
-              <div className="mt-6 flex items-center gap-4 border-t border-gray-200 pt-6">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-indexa-orange to-orange-500 font-bold text-white">
-                  {data.testimonio.nombre.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                </div>
-                <div>
-                  <p className="font-bold text-indexa-gray-dark">{data.testimonio.nombre}</p>
-                  <p className="text-sm text-gray-600">
-                    {data.testimonio.negocio} · {data.testimonio.zona}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <p className="mt-4 text-center text-xs text-gray-400">
-            Caso real anonimizado a petición del cliente. Cambia &quot;resultado&quot; por experiencia comparable según giro.
-          </p>
         </div>
       </section>
 

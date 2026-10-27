@@ -71,18 +71,13 @@ Schema.org AutomotiveBusiness con servicios (mecánica general, hojalatería, al
 
 ---
 
-## Cobertura geográfica con landing dedicada
+## Cobertura geográfica
 
-- Ciudad de México (CDMX): https://indexaia.com/pagina-web-cdmx
-- Guadalajara: https://indexaia.com/pagina-web-guadalajara
-- Monterrey: https://indexaia.com/pagina-web-monterrey
-- Puebla: https://indexaia.com/pagina-web-puebla
-- Querétaro: https://indexaia.com/pagina-web-queretaro
-- Tijuana: https://indexaia.com/pagina-web-tijuana
-- Mérida: https://indexaia.com/pagina-web-merida
-- León: https://indexaia.com/pagina-web-leon
+- Ciudad de México y Estado de México (landing con caso real): https://indexaia.com/pagina-web-cdmx
+- Resto de la República Mexicana (servicio 100% online): https://indexaia.com/servicios/sitios-web-ia
+- Negocios hispanos en Estados Unidos: https://indexaia.com/usa
 
-INDEXA también funciona en cualquier otra ciudad de México: el sitio se adapta a la ciudad que el dueño del negocio configure.
+INDEXA funciona en cualquier ciudad de México: el sitio se adapta a la ciudad que el dueño del negocio configure. Las antiguas landings por ciudad (Guadalajara, Monterrey, Puebla, Querétaro, Tijuana, Mérida, León) se fusionaron en 2026-10 porque repetían la misma plantilla.
 
 ---
 

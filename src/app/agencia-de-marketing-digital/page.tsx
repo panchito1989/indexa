@@ -7,7 +7,7 @@ import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 const PAGE_PATH = "/agencia-de-marketing-digital";
 
 export const metadata: Metadata = {
-  title: "Agencia de Marketing Digital en México | INDEXA — Plataforma con IA",
+  title: "Agencia de Marketing Digital en México — Plataforma con IA",
   description:
     "INDEXA es la agencia de marketing digital para PYMES en México: sitios web, Google Ads, Meta Ads, SEO local, redes sociales y leads directos a WhatsApp. Plan único de $699 MXN/mes, todo incluido. 14 días gratis.",
   keywords: [
@@ -82,7 +82,7 @@ const faq = [
   {
     pregunta: "¿Atienden empresas fuera de la Ciudad de México?",
     respuesta:
-      "Sí. INDEXA atiende toda la República Mexicana y a negocios hispanos en USA. Tenemos páginas dedicadas para Guadalajara, Monterrey, Puebla, Querétaro, Tijuana, Mérida y León, con SEO local segmentado por código postal. Todo el servicio se entrega 100% online con soporte por WhatsApp en español, así que no importa dónde esté tu negocio: nosotros lo ponemos en Google y trabajamos campañas hiper-locales para tu zona específica.",
+      "Sí. INDEXA atiende toda la República Mexicana y a negocios hispanos en USA. Todo el servicio se entrega 100% online con soporte por WhatsApp en español y las campañas se segmentan por ciudad, código postal y radio, así que no importa dónde esté tu negocio: nosotros lo ponemos en Google y trabajamos campañas hiper-locales para tu zona específica. El caso real que publicamos es de un negocio en CDMX y Estado de México.",
   },
 ];
 
@@ -125,15 +125,13 @@ const servicios = [
   },
 ];
 
+// Las landings de otras ciudades se fusionaron (ver redireccionesLegacy.ts):
+// sólo CDMX tiene contenido y un caso real propios.
 const ciudades = [
-  { nombre: "Ciudad de México (CDMX)", href: "/pagina-web-cdmx" },
-  { nombre: "Guadalajara", href: "/pagina-web-guadalajara" },
-  { nombre: "Monterrey", href: "/pagina-web-monterrey" },
-  { nombre: "Puebla", href: "/pagina-web-puebla" },
-  { nombre: "Querétaro", href: "/pagina-web-queretaro" },
-  { nombre: "Tijuana", href: "/pagina-web-tijuana" },
-  { nombre: "Mérida", href: "/pagina-web-merida" },
-  { nombre: "León", href: "/pagina-web-leon" },
+  { nombre: "CDMX y Estado de México", href: "/pagina-web-cdmx" },
+  { nombre: "Toda la República (servicio online)", href: "/servicios/sitios-web-ia" },
+  { nombre: "Negocios hispanos en USA", href: "/usa" },
+  { nombre: "Administración de campañas", href: "/administracion-de-campanas" },
 ];
 
 const planes = [

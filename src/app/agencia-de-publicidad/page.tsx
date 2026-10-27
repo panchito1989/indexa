@@ -7,7 +7,7 @@ import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 const PAGE_PATH = "/agencia-de-publicidad";
 
 export const metadata: Metadata = {
-  title: "Agencia de Publicidad en México | INDEXA — Anuncios que Sí Venden",
+  title: "Agencia de Publicidad en México — Anuncios que Sí Venden",
   description:
     "INDEXA es la agencia de publicidad para PYMES en México: Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Sin contratos, leads directos a WhatsApp, plan único de $699 MXN/mes todo incluido.",
   keywords: [
@@ -125,15 +125,13 @@ const servicios = [
   },
 ];
 
+// Las landings de otras ciudades se fusionaron (ver redireccionesLegacy.ts):
+// sólo CDMX tiene contenido y un caso real propios.
 const ciudades = [
-  { nombre: "CDMX", href: "/pagina-web-cdmx" },
-  { nombre: "Guadalajara", href: "/pagina-web-guadalajara" },
-  { nombre: "Monterrey", href: "/pagina-web-monterrey" },
-  { nombre: "Puebla", href: "/pagina-web-puebla" },
-  { nombre: "Querétaro", href: "/pagina-web-queretaro" },
-  { nombre: "Tijuana", href: "/pagina-web-tijuana" },
-  { nombre: "Mérida", href: "/pagina-web-merida" },
-  { nombre: "León", href: "/pagina-web-leon" },
+  { nombre: "CDMX y Estado de México", href: "/pagina-web-cdmx" },
+  { nombre: "Toda la República (servicio online)", href: "/servicios/sitios-web-ia" },
+  { nombre: "Negocios hispanos en USA", href: "/usa" },
+  { nombre: "Administración de campañas", href: "/administracion-de-campanas" },
 ];
 
 export default function AgenciaPublicidadPage() {

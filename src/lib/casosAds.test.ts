@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buscarCaso, casos, formatoMXN } from "./casosAds";
+import { buscarCaso, CASO_DESTACADO, casos, formatoMXN } from "./casosAds";
 
 const PROHIBIDOS = ["nombre", "customerId", "customer", "dominio", "telefono", "email"];
 
@@ -57,5 +57,9 @@ describe("casos de exito de ads", () => {
   it("formatea pesos sin decimales", () => {
     expect(formatoMXN(159)).toBe("$159 MXN");
     expect(formatoMXN(15414.3)).toBe("$15,414 MXN");
+  });
+
+  it("el caso destacado de la home existe en el registro", () => {
+    expect(buscarCaso(CASO_DESTACADO)).not.toBeNull();
   });
 });
