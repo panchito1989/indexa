@@ -1,3 +1,33 @@
+import { buscarCaso, CASO_DESTACADO, formatoMXN } from "@/lib/casosAds";
+
+interface StatHero {
+  value: string;
+  label: string;
+  sub: string;
+}
+
+/**
+ * Cifras del hero. Las dos de resultados salen del caso publicado en
+ * `casos-ads.json` (una cuenta real que administramos, con fecha y fuente).
+ * Antes había un "+340% de conversión" y un "−60% de costo por cliente" sin
+ * fuente: Google (E-E-A-T) y los modelos de IA descuentan ese tipo de claims.
+ */
+function statsHero(): StatHero[] {
+  const producto: StatHero[] = [
+    { value: "<3 min", label: "Para tener tu web", sub: "lista para vender" },
+    { value: "24/7", label: "IA trabajando", sub: "incluso mientras duermes" },
+  ];
+  const caso = buscarCaso(CASO_DESTACADO);
+  if (!caso) return producto;
+  const m = caso.metricas;
+  return [
+    { value: String(m.contactos), label: "Contactos en un mes", sub: `negocio real en ${caso.ciudad}` },
+    producto[0],
+    { value: formatoMXN(m.costoPorContacto), label: "Por contacto en Google Ads", sub: "dato publicado, no promedio" },
+    producto[1],
+  ];
+}
+
 export default function Hero() {
   return (
     <section
@@ -110,14 +140,9 @@ export default function Hero() {
           14 días gratis · Sin tarjeta · Cancela cuando quieras
         </p>
 
-        {/* Stats bar - pivoted to conversion */}
+        {/* Stats bar: producto + cifras reales del caso publicado */}
         <div className="animate-fade-up-delay-2 mt-14 grid w-full max-w-4xl grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm sm:grid-cols-4">
-          {[
-            { value: "+340%", label: "Conversión promedio", sub: "vs. webs tradicionales" },
-            { value: "<3 min", label: "Para tener tu web", sub: "lista para vender" },
-            { value: "−60%", label: "Costo por cliente", sub: "en publicidad" },
-            { value: "24/7", label: "IA trabajando", sub: "incluso mientras duermes" },
-          ].map((stat) => (
+          {statsHero().map((stat) => (
             <div key={stat.label} className="bg-[#0a0e27]/60 px-5 py-5 text-center">
               <p className="bg-gradient-to-r from-indexa-orange to-amber-300 bg-clip-text text-2xl font-extrabold text-transparent sm:text-3xl">
                 {stat.value}

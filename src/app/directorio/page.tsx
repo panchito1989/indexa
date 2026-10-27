@@ -5,7 +5,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Directorio de Negocios en México — INDEXA",
+  title: "Directorio de Negocios en México",
   description:
     "Encuentra negocios locales en México con presencia digital profesional. Directorio de PYMES organizadas por ciudad y categoría con contacto directo por WhatsApp.",
   alternates: { canonical: "/directorio" },

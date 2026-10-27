@@ -9,7 +9,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Página Web para Dentista en México — INDEXA",
+  title: "Página Web para Dentista en México",
   description:
     "Crea la página web de tu consultorio dental en menos de 3 minutos. Lista de servicios, galería, citas por WhatsApp y SEO local para aparecer en Google cuando busquen 'dentista en [tu ciudad]'. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web dentista", "sitio web consultorio dental", "web para dentista México", "página web clínica dental", "sitio web ortodoncista"],

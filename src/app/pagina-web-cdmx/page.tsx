@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ServicesCrossLink from "@/components/ServicesCrossLink";
 import CityContentEnricher from "@/components/CityContentEnricher";
+import ResultadosReales from "@/components/ResultadosReales";
 import { buildCityServiceSchema } from "@/lib/seoSchemas";
 import { getCityData } from "@/lib/citiesData";
 
@@ -11,9 +12,10 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Página Web para Negocios en CDMX — INDEXA",
+  // Sin marca: el layout aplica la plantilla "%s | INDEXA".
+  title: "Página Web para Negocios en CDMX y Estado de México",
   description:
-    "Crea tu página web profesional para tu negocio en Ciudad de México en menos de 3 minutos. Con SEO local, WhatsApp integrado y IA. Plan único de $699 MXN/mes, todo incluido.",
+    "Crea tu página web profesional para tu negocio en Ciudad de México en menos de 3 minutos. Con SEO local, WhatsApp integrado y IA. Plan único de $699 MXN/mes, todo incluido. Incluye un caso real con cifras de Google Ads.",
   keywords: ["página web CDMX", "sitio web Ciudad de México", "presencia digital CDMX", "diseño web CDMX", "página web negocio México DF"],
   alternates: { canonical: "/pagina-web-cdmx" },
   openGraph: {
@@ -55,7 +57,7 @@ const faqJsonLd = {
       name: "¿En cuánto tiempo aparece mi negocio de CDMX en Google?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Con el SEO local de INDEXA, la mayoría de los negocios en CDMX empiezan a aparecer en Google en búsquedas locales entre 1 y 3 semanas. Cada sitio incluye Schema.org LocalBusiness con tu ubicación en la Ciudad de México.",
+        text: "Cada sitio de INDEXA incluye Schema.org LocalBusiness con tu ubicación en la Ciudad de México, y las primeras impresiones en búsquedas locales suelen llegar en las primeras semanas. El ritmo depende de la competencia de tu zona y de completar tu Google Business Profile y reseñas.",
       },
     },
     {
@@ -125,10 +127,10 @@ export default function PaginaWebCDMX() {
                 </svg>
               </Link>
               <Link
-                href="/demo"
+                href="/probar"
                 className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-8 py-4 text-lg font-bold text-white backdrop-blur-sm transition-all hover:border-white/30"
               >
-                Ver demo
+                Ver mi web demo gratis
               </Link>
             </div>
             <p className="mt-4 text-sm text-white/30">Sin tarjeta de crédito · Sin contratos · Listo en 3 minutos</p>
@@ -211,7 +213,10 @@ export default function PaginaWebCDMX() {
           </div>
         </section>
 
-        {/* Unique per-city content (zonas, giros, testimonio, FAQ extras) */}
+        {/* Caso real local: la única prueba social de la página (sin testimonios ficticios) */}
+        <ResultadosReales tema="claro" titulo="Resultados reales en CDMX y Estado de México" />
+
+        {/* Contenido local único (contexto, zonas, giros, FAQ extra) */}
         {cityData && <CityContentEnricher data={cityData} />}
 
         {/* Cross-link to all services for internal linking + commercial intent capture */}
@@ -224,7 +229,7 @@ export default function PaginaWebCDMX() {
               ¿Tienes un negocio en CDMX?
             </h2>
             <p className="mt-4 text-lg text-white/80">
-              Únete a los cientos de emprendedores en Ciudad de México que ya tienen presencia digital profesional.
+              Publica tu sitio hoy y mide los contactos que te trae, con las mismas cifras que mostramos en el caso real de arriba.
             </p>
             <Link
               href="/registro"

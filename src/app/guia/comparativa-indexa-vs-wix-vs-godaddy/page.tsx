@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "INDEXA vs Wix vs GoDaddy: comparativa para PYMEs en México (2026)",
+  title: { absolute: "INDEXA vs Wix vs GoDaddy: comparativa para PYMEs en México (2026)" },
   description:
     "Comparativa lado a lado de INDEXA, Wix y GoDaddy para una PYME mexicana: precios MXN, soporte en español, WhatsApp, anuncios integrados, SEO local y facilidad de uso.",
   alternates: { canonical: "/guia/comparativa-indexa-vs-wix-vs-godaddy" },

@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Aviso de Privacidad — INDEXA",
+  title: "Aviso de Privacidad",
   description: "Aviso de privacidad de INDEXA. Conoce cómo recopilamos, usamos y protegemos tus datos personales.",
 };
 

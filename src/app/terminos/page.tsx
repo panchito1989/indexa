@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Términos de Servicio — INDEXA",
+  title: "Términos de Servicio",
   description: "Términos y condiciones de uso de la plataforma INDEXA.",
 };
 

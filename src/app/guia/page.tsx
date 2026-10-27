@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Guías de Presencia Digital para PYMES en México — INDEXA",
+  title: "Guías de Presencia Digital para PYMES en México",
   description:
     "Guías gratuitas para PYMES mexicanas: cómo crear tu página web, SEO local, Google Mi Negocio, WhatsApp Business, marketing digital y más. Todo lo que necesitas para crecer en internet.",
   alternates: { canonical: "/guia" },

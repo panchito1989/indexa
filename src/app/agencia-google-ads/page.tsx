@@ -7,7 +7,7 @@ import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 const PAGE_PATH = "/agencia-google-ads";
 
 export const metadata: Metadata = {
-  title: "Agencia de Google Ads en México | INDEXA — Aparece Arriba en Google",
+  title: "Agencia de Google Ads en México — Aparece Arriba en Google",
   description:
     "INDEXA es la agencia de Google Ads para PYMES en México. Campañas de búsqueda, Maps y Display optimizadas por IA. Leads directos a WhatsApp. Sin contratos, plan único de $699 MXN/mes todo incluido.",
   keywords: [

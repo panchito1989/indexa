@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "¿Qué Incluye INDEXA? Todo lo que Recibes con tu Página Web (2026)",
+  title: { absolute: "¿Qué Incluye INDEXA? Todo lo que Recibes con tu Página Web (2026)" },
   description:
     "Desglose completo de todo lo que incluye tu plan de INDEXA: sitio web profesional, SEO automático, WhatsApp, SSL, panel de edición, analytics, galería, bio link y más. Sin costos ocultos.",
   alternates: { canonical: "/guia/que-incluye-indexa" },

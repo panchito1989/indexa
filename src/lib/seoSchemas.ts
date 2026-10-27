@@ -17,8 +17,11 @@ export const INDEXA_SITE_URL = rawSiteUrl.startsWith("http")
   ? rawSiteUrl
   : `https://${rawSiteUrl}`;
 
+// Misma entidad que declara el layout (`#organization`): el @id permite que
+// Google y los modelos de IA la resuelvan como una sola organización.
 const indexaProvider = {
   "@type": "Organization",
+  "@id": `${INDEXA_SITE_URL}/#organization`,
   name: "INDEXA",
   url: INDEXA_SITE_URL,
   logo: `${INDEXA_SITE_URL}/logo.png`,

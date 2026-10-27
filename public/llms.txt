@@ -70,15 +70,8 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 - [/servicios/chatbot-inteligente](https://indexaia.com/servicios/chatbot-inteligente): Chatbot que vende
 - [/servicios/automatizaciones](https://indexaia.com/servicios/automatizaciones): Workflows multi-canal
 
-### Landings por ciudad (México)
-- [/pagina-web-cdmx](https://indexaia.com/pagina-web-cdmx): Páginas web para negocios en CDMX
-- [/pagina-web-guadalajara](https://indexaia.com/pagina-web-guadalajara): Guadalajara
-- [/pagina-web-monterrey](https://indexaia.com/pagina-web-monterrey): Monterrey
-- [/pagina-web-puebla](https://indexaia.com/pagina-web-puebla): Puebla
-- [/pagina-web-queretaro](https://indexaia.com/pagina-web-queretaro): Querétaro
-- [/pagina-web-tijuana](https://indexaia.com/pagina-web-tijuana): Tijuana
-- [/pagina-web-merida](https://indexaia.com/pagina-web-merida): Mérida
-- [/pagina-web-leon](https://indexaia.com/pagina-web-leon): León
+### Landing por ciudad (México)
+- [/pagina-web-cdmx](https://indexaia.com/pagina-web-cdmx): Páginas web para negocios en CDMX y Estado de México, con el caso real anónimo de una cuenta de Google Ads administrada por INDEXA (cifras de agosto de 2026). INDEXA atiende toda la República; las landings de otras ciudades se fusionaron en /servicios/sitios-web-ia.
 
 ### Landings por industria (México)
 - [/sitio-web-restaurante](https://indexaia.com/sitio-web-restaurante): Páginas web para restaurantes

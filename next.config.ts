@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
+// Import relativo: next.config no resuelve el alias "@/".
+import { REDIRECCIONES_LEGACY } from "./src/lib/redireccionesLegacy";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // 301 de URLs del sitio anterior y de landings fusionadas (ver el módulo).
+  // Next evalúa redirects antes del middleware, así que no pasan por él.
+  redirects: async () => [...REDIRECCIONES_LEGACY],
   // ffmpeg-static resuelve la ruta de su binario en runtime — si el bundler lo
   // empaqueta, la ruta queda rota ("\ROOT\...\ffmpeg.exe ENOENT"). Externo +
   // incluir el binario en el trace de las DOS rutas que lo usan (Vercel).

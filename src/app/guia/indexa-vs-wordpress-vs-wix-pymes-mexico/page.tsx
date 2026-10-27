@@ -8,7 +8,7 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 const PAGE_PATH = "/guia/indexa-vs-wordpress-vs-wix-pymes-mexico";
 
 export const metadata: Metadata = {
-  title: "INDEXA vs WordPress vs Wix: ¿Cuál Conviene a una PYME en México? (2026)",
+  title: { absolute: "INDEXA vs WordPress vs Wix: ¿Cuál Conviene a una PYME en México? (2026)" },
   description:
     "Comparativa real para una PYME mexicana 2026: INDEXA vs WordPress vs Wix. Costo total anual, soporte español, WhatsApp, SEO local, facilidad de uso y conversión.",
   keywords: [
