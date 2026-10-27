@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu taller mecánico en USA — INDEXA",
+  title: "Más clientes para tu taller mecánico en USA",
   description:
     "Llena tu taller mecánico de clientes hispanos en USA. Anuncios en español en Facebook, Google y TikTok, página web optimizada y leads directos a WhatsApp. Para Houston, Dallas, Miami, LA, Phoenix y todo USA. Garantía 30 días.",
   keywords: [

@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio de landscaping en USA — INDEXA",
+  title: "Más clientes para tu negocio de landscaping en USA",
   description:
     "Llena tu agenda de landscaping de clientes hispanos y americanos en USA. Anuncios en Facebook, Google y TikTok que traen contratos mensuales y trabajos grandes. Para Houston, Dallas, Miami, LA, Phoenix y todo USA.",
   keywords: [

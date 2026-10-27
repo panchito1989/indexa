@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio de limpieza en USA — INDEXA",
+  title: "Más clientes para tu negocio de limpieza en USA",
   description:
     "Llena tu agenda de limpieza residencial y comercial en USA con clientes recurrentes. Anuncios en español, página web optimizada y leads directos a WhatsApp. Para Houston, Dallas, Miami, LA, Phoenix y todo USA. Garantía 30 días.",
   keywords: [

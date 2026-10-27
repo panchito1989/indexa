@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio hispano en USA — INDEXA",
+  title: "Más clientes para tu negocio hispano en USA",
   description:
     "INDEXA llena tu agenda de clientes en USA. Anuncios en Facebook, Google y TikTok hechos en español, página web que vende y WhatsApp con leads. Para mecánicos, landscaping, limpieza, restaurantes y todo negocio hispano. Garantía de resultados o no pagas el siguiente mes.",
   keywords: [

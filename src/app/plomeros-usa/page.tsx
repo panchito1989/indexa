@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio de plomería en USA — INDEXA",
+  title: "Más clientes para tu negocio de plomería en USA",
   description:
     "Llamadas de emergencia y trabajos residenciales para plomeros y electricistas hispanos en USA. Anuncios en español y Google que aparecen cuando alguien necesita ayuda urgente. Garantía 30 días.",
   keywords: [

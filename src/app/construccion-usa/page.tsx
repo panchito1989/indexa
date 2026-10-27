@@ -6,7 +6,7 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio de construcción y remodelación en USA — INDEXA",
+  title: "Más clientes para tu negocio de construcción y remodelación en USA",
   description:
     "Cotizaciones de remodelación, techos, drywall, pintura y pisos para contractors hispanos en USA. Anuncios en español, página web optimizada y leads directos a WhatsApp. Garantía 30 días.",
   keywords: [

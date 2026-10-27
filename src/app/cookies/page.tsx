@@ -4,7 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Política de Cookies — INDEXA",
+  title: "Política de Cookies",
   description: "Política de cookies de INDEXA. Conoce qué cookies utilizamos y cómo puedes gestionarlas.",
 };
 

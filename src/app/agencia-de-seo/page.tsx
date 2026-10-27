@@ -6,7 +6,7 @@ import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 const PAGE_PATH = "/agencia-de-seo";
 
 export const metadata: Metadata = {
-  title: "Agencia de SEO en México | INDEXA — Posiciona tu Negocio en Google",
+  title: "Agencia de SEO en México — Posiciona tu Negocio en Google",
   description:
     "INDEXA es la agencia de SEO para PYMES en México. Posicionamiento en Google, SEO local en Maps, schema, link building y reportes en tiempo real. Plan único de $699 MXN/mes, todo incluido.",
   keywords: [

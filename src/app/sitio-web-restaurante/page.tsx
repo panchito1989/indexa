@@ -9,7 +9,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Página Web para Restaurante en México — INDEXA",
+  title: "Página Web para Restaurante en México",
   description:
     "Crea la página web de tu restaurante en menos de 3 minutos con IA. Menú digital, galería de platillos, reservaciones por WhatsApp y SEO local para aparecer en Google. Plan único de $699 MXN/mes, todo incluido.",
   keywords: ["página web restaurante", "sitio web restaurante México", "menú digital restaurante", "web para fonda", "página web taquería", "sitio web cocina"],

@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Para Agencias — Multiplica tu Operación con INDEXA",
+  title: { absolute: "Para Agencias — Multiplica tu Operación con INDEXA" },
   description:
     "Gestiona 10, 50 o 200 clientes PYME desde un solo panel. Sitios con IA, SEO local y WhatsApp integrados. Descuentos por volumen, onboarding en minutos y margen recurrente para tu agencia.",
   alternates: { canonical: "/agencias" },
