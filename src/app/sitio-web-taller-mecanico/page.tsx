@@ -12,7 +12,6 @@ export const metadata: Metadata = {
   title: "Página Web para Taller Mecánico en México",
   description:
     "Crea la página web de tu taller mecánico en 3 minutos con IA. Lista de servicios, precios, galería y WhatsApp para cotizaciones. SEO local para aparecer en Google. Plan único de $699 MXN/mes, todo incluido.",
-  keywords: ["página web taller mecánico", "sitio web taller automotriz", "web para mecánico México", "página web refaccionaria", "sitio web vulcanizadora"],
   alternates: { canonical: "/sitio-web-taller-mecanico" },
   openGraph: {
     title: "Página Web para tu Taller Mecánico — INDEXA",

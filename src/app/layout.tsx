@@ -24,19 +24,18 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "INDEXA — Presencia Digital para tu Negocio",
+    default: "INDEXA — Agencia Digital con IA para PYMES en México",
     template: "%s | INDEXA",
   },
   description:
-    "Creamos tu página web profesional, tienda en línea y estrategia SEO. Llevamos clientes a tu puerta, mientras tú te enfocas en vender.",
-  keywords: ["presencia digital", "páginas web", "PYMES", "SEO", "e-commerce", "México", "sitio web", "WhatsApp", "Google"],
+    "Página web con IA, campañas en Google, Meta y TikTok y SEO local para PYMES en México. Plan único de $699 MXN/mes, sin contratos. Prueba 14 días gratis.",
   authors: [{ name: "INDEXA", url: SITE_URL }],
   creator: "INDEXA",
   openGraph: {
     type: "website",
     locale: "es_MX",
     siteName: "INDEXA",
-    title: "INDEXA — Presencia Digital para tu Negocio",
+    title: "INDEXA — Agencia Digital con IA para PYMES en México",
     description: "Creamos tu página web profesional, tienda en línea y estrategia SEO. Llevamos clientes a tu puerta.",
     url: SITE_URL,
     images: [
@@ -44,13 +43,13 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "INDEXA — Presencia Digital con IA para PYMES en México",
+        alt: "INDEXA — Agencia Digital con IA para PYMES en México",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "INDEXA — Presencia Digital para tu Negocio",
+    title: "INDEXA — Agencia Digital con IA para PYMES en México",
     description: "Creamos tu página web profesional, tienda en línea y estrategia SEO.",
     images: ["/og-image.png"],
   },

@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Mejor plataforma para hacer la página web de tu PYME en México (2026)",
+  title: "Mejor plataforma web para PYMES en México (2026)",
   description:
     "Comparativa actualizada 2026 de las mejores plataformas para crear la página web de un negocio en México: precios en MXN, soporte en español, WhatsApp, anuncios y SEO local.",
   alternates: { canonical: "/guia/mejor-plataforma-pagina-web-pymes-mexico-2026" },

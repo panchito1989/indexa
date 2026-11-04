@@ -16,7 +16,6 @@ export const metadata: Metadata = {
   title: "Página Web para Negocios en CDMX y Estado de México",
   description:
     "Crea tu página web profesional para tu negocio en Ciudad de México en menos de 3 minutos. Con SEO local, WhatsApp integrado y IA. Plan único de $699 MXN/mes, todo incluido. Incluye un caso real con cifras de Google Ads.",
-  keywords: ["página web CDMX", "sitio web Ciudad de México", "presencia digital CDMX", "diseño web CDMX", "página web negocio México DF"],
   alternates: { canonical: "/pagina-web-cdmx" },
   openGraph: {
     title: "Página Web para Negocios en CDMX — INDEXA",

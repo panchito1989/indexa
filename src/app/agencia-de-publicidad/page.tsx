@@ -7,21 +7,9 @@ import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
 const PAGE_PATH = "/agencia-de-publicidad";
 
 export const metadata: Metadata = {
-  title: "Agencia de Publicidad en México — Anuncios que Sí Venden",
+  title: "Agencia de Publicidad en México: Anuncios que Venden",
   description:
-    "INDEXA es la agencia de publicidad para PYMES en México: Google Ads, Meta Ads, TikTok Ads y publicidad digital con IA. Sin contratos, leads directos a WhatsApp, plan único de $699 MXN/mes todo incluido.",
-  keywords: [
-    "agencia de publicidad",
-    "agencia publicidad",
-    "agencia de publicidad México",
-    "agencia de publicidad y marketing",
-    "agencia de publicidad digital",
-    "agencia de publicidad cerca de mi",
-    "empresas de publicidad",
-    "agencia publicidad cdmx",
-    "mejor agencia de publicidad México",
-    "agencia de anuncios",
-  ],
+    "Agencia de publicidad para PYMES en México: Google, Meta y TikTok Ads con IA y leads a WhatsApp. Sin contratos, plan único de $699 MXN/mes.",
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "Agencia de Publicidad en México — INDEXA",

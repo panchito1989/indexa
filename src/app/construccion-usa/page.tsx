@@ -6,17 +6,9 @@ import { buildUsaHispanicServiceSchema, INDEXA_SITE_URL } from "@/lib/seoSchemas
 import { WHATSAPP_NUMBER } from "@/lib/contact";
 
 export const metadata: Metadata = {
-  title: "Más clientes para tu negocio de construcción y remodelación en USA",
+  title: "Clientes para tu negocio de construcción en USA",
   description:
     "Cotizaciones de remodelación, techos, drywall, pintura y pisos para contractors hispanos en USA. Anuncios en español, página web optimizada y leads directos a WhatsApp. Garantía 30 días.",
-  keywords: [
-    "publicidad para contractor hispano USA",
-    "marketing para construcción y remodelación",
-    "más clientes para mi negocio de construcción",
-    "anuncios remodelación Houston Dallas Miami",
-    "general contractor advertising hispanic",
-    "facebook ads construcción español",
-  ],
   alternates: { canonical: "/construccion-usa" },
   openGraph: {
     title: "Llena tu agenda de remodelaciones — INDEXA USA",

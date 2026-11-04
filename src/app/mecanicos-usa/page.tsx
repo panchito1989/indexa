@@ -9,14 +9,6 @@ export const metadata: Metadata = {
   title: "Más clientes para tu taller mecánico en USA",
   description:
     "Llena tu taller mecánico de clientes hispanos en USA. Anuncios en español en Facebook, Google y TikTok, página web optimizada y leads directos a WhatsApp. Para Houston, Dallas, Miami, LA, Phoenix y todo USA. Garantía 30 días.",
-  keywords: [
-    "publicidad para taller mecánico USA",
-    "marketing para mecánicos hispanos",
-    "más clientes para mi taller mecánico",
-    "anuncios mecánico Houston Dallas Miami",
-    "google ads taller automotriz USA",
-    "facebook ads para mecánicos",
-  ],
   alternates: { canonical: "/mecanicos-usa" },
   openGraph: {
     title: "Llena tu taller mecánico de clientes — INDEXA USA",

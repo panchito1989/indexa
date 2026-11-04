@@ -94,9 +94,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "sitios-web-ia",
-    seoTitle: "Páginas Web con IA para PYMES en México | Sitios que Convierten",
+    seoTitle: "Páginas Web con IA para PYMES en México",
     seoDescription:
-      "Crea tu página web profesional con inteligencia artificial en menos de 3 minutos. Diseñada para convertir visitas en clientes vía WhatsApp. Para negocios en México por $699 MXN/mes, todo incluido. 14 días gratis.",
+      "Crea tu página web profesional con IA en menos de 3 minutos, diseñada para convertir visitas en clientes por WhatsApp. $699 MXN/mes, todo incluido.",
     seoKeywords: [
       "página web pyme méxico",
       "crear página web con inteligencia artificial",
@@ -244,7 +244,7 @@ export const servicios: Servicio[] = [
     stats: [
       { valor: "<3 min", label: "En lo que se construye" },
       { valor: "1.2 s", label: "Velocidad de carga" },
-      { valor: "+340%", label: "Conversión promedio" },
+      { valor: "$699", label: "MXN/mes, todo incluido" },
     ],
     whoIsItFor: {
       titulo: "Es para ti si...",
@@ -286,9 +286,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "marketing-automatizado",
-    seoTitle: "Marketing Automatizado con IA para PYMES | Meta Ads y Google Ads en México",
+    seoTitle: "Marketing Automatizado con IA: Meta y Google Ads",
     seoDescription:
-      "Tus campañas de Facebook, Instagram y Google Ads optimizadas por IA cada 6 minutos. Reduce el costo por cliente hasta 60% sin contratar agencia. Pagas solo el plan, sin comisiones.",
+      "Campañas de Facebook, Instagram y Google Ads optimizadas con IA, sin contratar agencia. Pagas solo el plan de $699 MXN/mes, sin comisiones.",
     seoKeywords: [
       "marketing digital pyme méxico",
       "facebook ads para pymes",
@@ -478,9 +478,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "seo-inteligente",
-    seoTitle: "SEO Local para PYMES en México | Posicionamiento en Google con IA",
+    seoTitle: "SEO Local para PYMES en México con IA",
     seoDescription:
-      "Posiciona tu negocio en los primeros lugares de Google cuando buscan tu giro en tu ciudad. Tráfico orgánico real, sin pagar publicidad. Optimización técnica completa + Google My Business.",
+      "Aparece en Google cuando buscan tu giro en tu ciudad: optimización técnica completa y Google Business Profile, sin pagar publicidad.",
     seoKeywords: [
       "seo local méxico",
       "posicionamiento web google méxico",
@@ -616,7 +616,7 @@ export const servicios: Servicio[] = [
         label: "Tráfico orgánico mensual",
         before: "10 – 50 visitas",
         after: "400 – 2,000 visitas",
-        delta: "Hasta 40x más",
+        delta: "Rango típico, no garantizado",
       },
       {
         label: "Llamadas y mensajes desde Google",
@@ -627,7 +627,7 @@ export const servicios: Servicio[] = [
     ],
     stats: [
       { valor: "Top 3", label: "En Google local" },
-      { valor: "+40x", label: "Tráfico orgánico" },
+      { valor: "Schema.org", label: "SEO local incluido" },
       { valor: "1.5 s", label: "Carga del sitio" },
     ],
     whoIsItFor: {
@@ -670,9 +670,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "analiticas-tiempo-real",
-    seoTitle: "Analíticas y Métricas en Tiempo Real para PYMES | Panel para Negocios México",
+    seoTitle: "Analíticas en Tiempo Real para PYMES en México",
     seoDescription:
-      "Mide visitas, conversiones, mensajes de WhatsApp y rendimiento de campañas en tiempo real. Decisiones con datos, no con intuición. Panel en español sin curvas de aprendizaje.",
+      "Mide visitas, conversiones, mensajes de WhatsApp y campañas en tiempo real. Decide con datos, no con intuición, desde un panel en español.",
     seoKeywords: [
       "analíticas web pyme",
       "panel de métricas negocio",
@@ -856,9 +856,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "chatbot-inteligente",
-    seoTitle: "Chatbot con IA para WhatsApp e Instagram | Atención 24/7 para PYMES México",
+    seoTitle: "Chatbot con IA para WhatsApp e Instagram 24/7",
     seoDescription:
-      "Tu vendedor de IA responde mensajes de WhatsApp, Instagram, Messenger y tu web en menos de 3 segundos, agenda citas y califica leads. Cero clientes perdidos por no contestar a tiempo.",
+      "Un vendedor con IA responde WhatsApp, Instagram, Messenger y tu web en segundos, agenda citas y califica leads. Cero clientes perdidos por no contestar.",
     seoKeywords: [
       "chatbot whatsapp business pyme",
       "chatbot ia para negocio méxico",
@@ -1048,9 +1048,9 @@ export const servicios: Servicio[] = [
   // ─────────────────────────────────────────────────────────────────
   {
     slug: "automatizaciones",
-    seoTitle: "Automatizaciones para Negocios en México | Conecta WhatsApp, CRM, Pagos y Calendar",
+    seoTitle: "Automatiza WhatsApp, CRM y Pagos de tu Negocio",
     seoDescription:
-      "Automatiza tu negocio: WhatsApp, Google Calendar, CRM, pagos y facturación trabajando solos. Recupera 10-20 horas a la semana, reduce no-shows 70% y escala sin contratar más gente.",
+      "Automatiza WhatsApp, Google Calendar, CRM, pagos y facturación. Recupera horas cada semana, reduce citas perdidas y crece sin contratar más gente.",
     seoKeywords: [
       "automatización procesos pyme méxico",
       "integración whatsapp y crm",

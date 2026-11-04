@@ -6,7 +6,7 @@ import Footer from "@/components/Footer";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Cómo Elegir la Mejor Página Web para tu Negocio: Freelance vs Agencia vs Plataforma (2026)",
+  title: "Cómo Elegir Página Web: Freelance vs Agencia (2026)",
   description:
     "Compara las opciones para crear tu página web en México: freelance, agencia o plataforma como INDEXA. Pros, contras, costos, tiempos de entrega y cuál es la mejor opción según tu tipo de negocio.",
   alternates: { canonical: "/guia/como-elegir-pagina-web" },

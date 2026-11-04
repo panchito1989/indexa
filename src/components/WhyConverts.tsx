@@ -44,7 +44,7 @@ const beforeAfter = [
 
 export default function WhyConverts() {
   return (
-    <section id="por-que-converte" className="relative overflow-hidden bg-[#040611] py-24 sm:py-32">
+    <section id="por-que-convierte" className="relative overflow-hidden bg-[#040611] py-24 sm:py-32">
       {/* Background decoration */}
       <div className="pointer-events-none absolute inset-0 opacity-[0.04]">
         <div

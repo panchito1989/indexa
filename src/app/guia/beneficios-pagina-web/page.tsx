@@ -9,7 +9,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "10 Beneficios de Tener una Página Web para tu Negocio en México (2026)",
+  title: "10 Beneficios de una Página Web para tu Negocio",
   description:
     "Descubre los beneficios reales de tener una página web profesional para tu PYME: más clientes, credibilidad, ventas 24/7, SEO local y mucho más. Guía completa con datos para México.",
   alternates: { canonical: "/guia/beneficios-pagina-web" },

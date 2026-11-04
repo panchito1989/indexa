@@ -9,14 +9,6 @@ export const metadata: Metadata = {
   title: "Más clientes para tu negocio hispano en USA",
   description:
     "INDEXA llena tu agenda de clientes en USA. Anuncios en Facebook, Google y TikTok hechos en español, página web que vende y WhatsApp con leads. Para mecánicos, landscaping, limpieza, restaurantes y todo negocio hispano. Garantía de resultados o no pagas el siguiente mes.",
-  keywords: [
-    "publicidad para negocios hispanos USA",
-    "marketing para latinos en Estados Unidos",
-    "anuncios en español USA",
-    "más clientes para mi negocio Houston Miami Dallas",
-    "agencia de marketing latino USA",
-    "publicidad mecánico landscaping limpieza USA",
-  ],
   alternates: { canonical: "/usa" },
   openGraph: {
     title: "Más clientes para tu negocio hispano en USA — INDEXA",

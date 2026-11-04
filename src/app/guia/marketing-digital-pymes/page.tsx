@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Marketing Digital para PYMES: Meta Ads y TikTok Ads en México (2026)",
+  title: "Marketing Digital para PYMES: Meta y TikTok Ads",
   description:
     "Aprende a invertir en publicidad digital para tu negocio: cuánto cuesta, cómo segmentar y cómo medir resultados en Facebook, Instagram y TikTok. Guía práctica para PYMES mexicanas.",
   alternates: { canonical: "/guia/marketing-digital-pymes" },

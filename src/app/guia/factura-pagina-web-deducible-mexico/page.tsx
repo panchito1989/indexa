@@ -8,18 +8,9 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 const PAGE_PATH = "/guia/factura-pagina-web-deducible-mexico";
 
 export const metadata: Metadata = {
-  title: "¿Es Deducible una Página Web en México? | Factura, IVA y CFDI 2026",
+  title: "¿Es Deducible una Página Web en México? CFDI e IVA",
   description:
     "Sí, una página web es 100% deducible en México como gasto operativo. Te explicamos cómo facturar tu sitio web, qué CFDI usar, IVA acreditable y los requisitos del SAT en 2026.",
-  keywords: [
-    "página web es deducible mexico",
-    "factura página web deducible",
-    "cfdi servicios digitales sat",
-    "iva acreditable hosting mexico",
-    "deducir gastos sitio web pyme",
-    "facturar suscripción saas mexico",
-    "uso cfdi g03 servicios web",
-  ],
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "¿Es Deducible una Página Web en México? — Guía SAT 2026",

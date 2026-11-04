@@ -9,14 +9,6 @@ export const metadata: Metadata = {
   title: "Más clientes para tu negocio de plomería en USA",
   description:
     "Llamadas de emergencia y trabajos residenciales para plomeros y electricistas hispanos en USA. Anuncios en español y Google que aparecen cuando alguien necesita ayuda urgente. Garantía 30 días.",
-  keywords: [
-    "publicidad para plomero hispano USA",
-    "marketing para plumber latino",
-    "más clientes para mi negocio de plomería",
-    "anuncios plomero electricista USA",
-    "plumber advertising hispanic spanish",
-    "google ads plomería español",
-  ],
   alternates: { canonical: "/plomeros-usa" },
   openGraph: {
     title: "Llena tu agenda de trabajos de plomería — INDEXA USA",

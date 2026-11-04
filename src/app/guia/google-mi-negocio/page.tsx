@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Google Business Profile (Mi Negocio): Guía Completa para PYMES en México (2026)",
+  title: "Google Business Profile: Guía para PYMES en México",
   description:
     "Aprende a crear, optimizar y posicionar tu ficha de Google Business Profile (antes Google Mi Negocio) para aparecer en Google Maps, el Local Pack y atraer clientes locales a tu negocio en México.",
   alternates: { canonical: "/guia/google-mi-negocio" },
