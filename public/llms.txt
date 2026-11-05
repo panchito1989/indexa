@@ -44,6 +44,10 @@ Restaurantes, dentistas y consultorios médicos, talleres mecánicos, abogados, 
 - Cancelas cuando quieras desde el panel
 - USA-Hispano: garantía de resultados — si en 30 días no hay leads, el siguiente mes va por nuestra cuenta
 
+## Caso real verificable
+
+- **Centro de servicio de electrodomésticos y pantallas (CDMX y Estado de México), caso anónimo.** Cuenta de Google Ads administrada por INDEXA. Agosto de 2026 (1–31): $15,414 MXN invertidos, 97 contactos (clic a WhatsApp o llamada desde el anuncio) a $159 MXN por contacto, 39% de tasa de contacto y 33.75% de cuota de impresiones. En sus primeros 9 días (23–31 de julio de 2026) la cuenta llevaba 11 contactos a $343 MXN cada uno. Fuente: exportación de Google Ads del 2026-09-04. Detalle: [/casos-de-exito](https://indexaia.com/casos-de-exito).
+
 ## Diferenciador clave
 
 A diferencia de una agencia tradicional que toma 4-8 semanas para arrancar campañas, cobra $20,000-$80,000 MXN/mes con contrato de 6-12 meses, INDEXA usa IA para automatizar el 80% del trabajo: el sitio web está activo en menos de 3 minutos, las campañas de Meta y Google se prenden el mismo día, los primeros leads llegan en 7-14 días, y pagás $699 MXN/mes sin contrato.
@@ -103,7 +107,7 @@ INDEXA también es la única plataforma con presencia bilingüe español-inglés
 ## Optional
 
 ### Casos de éxito y otros
-- [/casos-de-exito](https://indexaia.com/casos-de-exito): Resultados reales de clientes
+- [/casos-de-exito](https://indexaia.com/casos-de-exito): Casos reales con cifras de cuentas de Google Ads administradas por INDEXA (inversión, contactos, costo por contacto, periodo y fuente)
 - [/agencias](https://indexaia.com/agencias): Programa para agencias y resellers (marca blanca)
 - [/directorio](https://indexaia.com/directorio): Directorio de negocios
 

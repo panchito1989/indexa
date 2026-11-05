@@ -8,7 +8,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Preguntas Frecuentes sobre Páginas Web para Negocios en México (2026)",
+  title: "Preguntas Frecuentes: Páginas Web para Negocios",
   description:
     "Resolvemos todas tus dudas sobre crear una página web para tu negocio: costos, tiempos, dominio, hosting, SEO, WhatsApp, diseño, mantenimiento y más. FAQ completa para PYMES mexicanas.",
   alternates: { canonical: "/guia/preguntas-frecuentes" },

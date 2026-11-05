@@ -3,25 +3,14 @@ import Link from "next/link";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { buildAgenciaPageGraph, SITE_URL } from "@/lib/agenciaSeoSchemas";
+import { buscarCaso, CASO_DESTACADO, formatoMXN } from "@/lib/casosAds";
 
 const PAGE_PATH = "/agencia-de-marketing-digital";
 
 export const metadata: Metadata = {
-  title: "Agencia de Marketing Digital en México — Plataforma con IA",
+  title: "Agencia de Marketing Digital en México con IA",
   description:
-    "INDEXA es la agencia de marketing digital para PYMES en México: sitios web, Google Ads, Meta Ads, SEO local, redes sociales y leads directos a WhatsApp. Plan único de $699 MXN/mes, todo incluido. 14 días gratis.",
-  keywords: [
-    "agencia de marketing digital",
-    "agencia marketing digital",
-    "marketing digital agencia",
-    "agencia de mkt digital",
-    "agencia digital marketing",
-    "agencia digital",
-    "agencia de marketing digital México",
-    "mejor agencia marketing digital México",
-    "agencia marketing digital pymes",
-    "servicios de marketing digital",
-  ],
+    "Agencia de marketing digital para PYMES en México: web, Google y Meta Ads, SEO local y leads a WhatsApp. Plan único de $699 MXN/mes. 14 días gratis.",
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "Agencia de Marketing Digital en México — INDEXA",
@@ -42,7 +31,7 @@ const faq = [
   {
     pregunta: "¿Cuánto cuesta contratar una agencia de marketing digital en México?",
     respuesta:
-      "Los precios de agencias de marketing digital en México varían según el tamaño y el alcance: agencias pequeñas y freelancers cobran $5,000–$15,000 MXN/mes; agencias medianas $15,000–$50,000 MXN/mes; agencias grandes $50,000+ MXN/mes con contrato anual. INDEXA ofrece un plan único de $699 MXN/mes con todo incluido: sitio web con IA, panel CMS, campañas en Google, Meta y TikTok con asistente IA, SEO local, estadísticas en tiempo real y soporte por WhatsApp. Sin pagos iniciales, sin contratos anuales, prueba 14 días gratis.",
+      "Los precios de agencias de marketing digital en México varían según el tamaño y el alcance: freelancers y agencias pequeñas cobran $5,000–$15,000 MXN/mes; agencias medianas $15,000–$50,000 MXN/mes; agencias grandes $50,000+ MXN/mes con contrato anual. INDEXA ofrece un plan único de $699 MXN/mes con todo incluido: sitio web con IA, panel CMS, campañas en Google, Meta y TikTok con asistente IA, SEO local, estadísticas en tiempo real y soporte por WhatsApp. Sin pagos iniciales, sin contratos anuales, prueba 14 días gratis.",
   },
   {
     pregunta: "¿Qué servicios incluye INDEXA como agencia de marketing digital?",
@@ -52,7 +41,7 @@ const faq = [
   {
     pregunta: "¿En qué se diferencia INDEXA de una agencia de marketing digital tradicional?",
     respuesta:
-      "Una agencia tradicional te asigna un equipo humano que toma 4–8 semanas en arrancar tus campañas, con honorarios de $20,000–$80,000 MXN/mes y contrato de 6–12 meses. INDEXA usa IA para automatizar el 80% del trabajo: tu sitio web está listo en 3 minutos, las campañas se optimizan solas 24/7 y el chatbot atiende a tus clientes mientras duermes. Pagas $699 MXN mes a mes (plan único, todo incluido) sin contrato y obtienes resultados desde la primera semana. Es como tener una agencia de marketing digital pero por una décima parte del costo.",
+      "Una agencia tradicional te asigna un equipo humano que toma 4–8 semanas en arrancar tus campañas, con honorarios de $15,000–$50,000 MXN/mes (agencia mediana) y contrato de 6–12 meses. INDEXA usa IA para automatizar el 80% del trabajo: tu sitio web está listo en 3 minutos, las campañas se optimizan solas 24/7 y el chatbot atiende a tus clientes mientras duermes. Pagas $699 MXN mes a mes (plan único, todo incluido) sin contrato y obtienes resultados desde la primera semana. Es como tener una agencia de marketing digital pero por una décima parte del costo.",
   },
   {
     pregunta: "¿INDEXA funciona para mi industria?",
@@ -222,12 +211,7 @@ export default function AgenciaMarketingDigitalPage() {
             <p className="mt-3 text-sm text-white/40">14 días gratis · Sin tarjeta · Cancela cuando quieras</p>
 
             <div className="mt-14 grid w-full max-w-4xl mx-auto grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm sm:grid-cols-4">
-              {[
-                { value: "+340%", label: "Conversión vs. webs tradicionales" },
-                { value: "<3 min", label: "Para tener tu web lista" },
-                { value: "−60%", label: "Costo por cliente" },
-                { value: "24/7", label: "IA optimizando tus campañas" },
-              ].map((s) => (
+              {statsHero().map((s) => (
                 <div key={s.label} className="bg-[#0a0e27]/60 px-5 py-5 text-center">
                   <p className="bg-gradient-to-r from-indexa-orange to-amber-300 bg-clip-text text-2xl font-extrabold text-transparent sm:text-3xl">
                     {s.value}
@@ -316,20 +300,20 @@ export default function AgenciaMarketingDigitalPage() {
                 </thead>
                 <tbody className="text-white/80">
                   <tr className="border-b border-white/5">
-                    <td className="px-6 py-4">Freelancer / consultor</td>
-                    <td className="px-6 py-4">$3,000–$15,000</td>
+                    <td className="px-6 py-4">Freelancer / agencia pequeña</td>
+                    <td className="px-6 py-4">$5,000–$15,000</td>
                     <td className="px-6 py-4">Variable</td>
-                    <td className="px-6 py-4">2-3 semanas</td>
+                    <td className="px-6 py-4">2-4 semanas</td>
                   </tr>
                   <tr className="border-b border-white/5">
-                    <td className="px-6 py-4">Agencia pequeña</td>
+                    <td className="px-6 py-4">Agencia mediana</td>
                     <td className="px-6 py-4">$15,000–$50,000</td>
                     <td className="px-6 py-4">3-6 meses</td>
                     <td className="px-6 py-4">4-6 semanas</td>
                   </tr>
                   <tr className="border-b border-white/5">
-                    <td className="px-6 py-4">Agencia mediana / grande</td>
-                    <td className="px-6 py-4">$50,000–$200,000+</td>
+                    <td className="px-6 py-4">Agencia grande</td>
+                    <td className="px-6 py-4">$50,000+</td>
                     <td className="px-6 py-4">6-12 meses</td>
                     <td className="px-6 py-4">6-8 semanas</td>
                   </tr>
@@ -475,4 +459,24 @@ export default function AgenciaMarketingDigitalPage() {
       <Footer />
     </>
   );
+}
+
+/**
+ * Cifras del hero. Antes había "+340% de conversión" y "−60% de costo por
+ * cliente" sin fuente; ahora salen del caso real publicado en casos-ads.json
+ * (igual que en la home). Los LLMs descartan fuentes con cifras sin respaldo.
+ */
+function statsHero(): { value: string; label: string }[] {
+  const producto = [
+    { value: "<3 min", label: "Para tener tu web lista" },
+    { value: "24/7", label: "IA optimizando tus campañas" },
+  ];
+  const caso = buscarCaso(CASO_DESTACADO);
+  if (!caso) return producto;
+  return [
+    { value: String(caso.metricas.contactos), label: "Contactos en un mes (caso real)" },
+    producto[0],
+    { value: formatoMXN(caso.metricas.costoPorContacto), label: "Por contacto en Google Ads (caso real)" },
+    producto[1],
+  ];
 }

@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "SEO Local en México: Guía para Aparecer en Google y Google Maps (2026)",
+  title: "SEO Local en México: Aparece en Google Maps (2026)",
   description:
     "Aprende cómo posicionar tu negocio en búsquedas locales de Google con Schema.org, Google Business Profile y datos estructurados. Guía paso a paso para PYMES mexicanas.",
   alternates: { canonical: "/guia/seo-local-mexico" },

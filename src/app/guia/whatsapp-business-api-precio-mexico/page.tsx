@@ -8,18 +8,9 @@ const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 const PAGE_PATH = "/guia/whatsapp-business-api-precio-mexico";
 
 export const metadata: Metadata = {
-  title: "WhatsApp Business API Precio México 2026: Cuánto Cuesta y Cómo Activarla",
+  title: "WhatsApp Business API: Precio en México 2026",
   description:
     "Guía completa de precios de WhatsApp Business API en México 2026: costo por conversación, comparativa proveedores (Twilio, 360dialog, Meta Cloud), requisitos y pasos para activarla en tu PYME.",
-  keywords: [
-    "whatsapp business api precio mexico",
-    "cuanto cuesta whatsapp business api",
-    "whatsapp business api mexico 2026",
-    "activar whatsapp business api pyme",
-    "whatsapp cloud api precio",
-    "twilio whatsapp precio mexico",
-    "meta whatsapp business api costo",
-  ],
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "WhatsApp Business API Precio México 2026 — INDEXA",

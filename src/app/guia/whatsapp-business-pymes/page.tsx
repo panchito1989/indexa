@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "WhatsApp Business para PYMES: Guía para Vender Más por WhatsApp (2026)",
+  title: "WhatsApp Business para PYMES: Vende Más (2026)",
   description:
     "Aprende a usar WhatsApp Business para tu negocio en México: configuración, catálogo, respuestas rápidas, integración con tu página web y estrategias para convertir chats en ventas reales.",
   alternates: { canonical: "/guia/whatsapp-business-pymes" },

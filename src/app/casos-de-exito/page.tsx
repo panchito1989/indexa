@@ -21,9 +21,9 @@ const PAGE_URL = `${SITE_URL}/casos-de-exito`;
 
 export const metadata: Metadata = {
   // Sin marca: el layout aplica la plantilla "%s | INDEXA".
-  title: "Casos reales: cifras de cuentas de Google Ads que administramos",
+  title: "Casos reales de Google Ads con cifras verificables",
   description:
-    "Resultados reales de cuentas publicitarias administradas por INDEXA: inversión, contactos por WhatsApp y llamada, costo por contacto y cuota de impresiones. Casos anónimos con periodo y fuente.",
+    "Resultados reales de cuentas de Google Ads que administra INDEXA: inversión, contactos, costo por contacto y periodo. Casos anónimos con fuente.",
   alternates: { canonical: "/casos-de-exito" },
   openGraph: {
     title: "Casos reales — INDEXA",

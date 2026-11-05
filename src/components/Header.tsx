@@ -78,7 +78,7 @@ export default function Header() {
                     ))}
                   </div>
                   <div className="mt-2 border-t border-white/5 pt-2">
-                    <a href="#soluciones" className="block rounded-lg px-3 py-2 text-xs font-semibold text-indexa-orange hover:bg-indexa-orange/10">
+                    <a href="/#soluciones" className="block rounded-lg px-3 py-2 text-xs font-semibold text-indexa-orange hover:bg-indexa-orange/10">
                       Ver todos los servicios →
                     </a>
                   </div>
@@ -86,13 +86,13 @@ export default function Header() {
               </div>
             )}
           </div>
-          <a href="#por-que-converte" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          <a href="/#por-que-convierte" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
             ¿Por qué convierte?
           </a>
-          <a href="#como-funciona" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          <a href="/#como-funciona" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
             Cómo Funciona
           </a>
-          <a href="#precios" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+          <a href="/#precios" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
             Precios
           </a>
           <Link href="/agencias" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
@@ -135,7 +135,7 @@ export default function Header() {
       {menuOpen && (
         <div id="mobile-menu" role="navigation" aria-label="Menú principal" className="border-t border-white/10 bg-[#0a0e27]/95 backdrop-blur-xl px-4 pb-4 md:hidden">
           <div className="flex flex-col gap-3 pt-3">
-            <a href="#soluciones" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Servicios</a>
+            <a href="/#soluciones" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Servicios</a>
             <div className="flex flex-col gap-1.5 border-l border-white/10 pl-3">
               {servicios.map((s) => (
                 <Link
@@ -152,9 +152,9 @@ export default function Header() {
                 </Link>
               ))}
             </div>
-            <a href="#por-que-converte" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">¿Por qué convierte?</a>
-            <a href="#como-funciona" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Cómo Funciona</a>
-            <a href="#precios" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Precios</a>
+            <a href="/#por-que-convierte" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">¿Por qué convierte?</a>
+            <a href="/#como-funciona" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Cómo Funciona</a>
+            <a href="/#precios" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Precios</a>
             <Link href="/probar" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Probar sin cuenta</Link>
             <Link href="/agencias" onClick={() => setMenuOpen(false)} className="text-sm font-medium text-white/70 hover:text-white">Para Agencias</Link>
             <Link

@@ -9,14 +9,6 @@ export const metadata: Metadata = {
   title: "Más clientes para tu negocio de landscaping en USA",
   description:
     "Llena tu agenda de landscaping de clientes hispanos y americanos en USA. Anuncios en Facebook, Google y TikTok que traen contratos mensuales y trabajos grandes. Para Houston, Dallas, Miami, LA, Phoenix y todo USA.",
-  keywords: [
-    "publicidad para landscaping USA",
-    "marketing para landscapers hispanos",
-    "más clientes para mi negocio de jardinería",
-    "anuncios landscaping Houston Dallas Miami",
-    "lawn care advertising hispanic",
-    "facebook ads landscaping español",
-  ],
   alternates: { canonical: "/landscaping-usa" },
   openGraph: {
     title: "Llena tu agenda de landscaping — INDEXA USA",

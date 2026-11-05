@@ -15,13 +15,6 @@ export const metadata: Metadata = {
   title: "Manejo de Anuncios Google/Meta/TikTok en Español (USA)",
   description:
     "INDEXA maneja anuncios de Google, Meta y TikTok Ads para negocios hispanos en USA: presupuesto, creativos y reportes. Administrarlos se cotiza, sin tarifa fija.",
-  keywords: [
-    "manejo de anuncios para negocios hispanos usa",
-    "quien administra mis campañas de google ads en usa",
-    "agencia hispana de publicidad digital usa",
-    "administracion de google ads meta ads tiktok ads usa",
-    "publicidad en español houston dallas miami phoenix atlanta",
-  ],
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "Manejo de Anuncios de Google, Meta y TikTok Ads — INDEXA USA",

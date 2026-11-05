@@ -7,7 +7,7 @@ const rawUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://indexaia.com";
 const SITE_URL = rawUrl.startsWith("http") ? rawUrl : `https://${rawUrl}`;
 
 export const metadata: Metadata = {
-  title: "Cuánto cuesta la página web de un dentista en México (2026)",
+  title: "Cuánto cuesta la página web de un dentista (2026)",
   description:
     "Precios reales en MXN para crear el sitio web de un consultorio dental en México: planes mensuales, qué debe incluir y cómo aparecer en Google Maps siendo dentista.",
   alternates: { canonical: "/guia/pagina-web-dentista-mexico-cuanto-cuesta" },

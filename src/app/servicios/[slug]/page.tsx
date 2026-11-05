@@ -29,7 +29,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: servicio.seoTitle,
     description: servicio.seoDescription,
-    keywords: servicio.seoKeywords,
     alternates: {
       canonical,
       languages: { "es-MX": canonical },

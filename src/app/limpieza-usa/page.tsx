@@ -9,14 +9,6 @@ export const metadata: Metadata = {
   title: "Más clientes para tu negocio de limpieza en USA",
   description:
     "Llena tu agenda de limpieza residencial y comercial en USA con clientes recurrentes. Anuncios en español, página web optimizada y leads directos a WhatsApp. Para Houston, Dallas, Miami, LA, Phoenix y todo USA. Garantía 30 días.",
-  keywords: [
-    "publicidad para limpieza USA",
-    "marketing para cleaning service hispano",
-    "más clientes para mi negocio de limpieza",
-    "anuncios cleaning Houston Dallas Miami",
-    "house cleaning advertising hispanic",
-    "facebook ads limpieza español",
-  ],
   alternates: { canonical: "/limpieza-usa" },
   openGraph: {
     title: "Llena tu agenda de limpieza — INDEXA USA",

@@ -17,14 +17,6 @@ export const metadata: Metadata = {
   title: "Administración de Campañas de Google, Meta y TikTok Ads",
   description:
     "INDEXA opera campañas de Google, Meta y TikTok Ads para PYMES en México: presupuesto, creativos y reportes. Administrar tu cuenta se cotiza, sin tarifa fija.",
-  keywords: [
-    "administracion de campañas de google ads",
-    "administrar google ads meta ads y tiktok ads",
-    "agencia que administra mis anuncios",
-    "manejo de campañas publicitarias mexico",
-    "quien me administra mi cuenta de google ads",
-    "administracion de publicidad digital pymes mexico",
-  ],
   alternates: { canonical: PAGE_PATH },
   openGraph: {
     title: "Administración de Campañas de Google, Meta y TikTok Ads — INDEXA",

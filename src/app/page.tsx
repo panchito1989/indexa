@@ -22,7 +22,7 @@ const webPageJsonLd = {
   "@type": "WebPage",
   "@id": `${SITE_URL}/#webpage`,
   url: SITE_URL,
-  name: "INDEXA — Presencia Digital para tu Negocio",
+  name: "INDEXA — Agencia Digital con IA para PYMES en México",
   inLanguage: "es-MX",
   isPartOf: { "@id": `${SITE_URL}/#website` },
   about: { "@id": `${SITE_URL}/#organization` },
